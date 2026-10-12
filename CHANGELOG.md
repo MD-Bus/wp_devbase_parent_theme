@@ -73,7 +73,8 @@ Initial release.
 - Vendored Secure Custom Fields, Admin Site Enhancements and MCP Adapter,
   each tracking upstream on a daily schedule that runs from any request
   rather than only in wp-admin.
-- Theme updates delivered from a self-hosted licensing service, verified
+- Theme updates delivered from [Warden](https://github.com/momardia54/Warden), a self-hosted licensing
+  and release service, verified
   with Ed25519 signatures and nonce replay protection, installed through
   WordPress's own upgrader.
 - A Licence settings page with per-theme keys, a live status view and a

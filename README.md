@@ -36,7 +36,7 @@ fix reaches every client site through a single release.
 | **Schema** | Organization, Website and Breadcrumb JSON-LD, each independently toggleable. |
 | **Archives** | Custom fields on a CPT archive (which ACF has no location rule for) and CPT archives in the internal link picker. |
 | **MCP** | Content abilities over the WordPress MCP Adapter — list/get/create/update posts and options values, generic across every post type, behind an opt-in allow-list. |
-| **Updates** | Vendored dependencies track upstream on a daily schedule; both themes update themselves from a licensing service. |
+| **Updates** | Vendored dependencies track upstream on a daily schedule; both themes update themselves from [Warden](https://github.com/momardia54/Warden), a self-hosted licensing and release service. |
 
 ## Installing
 
@@ -162,11 +162,50 @@ at the top level — they only store a callable. Never *call* a `devbase_*`
 function there, and never guard one with `function_exists()`: it will be
 false, the code will silently do nothing, and the cause is not obvious.
 
+## Updates
+
+Both themes keep themselves current, and so do the vendored dependencies —
+on a client site nobody needs to do anything.
+
+**Dependencies** (Secure Custom Fields, Admin Site Enhancements, MCP
+Adapter) track their own upstreams on a daily WP-Cron event. That event
+fires on any request, including front-end traffic, specifically so a site
+whose owner never opens wp-admin still receives them.
+
+**The themes themselves** are delivered by [Warden](https://github.com/momardia54/Warden) — a self-hosted
+licensing and release service, and a separate project. Each theme has its
+own release track and its own licence key, so the parent and a client's
+child theme update independently.
+
+The theme asks Warden what release is available for the version and domain
+it reports, then hands the answer to WordPress's own `Theme_Upgrader`,
+which does the downloading, swapping and rollback. That means the update
+notice, the Dashboard → Updates screen, `wp theme update` and unattended
+auto-updates all work exactly as they do for any other theme.
+
+Three properties are worth knowing, since they decide how this behaves
+when something goes wrong:
+
+- **Every response is verified** with an Ed25519 signature over the raw
+  body before any of it is trusted, and carries a nonce the response must
+  echo. A response that fails either check is a transport error, never a
+  verdict — it matters most because that response carries a download URL
+  WordPress would install as the active theme.
+- **Failure is soft.** On an outage the last verified answer stands, so a
+  service problem cannot lock a site out or make a valid licence look
+  invalid.
+- **But bounded.** That cached answer stops authorising installs after
+  seven days, so a response that can no longer be re-verified cannot keep
+  approving updates indefinitely.
+
+No licence key means no update checks for that theme — which is the right
+state for a staging clone or a local copy.
+
 ## Versioning
 
 The `Version:` header in `style.css` is the single source of truth.
-WordPress reads it, the updater reports it, and the licensing service
-compares against it to decide whether a release applies.
+WordPress reads it, the updater reports it, and [Warden](https://github.com/momardia54/Warden) compares
+against it to decide whether a release applies.
 
 ```bash
 ./bin/bump-version.sh patch    # 1.0.0 -> 1.0.1

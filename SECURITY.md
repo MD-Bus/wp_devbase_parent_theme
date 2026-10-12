@@ -34,8 +34,8 @@ oversights.
 
 ### Update delivery is signed and verified
 
-Theme updates come from a self-hosted licensing service rather than
-WordPress.org. Every response is verified with an **Ed25519 signature**
+Theme updates come from [Warden](https://github.com/momardia54/Warden), a self-hosted licensing and
+release service, rather than from WordPress.org. Every response is verified with an **Ed25519 signature**
 over the raw body before any part of it is trusted, and each request
 carries a nonce that the response must echo. A response that fails either
 check is treated as a transport error, never as a verdict.
