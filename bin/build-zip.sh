@@ -47,6 +47,17 @@
 #
 # See inc/dependencies/AGENT.md, "committed to git".
 
+# Repository-only files are stripped: README, CHANGELOG, ROADMAP, SECURITY
+# and docs/ (which carries screenshots — ~1.9MB that has no business on a
+# client's server). The excludes are anchored with a leading slash so they
+# only match this theme's own copies, never third-party ones inside vendor/.
+#
+# LICENSE is deliberately KEPT. This theme is GPLv2+ and bundles GPLv2+ code
+# (Secure Custom Fields, Admin Site Enhancements); the GPL requires the
+# licence text to travel with the distributed work. The licence files inside
+# vendor/ stay for the same reason — they are other projects' licences and
+# removing them would be a compliance problem, not a tidy-up.
+#
 set -euo pipefail
 
 THEME_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -135,6 +146,12 @@ rsync -a "$THEME_DIR/" "$BUILD_DIR/" \
 	--exclude='bin' \
 	--exclude='*.zip' \
 	--exclude='AGENT.md' \
+	--exclude='/README.md' \
+	--exclude='/CHANGELOG.md' \
+	--exclude='/ROADMAP.md' \
+	--exclude='/SECURITY.md' \
+	--exclude='/docs' \
+	--exclude='.gitignore' \
 	--exclude='/languages/*.po' \
 	--exclude='/languages/*.pot'
 
