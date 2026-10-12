@@ -1,0 +1,7 @@
+{
+    "require": {
+        "wp-phpunit/wp-phpunit": "^7.0",
+        "yoast/phpunit-polyfills": "^2.0",
+        "phpunit/phpunit": "^9.6"
+    }
+}

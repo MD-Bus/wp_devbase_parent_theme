@@ -1,0 +1,547 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: devbase_parent_theme\n"
+"Report-Msgid-Bugs-To: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Domain: devbase_parent_theme\n"
+
+msgid "Theme Settings"
+msgstr ""
+
+msgid "Security"
+msgstr ""
+
+msgid "Turnstile"
+msgstr ""
+
+msgid "Enable Turnstile"
+msgstr ""
+
+msgid "Site Key"
+msgstr ""
+
+msgid "Secret Key"
+msgstr ""
+
+msgid "reCAPTCHA"
+msgstr ""
+
+msgid "Enable reCAPTCHA"
+msgstr ""
+
+msgid "Only one of Turnstile or reCAPTCHA can be enabled at a time. Disable the other one first."
+msgstr ""
+
+msgid "SMTP Settings"
+msgstr ""
+
+msgid "SMTP Server"
+msgstr ""
+
+msgid "Enable Custom SMTP"
+msgstr ""
+
+msgid "SMTP Host"
+msgstr ""
+
+msgid "SMTP Port"
+msgstr ""
+
+msgid "Encryption"
+msgstr ""
+
+msgid "None"
+msgstr ""
+
+msgid "SMTP Username"
+msgstr ""
+
+msgid "SMTP Password"
+msgstr ""
+
+msgid "From Email"
+msgstr ""
+
+msgid "From Name"
+msgstr ""
+
+msgid "Test Connection"
+msgstr ""
+
+msgid "Send Test Email"
+msgstr ""
+
+msgid "Sending…"
+msgstr ""
+
+msgid "Something went wrong. Please try again."
+msgstr ""
+
+msgid "Permission denied."
+msgstr ""
+
+msgid "SMTP test email"
+msgstr ""
+
+msgid "This is a test email from Theme Settings > SMTP Settings. If you received this, your SMTP configuration is working."
+msgstr ""
+
+msgid "Test email sent to %s. Check the inbox (and spam folder)."
+msgstr ""
+
+msgid "Failed to send test email."
+msgstr ""
+
+msgid "Tracking"
+msgstr ""
+
+msgid "Analytics"
+msgstr ""
+
+msgid "Google Tag Manager ID"
+msgstr ""
+
+msgid "e.g. GTM-XXXXXXX. Leave blank if this site doesn't use GTM."
+msgstr ""
+
+msgid "Google Analytics (GA4) ID"
+msgstr ""
+
+msgid "e.g. G-XXXXXXXXXX. Only needed if not already loaded through GTM above."
+msgstr ""
+
+msgid "Custom Scripts"
+msgstr ""
+
+msgid "Header Scripts"
+msgstr ""
+
+msgid "Raw HTML/JS, output just before </head>. E.g. Meta Pixel, Hotjar."
+msgstr ""
+
+msgid "Footer Scripts"
+msgstr ""
+
+msgid "Raw HTML/JS, output just before </body>."
+msgstr ""
+
+msgid "Never run yet."
+msgstr ""
+
+msgid "Last run: %1$s — %2$d deleted."
+msgstr ""
+
+msgid "⚠ Over 36 hours ago — if this keeps growing, WP-Cron may not be running on this site (common on hosts that disable it in favor of a real system cron). Use \"Run Purge Now\" to verify, or point a real cron job at wp-cron.php."
+msgstr ""
+
+msgid "Details"
+msgstr ""
+
+msgid "Form Name"
+msgstr ""
+
+msgid "pass this to devbase_form_log_submission()"
+msgstr ""
+
+msgid "Destinations Applying To This Form"
+msgstr ""
+
+msgid "No destination currently applies to this form — submissions will be logged but nobody will be notified."
+msgstr ""
+
+msgid "Label"
+msgstr ""
+
+msgid "Type"
+msgstr ""
+
+msgid "Manage Form Destinations"
+msgstr ""
+
+msgid "Submission"
+msgstr ""
+
+msgid "Form"
+msgstr ""
+
+msgid "Submitted Fields"
+msgstr ""
+
+msgid "No submitted data recorded on this entry."
+msgstr ""
+
+msgid "Dispatch Log"
+msgstr ""
+
+msgid "Not dispatched yet."
+msgstr ""
+
+msgid "Status"
+msgstr ""
+
+msgid "Destination"
+msgstr ""
+
+msgid "Detail"
+msgstr ""
+
+msgid "Sent"
+msgstr ""
+
+msgid "Failed"
+msgstr ""
+
+msgid "Registered Forms"
+msgstr ""
+
+msgid "Registered Form"
+msgstr ""
+
+msgid "Add New Registered Form"
+msgstr ""
+
+msgid "Edit Registered Form"
+msgstr ""
+
+msgid "Search Registered Forms"
+msgstr ""
+
+msgid "No registered forms found."
+msgstr ""
+
+msgid "No registered forms found in Trash."
+msgstr ""
+
+msgid "Form Data"
+msgstr ""
+
+msgid "Search Submissions"
+msgstr ""
+
+msgid "No submissions found."
+msgstr ""
+
+msgid "No submissions found in Trash."
+msgstr ""
+
+msgid "No destinations configured"
+msgstr ""
+
+msgid "No matching destination"
+msgstr ""
+
+msgid "SMTP"
+msgstr ""
+
+msgid "New submission: %s"
+msgstr ""
+
+msgid "Webhook"
+msgstr ""
+
+msgid "%1$s — %2$s"
+msgstr ""
+
+msgid "Form Destinations"
+msgstr ""
+
+msgid "Destinations"
+msgstr ""
+
+msgid "Add Destination"
+msgstr ""
+
+msgid "Each row is a place submissions can be sent, and which registered form(s) route there."
+msgstr ""
+
+msgid "SMTP (email)"
+msgstr ""
+
+msgid "Send To"
+msgstr ""
+
+msgid "Endpoint URL"
+msgstr ""
+
+msgid "Password / Key"
+msgstr ""
+
+msgid "Optional. Value sent in the header below to authenticate the request."
+msgstr ""
+
+msgid "Header Name"
+msgstr ""
+
+msgid "Name of the HTTP header used to send the password/key above (e.g. X-API-Key, Authorization…)."
+msgstr ""
+
+msgid "Applies To"
+msgstr ""
+
+msgid "Which registered form(s) should route submissions to this destination."
+msgstr ""
+
+msgid "Retention Policy is disabled — enable and save it first."
+msgstr ""
+
+msgid "%d submission deleted."
+msgid_plural "%d submissions deleted."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Miscellaneous"
+msgstr ""
+
+msgid "Retention Policy"
+msgstr ""
+
+msgid "Enable Retention Policy"
+msgstr ""
+
+msgid "Off by default: submissions are kept forever unless this is enabled. When on, a daily job permanently deletes form submissions older than the period configured below, for whichever forms each row applies to."
+msgstr ""
+
+msgid "Retention Policies"
+msgstr ""
+
+msgid "Add Policy"
+msgstr ""
+
+msgid "Each row deletes submissions older than the chosen period, for the form(s) it applies to. A form with no matching row is kept forever. A form covered by more than one row is purged at whichever period is shortest."
+msgstr ""
+
+msgid "Delete After"
+msgstr ""
+
+msgid "1 Day"
+msgstr ""
+
+msgid "1 Week"
+msgstr ""
+
+msgid "1 Month"
+msgstr ""
+
+msgid "3 Months"
+msgstr ""
+
+msgid "6 Months"
+msgstr ""
+
+msgid "1 Year"
+msgstr ""
+
+msgid "Which registered form(s) this policy purges."
+msgstr ""
+
+msgid "Run Purge Now"
+msgstr ""
+
+msgid "Purging…"
+msgstr ""
+
+msgid "SMTP is disabled — using PHP's default mail()."
+msgstr ""
+
+msgid "SMTP is enabled — not tested yet. Use \"Send Test Email\" on SMTP Settings."
+msgstr ""
+
+msgid "SMTP last tested successfully: %s."
+msgstr ""
+
+msgid "SMTP last test FAILED (%1$s): %2$s"
+msgstr ""
+
+msgid "System Status"
+msgstr ""
+
+msgid "Form Notifications"
+msgstr ""
+
+msgid "Checks the most recent 50 dispatch attempts across all submissions."
+msgstr ""
+
+msgid "No dispatch attempts recorded yet."
+msgstr ""
+
+msgid "All %d recent dispatch attempts succeeded."
+msgstr ""
+
+msgid "%1$d of the last %2$d dispatch attempts failed:"
+msgstr ""
+
+msgid "When"
+msgstr ""
+
+msgid "Licence"
+msgstr ""
+
+msgid "Licence & Updates"
+msgstr ""
+
+msgid "Connection"
+msgstr ""
+
+msgid "Licence Keys"
+msgstr ""
+
+msgid "Warden URL"
+msgstr ""
+
+msgid "Warden Public Key"
+msgstr ""
+
+msgid "Base URL of the Warden deployment, with no trailing path — e.g. https://warden.example.workers.dev"
+msgstr ""
+
+msgid "Base64 Ed25519 public key, copied from the licence page in Warden. Every response is verified against this before it is trusted; without it, update checks are skipped entirely rather than trusted unverified."
+msgstr ""
+
+msgid "Install Updates Automatically"
+msgstr ""
+
+msgid "Let WordPress install new theme releases on its own schedule, with no manual step. Switch this off while actively building a site, so the theme cannot change underneath you mid-project."
+msgstr ""
+
+msgid "Base Theme Licence Key"
+msgstr ""
+
+msgid "Child Theme Licence Key"
+msgstr ""
+
+msgid "Licence key covering this base (parent) theme. Leave empty to disable update checks for it."
+msgstr ""
+
+msgid "Licence key covering this site's own child theme. Leave empty to disable update checks for it."
+msgstr ""
+
+msgid "Current Status"
+msgstr ""
+
+msgid "No theme tracks are configured."
+msgstr ""
+
+msgid "Theme"
+msgstr ""
+
+msgid "Installed"
+msgstr ""
+
+msgid "Update"
+msgstr ""
+
+msgid "No licence key entered — update checks are off for this theme."
+msgstr ""
+
+msgid "Never checked successfully. Last error: %s"
+msgstr ""
+
+msgid "Not checked yet."
+msgstr ""
+
+msgid "Expires %s"
+msgstr ""
+
+msgid "%s available"
+msgstr ""
+
+msgid "Blocked — licence is not valid."
+msgstr ""
+
+msgid "Up to date."
+msgstr ""
+
+msgid "Last check failed (%s) — showing the previous result."
+msgstr ""
+
+msgid "Last checked: %1$s — updated %2$s."
+msgstr ""
+
+msgid "Last checked: %s — everything already current."
+msgstr ""
+
+msgid "Last checked: %1$s — updated to %2$s."
+msgstr ""
+
+msgid "⚠ Problems: %s"
+msgstr ""
+
+msgid "⚠ Problem: %s"
+msgstr ""
+
+msgid "⚠ Over 48 hours ago. This runs on a daily WP-Cron event, which only fires when the site gets a request — if this keeps growing, either the site has no traffic at all or WP-Cron is not running (common on hosts that disable it in favour of a real system cron). Point a real cron job at wp-cron.php if so."
+msgstr ""
+
+msgid "⚠ Over 48 hours ago — see the note on the dependency check above."
+msgstr ""
+
+msgid "could not resolve a version for %s"
+msgstr ""
+
+msgid "failed to update %1$s to %2$s"
+msgstr ""
+
+msgid "could not reach GitHub"
+msgstr ""
+
+msgid "GitHub returned a malformed response"
+msgstr ""
+
+msgid "MCP Adapter is not installed"
+msgstr ""
+
+msgid "failed to update to %s"
+msgstr ""
+
+msgid "Dependency Updates"
+msgstr ""
+
+msgid "MCP Adapter Updates"
+msgstr ""
+
+msgid "Secure Custom Fields and Admin Site Enhancements, tracked against WordPress.org."
+msgstr ""
+
+msgid "Tracked against GitHub Releases, separately from the two above."
+msgstr ""
+
+msgid "Check for Updates Now"
+msgstr ""
+
+msgid "Runs every update check immediately, bypassing the usual schedule and Warden's 12-hour cache. Uses saved settings — save first, then check."
+msgstr ""
+
+msgid "Checking…"
+msgstr ""
+
+msgid "Request failed."
+msgstr ""
+
+msgid "Dependencies:"
+msgstr ""
+
+msgid "MCP Adapter:"
+msgstr ""
+
+msgid "%s: no licence key entered."
+msgstr ""
+
+msgid "%s: could not read an installed version."
+msgstr ""
+
+msgid "%1$s: check failed — %2$s"
+msgstr ""
+
+msgid "%1$s: %3$s available (installed %2$s)."
+msgstr ""
+
+msgid "%1$s: licence not valid (%2$s) — updates blocked."
+msgstr ""
+
+msgid "%1$s: up to date (%2$s)."
+msgstr ""
+
+msgid "no response"
+msgstr ""

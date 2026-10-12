@@ -1,0 +1,20 @@
+{
+    "repositories": [
+        { "type": "composer", "url": "https://wpackagist.org" }
+    ],
+    "require": {
+        "timber/timber": "^2.5",
+        "wpackagist-plugin/secure-custom-fields": "6.9.5",
+        "wpackagist-plugin/admin-site-enhancements": "9.2.1"
+    },
+    "extra": {
+        "installer-paths": {
+            "vendor/{$name}/": ["type:wordpress-plugin"]
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "composer/installers": true
+        }
+    }
+}

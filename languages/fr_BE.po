@@ -1,0 +1,549 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: devbase_parent_theme\n"
+"Report-Msgid-Bugs-To: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Domain: devbase_parent_theme\n"
+"Language: fr_BE\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "Theme Settings"
+msgstr "Réglages du thème"
+
+msgid "Security"
+msgstr "Sécurité"
+
+msgid "Turnstile"
+msgstr "Turnstile"
+
+msgid "Enable Turnstile"
+msgstr "Activer Turnstile"
+
+msgid "Site Key"
+msgstr "Clé de site"
+
+msgid "Secret Key"
+msgstr "Clé secrète"
+
+msgid "reCAPTCHA"
+msgstr "reCAPTCHA"
+
+msgid "Enable reCAPTCHA"
+msgstr "Activer reCAPTCHA"
+
+msgid "Only one of Turnstile or reCAPTCHA can be enabled at a time. Disable the other one first."
+msgstr "Seul Turnstile ou reCAPTCHA peut être activé à la fois. Désactivez l'autre d'abord."
+
+msgid "SMTP Settings"
+msgstr "Réglages SMTP"
+
+msgid "SMTP Server"
+msgstr "Serveur SMTP"
+
+msgid "Enable Custom SMTP"
+msgstr "Activer le SMTP personnalisé"
+
+msgid "SMTP Host"
+msgstr "Hôte SMTP"
+
+msgid "SMTP Port"
+msgstr "Port SMTP"
+
+msgid "Encryption"
+msgstr "Chiffrement"
+
+msgid "None"
+msgstr "Aucun"
+
+msgid "SMTP Username"
+msgstr "Nom d'utilisateur SMTP"
+
+msgid "SMTP Password"
+msgstr "Mot de passe SMTP"
+
+msgid "From Email"
+msgstr "E-mail d'expédition"
+
+msgid "From Name"
+msgstr "Nom d'expéditeur"
+
+msgid "Test Connection"
+msgstr "Tester la connexion"
+
+msgid "Send Test Email"
+msgstr "Envoyer un e-mail de test"
+
+msgid "Sending…"
+msgstr "Envoi en cours…"
+
+msgid "Something went wrong. Please try again."
+msgstr "Une erreur s'est produite. Veuillez réessayer."
+
+msgid "Permission denied."
+msgstr "Autorisation refusée."
+
+msgid "SMTP test email"
+msgstr "E-mail de test SMTP"
+
+msgid "This is a test email from Theme Settings > SMTP Settings. If you received this, your SMTP configuration is working."
+msgstr "Ceci est un e-mail de test envoyé depuis Réglages du thème > Réglages SMTP. Si vous avez reçu ce message, votre configuration SMTP fonctionne."
+
+msgid "Test email sent to %s. Check the inbox (and spam folder)."
+msgstr "E-mail de test envoyé à %s. Vérifiez la boîte de réception (et les indésirables)."
+
+msgid "Failed to send test email."
+msgstr "Échec de l'envoi de l'e-mail de test."
+
+msgid "Tracking"
+msgstr "Suivi"
+
+msgid "Analytics"
+msgstr "Analytique"
+
+msgid "Google Tag Manager ID"
+msgstr "Identifiant Google Tag Manager"
+
+msgid "e.g. GTM-XXXXXXX. Leave blank if this site doesn't use GTM."
+msgstr "ex. GTM-XXXXXXX. Laissez vide si ce site n'utilise pas GTM."
+
+msgid "Google Analytics (GA4) ID"
+msgstr "Identifiant Google Analytics (GA4)"
+
+msgid "e.g. G-XXXXXXXXXX. Only needed if not already loaded through GTM above."
+msgstr "ex. G-XXXXXXXXXX. Nécessaire uniquement si non déjà chargé via GTM ci-dessus."
+
+msgid "Custom Scripts"
+msgstr "Scripts personnalisés"
+
+msgid "Header Scripts"
+msgstr "Scripts d'en-tête"
+
+msgid "Raw HTML/JS, output just before </head>. E.g. Meta Pixel, Hotjar."
+msgstr "HTML/JS brut, affiché juste avant </head>. Ex. Meta Pixel, Hotjar."
+
+msgid "Footer Scripts"
+msgstr "Scripts de pied de page"
+
+msgid "Raw HTML/JS, output just before </body>."
+msgstr "HTML/JS brut, affiché juste avant </body>."
+
+msgid "Never run yet."
+msgstr "Jamais exécuté."
+
+msgid "Last run: %1$s — %2$d deleted."
+msgstr "Dernière exécution : %1$s — %2$d supprimé(s)."
+
+msgid "⚠ Over 36 hours ago — if this keeps growing, WP-Cron may not be running on this site (common on hosts that disable it in favor of a real system cron). Use \"Run Purge Now\" to verify, or point a real cron job at wp-cron.php."
+msgstr "⚠ Il y a plus de 36 heures — si ce délai continue d'augmenter, WP-Cron n'est peut-être pas exécuté sur ce site (fréquent chez les hébergeurs qui le désactivent au profit d'une véritable tâche cron système). Utilisez « Purger maintenant » pour vérifier, ou dirigez une véritable tâche cron vers wp-cron.php."
+
+msgid "Details"
+msgstr "Détails"
+
+msgid "Form Name"
+msgstr "Nom du formulaire"
+
+msgid "pass this to devbase_form_log_submission()"
+msgstr "à transmettre à devbase_form_log_submission()"
+
+msgid "Destinations Applying To This Form"
+msgstr "Destinations s'appliquant à ce formulaire"
+
+msgid "No destination currently applies to this form — submissions will be logged but nobody will be notified."
+msgstr "Aucune destination ne s'applique actuellement à ce formulaire — les soumissions seront enregistrées, mais personne ne sera averti."
+
+msgid "Label"
+msgstr "Libellé"
+
+msgid "Type"
+msgstr "Type"
+
+msgid "Manage Form Destinations"
+msgstr "Gérer les destinations des formulaires"
+
+msgid "Submission"
+msgstr "Soumission"
+
+msgid "Form"
+msgstr "Formulaire"
+
+msgid "Submitted Fields"
+msgstr "Champs soumis"
+
+msgid "No submitted data recorded on this entry."
+msgstr "Aucune donnée soumise enregistrée pour cette entrée."
+
+msgid "Dispatch Log"
+msgstr "Journal d'envoi"
+
+msgid "Not dispatched yet."
+msgstr "Pas encore envoyé."
+
+msgid "Status"
+msgstr "État"
+
+msgid "Destination"
+msgstr "Destination"
+
+msgid "Detail"
+msgstr "Détail"
+
+msgid "Sent"
+msgstr "Envoyé"
+
+msgid "Failed"
+msgstr "Échec"
+
+msgid "Registered Forms"
+msgstr "Formulaires enregistrés"
+
+msgid "Registered Form"
+msgstr "Formulaire enregistré"
+
+msgid "Add New Registered Form"
+msgstr "Ajouter un formulaire enregistré"
+
+msgid "Edit Registered Form"
+msgstr "Modifier le formulaire enregistré"
+
+msgid "Search Registered Forms"
+msgstr "Rechercher des formulaires enregistrés"
+
+msgid "No registered forms found."
+msgstr "Aucun formulaire enregistré trouvé."
+
+msgid "No registered forms found in Trash."
+msgstr "Aucun formulaire enregistré trouvé dans la corbeille."
+
+msgid "Form Data"
+msgstr "Données de formulaire"
+
+msgid "Search Submissions"
+msgstr "Rechercher des soumissions"
+
+msgid "No submissions found."
+msgstr "Aucune soumission trouvée."
+
+msgid "No submissions found in Trash."
+msgstr "Aucune soumission trouvée dans la corbeille."
+
+msgid "No destinations configured"
+msgstr "Aucune destination configurée"
+
+msgid "No matching destination"
+msgstr "Aucune destination correspondante"
+
+msgid "SMTP"
+msgstr "SMTP"
+
+msgid "New submission: %s"
+msgstr "Nouvelle soumission : %s"
+
+msgid "Webhook"
+msgstr "Webhook"
+
+msgid "%1$s — %2$s"
+msgstr "%1$s — %2$s"
+
+msgid "Form Destinations"
+msgstr "Destinations des formulaires"
+
+msgid "Destinations"
+msgstr "Destinations"
+
+msgid "Add Destination"
+msgstr "Ajouter une destination"
+
+msgid "Each row is a place submissions can be sent, and which registered form(s) route there."
+msgstr "Chaque ligne est un endroit où les soumissions peuvent être envoyées, ainsi que les formulaires enregistrés qui y sont dirigés."
+
+msgid "SMTP (email)"
+msgstr "SMTP (e-mail)"
+
+msgid "Send To"
+msgstr "Envoyer à"
+
+msgid "Endpoint URL"
+msgstr "URL du point de terminaison"
+
+msgid "Password / Key"
+msgstr "Mot de passe / Clé"
+
+msgid "Optional. Value sent in the header below to authenticate the request."
+msgstr "Facultatif. Valeur envoyée dans l'en-tête ci-dessous pour authentifier la requête."
+
+msgid "Header Name"
+msgstr "Nom de l'en-tête"
+
+msgid "Name of the HTTP header used to send the password/key above (e.g. X-API-Key, Authorization…)."
+msgstr "Nom de l'en-tête HTTP utilisé pour envoyer le mot de passe/la clé ci-dessus (ex. X-API-Key, Authorization…)."
+
+msgid "Applies To"
+msgstr "S'applique à"
+
+msgid "Which registered form(s) should route submissions to this destination."
+msgstr "Le ou les formulaires enregistrés dont les soumissions doivent être dirigées vers cette destination."
+
+msgid "Retention Policy is disabled — enable and save it first."
+msgstr "La politique de rétention est désactivée — activez-la et enregistrez d'abord."
+
+msgid "%d submission deleted."
+msgid_plural "%d submissions deleted."
+msgstr[0] "%d soumission supprimée."
+msgstr[1] "%d soumissions supprimées."
+
+msgid "Miscellaneous"
+msgstr "Divers"
+
+msgid "Retention Policy"
+msgstr "Politique de rétention"
+
+msgid "Enable Retention Policy"
+msgstr "Activer la politique de rétention"
+
+msgid "Off by default: submissions are kept forever unless this is enabled. When on, a daily job permanently deletes form submissions older than the period configured below, for whichever forms each row applies to."
+msgstr "Désactivée par défaut : les soumissions sont conservées indéfiniment tant que cette option n'est pas activée. Une fois activée, une tâche quotidienne supprime définitivement les soumissions plus anciennes que la période configurée ci-dessous, pour les formulaires concernés par chaque ligne."
+
+msgid "Retention Policies"
+msgstr "Politiques de rétention"
+
+msgid "Add Policy"
+msgstr "Ajouter une politique"
+
+msgid "Each row deletes submissions older than the chosen period, for the form(s) it applies to. A form with no matching row is kept forever. A form covered by more than one row is purged at whichever period is shortest."
+msgstr "Chaque ligne supprime les soumissions plus anciennes que la période choisie, pour le ou les formulaires concernés. Un formulaire sans ligne correspondante est conservé indéfiniment. Un formulaire couvert par plusieurs lignes est purgé selon la période la plus courte."
+
+msgid "Delete After"
+msgstr "Supprimer après"
+
+msgid "1 Day"
+msgstr "1 jour"
+
+msgid "1 Week"
+msgstr "1 semaine"
+
+msgid "1 Month"
+msgstr "1 mois"
+
+msgid "3 Months"
+msgstr "3 mois"
+
+msgid "6 Months"
+msgstr "6 mois"
+
+msgid "1 Year"
+msgstr "1 an"
+
+msgid "Which registered form(s) this policy purges."
+msgstr "Le ou les formulaires enregistrés que cette politique purge."
+
+msgid "Run Purge Now"
+msgstr "Purger maintenant"
+
+msgid "Purging…"
+msgstr "Purge en cours…"
+
+msgid "SMTP is disabled — using PHP's default mail()."
+msgstr "SMTP est désactivé — utilise la fonction mail() par défaut de PHP."
+
+msgid "SMTP is enabled — not tested yet. Use \"Send Test Email\" on SMTP Settings."
+msgstr "SMTP est activé — pas encore testé. Utilisez « Envoyer un e-mail de test » dans Réglages SMTP."
+
+msgid "SMTP last tested successfully: %s."
+msgstr "SMTP testé avec succès pour la dernière fois : %s."
+
+msgid "SMTP last test FAILED (%1$s): %2$s"
+msgstr "Échec du dernier test SMTP (%1$s) : %2$s"
+
+msgid "System Status"
+msgstr "État du système"
+
+msgid "Form Notifications"
+msgstr "Notifications de formulaire"
+
+msgid "Checks the most recent 50 dispatch attempts across all submissions."
+msgstr "Vérifie les 50 dernières tentatives d'envoi parmi toutes les soumissions."
+
+msgid "No dispatch attempts recorded yet."
+msgstr "Aucune tentative d'envoi enregistrée pour le moment."
+
+msgid "All %d recent dispatch attempts succeeded."
+msgstr "Les %d dernières tentatives d'envoi ont toutes réussi."
+
+msgid "%1$d of the last %2$d dispatch attempts failed:"
+msgstr "%1$d des %2$d dernières tentatives d'envoi ont échoué :"
+
+msgid "When"
+msgstr "Quand"
+
+msgid "Licence"
+msgstr "Licence"
+
+msgid "Licence & Updates"
+msgstr "Licence et mises à jour"
+
+msgid "Connection"
+msgstr "Connexion"
+
+msgid "Licence Keys"
+msgstr "Clés de licence"
+
+msgid "Warden URL"
+msgstr "URL de Warden"
+
+msgid "Warden Public Key"
+msgstr "Clé publique Warden"
+
+msgid "Base URL of the Warden deployment, with no trailing path — e.g. https://warden.example.workers.dev"
+msgstr "URL de base du déploiement Warden, sans chemin final — par ex. https://warden.example.workers.dev"
+
+msgid "Base64 Ed25519 public key, copied from the licence page in Warden. Every response is verified against this before it is trusted; without it, update checks are skipped entirely rather than trusted unverified."
+msgstr "Clé publique Ed25519 en base64, copiée depuis la page de licence dans Warden. Chaque réponse est vérifiée avec cette clé avant d'être acceptée ; sans elle, les vérifications de mise à jour sont ignorées plutôt qu'acceptées sans vérification."
+
+msgid "Install Updates Automatically"
+msgstr "Installer les mises à jour automatiquement"
+
+msgid "Let WordPress install new theme releases on its own schedule, with no manual step. Switch this off while actively building a site, so the theme cannot change underneath you mid-project."
+msgstr "Laisser WordPress installer les nouvelles versions du thème selon son propre calendrier, sans intervention. Désactivez cette option pendant la construction d'un site, afin que le thème ne change pas en cours de projet."
+
+msgid "Base Theme Licence Key"
+msgstr "Clé de licence du thème de base"
+
+msgid "Child Theme Licence Key"
+msgstr "Clé de licence du thème enfant"
+
+msgid "Licence key covering this base (parent) theme. Leave empty to disable update checks for it."
+msgstr "Clé de licence couvrant ce thème de base (parent). Laisser vide pour désactiver ses vérifications de mise à jour."
+
+msgid "Licence key covering this site's own child theme. Leave empty to disable update checks for it."
+msgstr "Clé de licence couvrant le thème enfant propre à ce site. Laisser vide pour désactiver ses vérifications de mise à jour."
+
+msgid "Current Status"
+msgstr "État actuel"
+
+msgid "No theme tracks are configured."
+msgstr "Aucune piste de thème n'est configurée."
+
+msgid "Theme"
+msgstr "Thème"
+
+msgid "Installed"
+msgstr "Installée"
+
+msgid "Update"
+msgstr "Mise à jour"
+
+msgid "No licence key entered — update checks are off for this theme."
+msgstr "Aucune clé de licence saisie — les vérifications de mise à jour sont désactivées pour ce thème."
+
+msgid "Never checked successfully. Last error: %s"
+msgstr "Jamais vérifiée avec succès. Dernière erreur : %s"
+
+msgid "Not checked yet."
+msgstr "Pas encore vérifiée."
+
+msgid "Expires %s"
+msgstr "Expire le %s"
+
+msgid "%s available"
+msgstr "%s disponible"
+
+msgid "Blocked — licence is not valid."
+msgstr "Bloquée — la licence n'est pas valide."
+
+msgid "Up to date."
+msgstr "À jour."
+
+msgid "Last check failed (%s) — showing the previous result."
+msgstr "La dernière vérification a échoué (%s) — affichage du résultat précédent."
+
+msgid "Last checked: %1$s — updated %2$s."
+msgstr "Dernière vérification : %1$s — mise à jour de %2$s."
+
+msgid "Last checked: %s — everything already current."
+msgstr "Dernière vérification : %s — tout est déjà à jour."
+
+msgid "Last checked: %1$s — updated to %2$s."
+msgstr "Dernière vérification : %1$s — mis à jour vers %2$s."
+
+msgid "⚠ Problems: %s"
+msgstr "⚠ Problèmes : %s"
+
+msgid "⚠ Problem: %s"
+msgstr "⚠ Problème : %s"
+
+msgid "⚠ Over 48 hours ago. This runs on a daily WP-Cron event, which only fires when the site gets a request — if this keeps growing, either the site has no traffic at all or WP-Cron is not running (common on hosts that disable it in favour of a real system cron). Point a real cron job at wp-cron.php if so."
+msgstr "⚠ Il y a plus de 48 heures. Cette vérification s'exécute via une tâche WP-Cron quotidienne, qui ne se déclenche que lorsque le site reçoit une requête — si ce délai continue d'augmenter, soit le site ne reçoit aucun trafic, soit WP-Cron ne fonctionne pas (fréquent chez les hébergeurs qui le désactivent au profit d'une véritable tâche cron système). Dans ce cas, pointez une tâche cron réelle vers wp-cron.php."
+
+msgid "⚠ Over 48 hours ago — see the note on the dependency check above."
+msgstr "⚠ Il y a plus de 48 heures — voir la note sur la vérification des dépendances ci-dessus."
+
+msgid "could not resolve a version for %s"
+msgstr "impossible de déterminer une version pour %s"
+
+msgid "failed to update %1$s to %2$s"
+msgstr "échec de la mise à jour de %1$s vers %2$s"
+
+msgid "could not reach GitHub"
+msgstr "impossible de joindre GitHub"
+
+msgid "GitHub returned a malformed response"
+msgstr "GitHub a renvoyé une réponse mal formée"
+
+msgid "MCP Adapter is not installed"
+msgstr "MCP Adapter n'est pas installé"
+
+msgid "failed to update to %s"
+msgstr "échec de la mise à jour vers %s"
+
+msgid "Dependency Updates"
+msgstr "Mises à jour des dépendances"
+
+msgid "MCP Adapter Updates"
+msgstr "Mises à jour de MCP Adapter"
+
+msgid "Secure Custom Fields and Admin Site Enhancements, tracked against WordPress.org."
+msgstr "Secure Custom Fields et Admin Site Enhancements, suivis depuis WordPress.org."
+
+msgid "Tracked against GitHub Releases, separately from the two above."
+msgstr "Suivi depuis les versions GitHub, séparément des deux ci-dessus."
+
+msgid "Check for Updates Now"
+msgstr "Vérifier les mises à jour maintenant"
+
+msgid "Runs every update check immediately, bypassing the usual schedule and Warden's 12-hour cache. Uses saved settings — save first, then check."
+msgstr "Exécute immédiatement toutes les vérifications de mise à jour, en contournant la planification habituelle et le cache de 12 heures de Warden. Utilise les réglages enregistrés — enregistrez d'abord, puis vérifiez."
+
+msgid "Checking…"
+msgstr "Vérification…"
+
+msgid "Request failed."
+msgstr "La requête a échoué."
+
+msgid "Dependencies:"
+msgstr "Dépendances :"
+
+msgid "MCP Adapter:"
+msgstr "MCP Adapter :"
+
+msgid "%s: no licence key entered."
+msgstr "%s : aucune clé de licence saisie."
+
+msgid "%s: could not read an installed version."
+msgstr "%s : impossible de lire la version installée."
+
+msgid "%1$s: check failed — %2$s"
+msgstr "%1$s : vérification échouée — %2$s"
+
+msgid "%1$s: %3$s available (installed %2$s)."
+msgstr "%1$s : %3$s disponible (installée : %2$s)."
+
+msgid "%1$s: licence not valid (%2$s) — updates blocked."
+msgstr "%1$s : licence non valide (%2$s) — mises à jour bloquées."
+
+msgid "%1$s: up to date (%2$s)."
+msgstr "%1$s : à jour (%2$s)."
+
+msgid "no response"
+msgstr "aucune réponse"

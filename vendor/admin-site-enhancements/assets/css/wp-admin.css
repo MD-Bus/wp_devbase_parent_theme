@@ -1,0 +1,156 @@
+/* Admin Interface >> Hide Howdy */
+#wp-admin-bar-my-account.no-avatar > .ab-item:before {
+	display: none;
+}
+
+/* Content Duplication */
+.additional-actions {
+	display: flex;
+	flex-wrap: wrap;
+	padding: 6px 10px 8px;
+    clear: both;
+}
+
+.additional-actions #duplication:before,
+.additional-actions #public-preview:before {
+	content: "\f186";
+	position: relative;
+	top: -1px;
+	font: normal 20px / 1 dashicons;
+	color: #8c8f94;
+    speak: never;
+    display: inline-block;
+    margin-left: -1px;
+    padding-right: 6px;
+    vertical-align: top;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.additional-actions #public-preview:before {
+	content: "\f11f";
+}
+
+.asenha-public-preview-row {
+	align-items: center;
+	gap: 2px;
+}
+
+.additional-actions.asenha-public-preview-row {
+	padding: 6px 10px 4px;
+}
+
+.asenha-public-preview-row .asenha-public-preview-reset,
+.asenha-public-preview-row .asenha-copy-preview-link-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 4px;
+	margin: 0;
+	min-height: 0;
+	line-height: 1;
+	vertical-align: middle;
+	text-decoration: none;
+}
+
+.asenha-public-preview-row .asenha-copy-preview-link-button {
+	margin-left: 4px;
+}
+
+.asenha-public-preview-row .asenha-public-preview-reset .dashicons {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+}
+
+.asenha-public-preview-row .asenha-public-preview-icon-group {
+	display: inline-flex;
+	align-items: center;
+	gap: 0;
+}
+
+#misc-publishing-actions .asenha-public-preview-row .asenha-copy-preview-link-button {
+	color: var(--wp-admin-theme-color, #2271b1);
+}
+
+#misc-publishing-actions .asenha-public-preview-row .asenha-copy-preview-link-button:hover {
+	color: var(--wp-admin-theme-color-darker-10, #135e96);
+}
+
+#misc-publishing-actions .asenha-public-preview-row .asenha-copy-preview-link-button svg {
+	display: block;
+	width: 18px;
+	height: 18px;
+}
+
+#misc-publishing-actions .asenha-public-preview-expiry {
+	margin: 0;
+	padding: 0 10px 8px 35px;
+	font-size: 12px;
+	line-height: 1.4;
+	color: #646970;
+	clear: both;
+}
+
+/* Utilities >> Enable Login Logout */
+.accordion-section #login-logout-links-checklist.categorychecklist {
+	margin: -13px 0 13px 0;
+}
+
+/* Content Management >> Enable External Permalink */
+/* Custom Code >> Custom Body Class */
+.external-permalink-input,
+.custom-body-class-input {
+	padding: 8px 0 0;
+}
+
+.external-permalink-input-description,
+.custom-body-class-input-description {
+	margin-top: 4px;
+}
+
+.external-permalink-new-tab {
+	margin: 4px 0 0;
+}
+
+/* Utilities >> Multiple User Roles */
+#adduser .form-field input[type="checkbox"], #createuser .form-field input[type="checkbox"] {
+	width: 1rem;
+}
+
+/* Utilities >> Display System Summary */
+#dashboard_right_now .sub {
+	color: inherit !important;
+	background: none;
+	border-top: none;
+	margin-top: -8px;
+	padding: 0 12px 12px !important;
+}
+
+#dashboard_right_now .inside .sub > .system-summary {
+	margin-top: 8px;
+	padding: 8px 0 0 0 !important;
+	border-top: 1px solid #ddd;
+}
+
+/* General */
+.asenha-warning-message {
+	font-weight: 500;
+	color: #d63638;
+}
+
+
+
+/* Utilities >> View Admin as Role */
+#role-view-reset {
+	position: fixed;
+	right: 20px;
+	bottom: 20px;
+	z-index: 999999;
+	box-shadow: rgba(0, 0, 0, 0.19) 0px 10px 20px, rgba(0, 0, 0, 0.23) 0px 6px 6px;
+}
+
+
+
+
+

@@ -1,0 +1,351 @@
+<?php
+
+namespace ASENHA\Classes;
+
+/**
+ * Plugin Activation
+ *
+ * @since 1.0.0
+ */
+class Activation {
+
+	/**
+	 * Target schema version for the failed logins log table.
+	 *
+	 * @since 9.0.2
+	 */
+	const FAILED_LOGINS_DB_VERSION = '1.1.0';
+
+	/**
+	 * Create failed login log table for Limit Login Attempts feature
+	 *
+	 * @since 2.5.0
+	 * @param bool $recreate When true, drop and recreate the table (plugin activation). When false, create only if missing.
+	 */
+	public function create_failed_logins_log_table( $recreate = true ) {
+        global $wpdb;
+
+        // Limit Login Attempts Log Table
+
+        $table_name = $wpdb->prefix . 'asenha_failed_logins';
+
+        $charset_collation_sql = '';
+
+        if ( ! empty( $wpdb->charset ) ) {
+            $charset_collation_sql = "DEFAULT CHARACTER SET $wpdb->charset";
+        }
+
+        if ( ! empty( $wpdb->collate ) ) {
+            $charset_collation_sql .= " COLLATE $wpdb->collate";
+        }
+
+        if ( $recreate ) {
+            // Drop table if already exists
+            $wpdb->query( "DROP TABLE IF EXISTS `" . $table_name . "`" );
+        } else {
+            $query = $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table_name ) );
+
+            if ( $wpdb->get_var( $query ) === $table_name ) {
+                return true;
+            }
+        }
+
+        // Create database table. This procedure may also be called
+        $sql =
+        "CREATE TABLE {$table_name} (
+            id int(6) unsigned NOT NULL auto_increment,
+            ip_address varchar(40) NOT NULL DEFAULT '',
+            username varchar(255) NOT NULL DEFAULT '',
+            fail_count int(10) NOT NULL DEFAULT '0',
+            lockout_count int(10) NOT NULL DEFAULT '0',
+            request_uri varchar(255) NOT NULL DEFAULT '',
+            unixtime int(10) NOT NULL DEFAULT '0',
+            datetime_wp varchar(36) NOT NULL DEFAULT '',
+            info varchar(64) NOT NULL DEFAULT '',
+            UNIQUE (ip_address),
+            PRIMARY KEY (id)
+        ) {$charset_collation_sql}";
+
+		require_once ABSPATH . '/wp-admin/includes/upgrade.php';
+
+        dbDelta( $sql );
+
+        update_option( 'asenha_failed_logins_db_version', self::FAILED_LOGINS_DB_VERSION, false );
+
+        return true;
+	}
+
+	/**
+	 * Upgrade failed logins log table schema for existing installs.
+	 *
+	 * @since 9.0.2
+	 */
+	public function maybe_upgrade_failed_logins_log_table() {
+		global $wpdb;
+
+		$version_key  = 'asenha_failed_logins_db_version';
+		$target       = self::FAILED_LOGINS_DB_VERSION;
+		$current      = get_option( $version_key, '' );
+		$table_name   = $wpdb->prefix . 'asenha_failed_logins';
+		$query        = $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table_name ) );
+		$table_exists = ( $wpdb->get_var( $query ) === $table_name );
+
+		if ( $current === $target && $table_exists ) {
+			return;
+		}
+
+		if ( ! $table_exists ) {
+			$this->create_failed_logins_log_table( false );
+			return;
+		}
+
+		$columns = $wpdb->get_results( "SHOW FULL COLUMNS FROM `{$table_name}`", ARRAY_A );
+
+		if ( empty( $columns ) ) {
+			return;
+		}
+
+		$column_lengths = array();
+
+		foreach ( $columns as $column ) {
+			if ( ! isset( $column['Field'], $column['Type'] ) ) {
+				continue;
+			}
+
+			if ( preg_match( '/varchar\((\d+)\)/i', $column['Type'], $matches ) ) {
+				$column_lengths[ $column['Field'] ] = (int) $matches[1];
+			}
+		}
+
+		if ( isset( $column_lengths['username'] ) && $column_lengths['username'] < 255 ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE `{$table_name}` MODIFY username varchar(255) NOT NULL DEFAULT ''" );
+		}
+
+		if ( isset( $column_lengths['request_uri'] ) && $column_lengths['request_uri'] < 255 ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE `{$table_name}` MODIFY request_uri varchar(255) NOT NULL DEFAULT ''" );
+		}
+
+		update_option( $version_key, $target, false );
+	}
+
+    /**
+     * Create email delivery log table for Email Delivery module
+     *
+     * @since 7.1.0
+     */
+    public function create_email_delivery_log_table() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'asenha_email_delivery';
+
+        if ( ! empty( $wpdb->charset ) ) {
+            $charset_collation_sql = "DEFAULT CHARACTER SET $wpdb->charset";         
+        }
+
+        if ( ! empty( $wpdb->collate ) ) {
+            $charset_collation_sql .= " COLLATE $wpdb->collate";         
+        }
+
+        // Drop table if already exists
+        $wpdb->query("DROP TABLE IF EXISTS `". $table_name ."`");
+
+        // Create database table. This procedure may also be called
+        $sql = 
+        "CREATE TABLE {$table_name} (
+            id int(6) unsigned NOT NULL auto_increment,
+            status enum('successful','failed','unknown') NOT NULL DEFAULT 'unknown',
+            error varchar(250) NOT NULL DEFAULT '',
+            subject varchar(250) NOT NULL DEFAULT '',
+            message longtext NOT NULL DEFAULT '',
+            send_to varchar(256) NOT NULL DEFAULT '',
+            sender varchar(256) NOT NULL DEFAULT '',
+            reply_to varchar(256) NOT NULL DEFAULT '',            
+            headers text NOT NULL DEFAULT '',
+            content_type text NOT NULL DEFAULT '',
+            attachments text NOT NULL DEFAULT '',
+            backtrace text NOT NULL DEFAULT '',
+            processor text NOT NULL DEFAULT '',
+            sent_on datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+            sent_on_unixtime int(10) NOT NULL DEFAULT '0',
+            extra longtext NOT NULL DEFAULT '',
+            PRIMARY KEY (id)
+        ) {$charset_collation_sql}";
+        
+        require_once ABSPATH . '/wp-admin/includes/upgrade.php';
+
+        dbDelta( $sql );
+
+        return true;
+    }
+
+    /**
+     * Create tables for the Form Builder module
+     *
+     * @since 7.8.0
+     */
+    public function create_form_builder_tables() {
+        global $wpdb;
+
+        if ( ! empty( $wpdb->charset ) ) {
+            $charset_collation_sql = "DEFAULT CHARACTER SET $wpdb->charset";         
+        }
+
+        if ( ! empty( $wpdb->collate ) ) {
+            $charset_collation_sql .= " COLLATE $wpdb->collate";         
+        }
+
+        require_once ABSPATH . '/wp-admin/includes/upgrade.php';
+        
+        $fields_table_name = $wpdb->prefix . 'asenha_formbuilder_fields';
+        $forms_table_name = $wpdb->prefix . 'asenha_formbuilder_forms';
+        $entries_table_name = $wpdb->prefix . 'asenha_formbuilder_entries';
+        $entry_meta_table_name = $wpdb->prefix . 'asenha_formbuilder_entry_meta';
+        
+        $sql = "CREATE TABLE {$fields_table_name} (
+  id bigint(20) NOT NULL AUTO_INCREMENT,
+  field_key varchar(100) NULL,
+  name text NULL,
+  description longtext NULL,
+  type text NULL,
+  default_value longtext NULL,
+  options longtext NULL,
+  field_order int(11) DEFAULT 0,
+  required int(1) NULL,
+  field_options longtext NULL,
+  form_id int(11) NULL,
+  created_at datetime NOT NULL,
+  PRIMARY KEY (id),
+  KEY form_id (form_id),
+  UNIQUE KEY field_key (field_key)
+) {$charset_collation_sql}";
+
+        dbDelta( $sql );
+        
+        $sql = "CREATE TABLE {$forms_table_name} (
+  id int(11) NOT NULL AUTO_INCREMENT,
+  form_key varchar(100) NULL,
+  name varchar(255) NULL,
+  description text NULL,
+  status varchar(255) NULL,
+  options longtext NULL,
+  settings longtext NULL,
+  styles longtext NULL,
+  created_at datetime NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY form_key (form_key)
+) {$charset_collation_sql}";
+
+        dbDelta( $sql );
+
+        $sql = "CREATE TABLE {$entries_table_name} (
+  id bigint(20) NOT NULL AUTO_INCREMENT,
+  ip text NULL,
+  form_id bigint(20) NULL,
+  user_id bigint(20) NULL,
+  delivery_status tinyint(1) DEFAULT 0,
+  status varchar(255) NULL,
+  resume_key varchar(64) NULL,
+  updated_at datetime NULL,
+  created_at datetime NOT NULL,
+  PRIMARY KEY (id),
+  KEY form_id (form_id),
+  KEY user_id (user_id),
+  UNIQUE KEY resume_key (resume_key)
+) {$charset_collation_sql}";
+
+        dbDelta( $sql );
+
+        $sql = "CREATE TABLE {$entry_meta_table_name} (
+  id bigint(20) NOT NULL AUTO_INCREMENT,
+  meta_value longtext NULL,
+  field_id bigint(20) NOT NULL,
+  item_id bigint(20) NOT NULL,
+  created_at datetime NOT NULL,
+  PRIMARY KEY (id),
+  KEY field_id (field_id),
+  KEY item_id (item_id)
+) {$charset_collation_sql}";
+
+        dbDelta( $sql );
+
+        return true;
+    }
+
+    /**
+     * Create submissions table for the Contact Form module.
+     *
+     * @since 8.9.0
+     */
+    public function create_contact_form_submissions_table() {
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'asenha_contact_form_submissions';
+
+        $charset_collation_sql = '';
+
+        if ( ! empty( $wpdb->charset ) ) {
+            $charset_collation_sql = "DEFAULT CHARACTER SET $wpdb->charset";
+        }
+
+        if ( ! empty( $wpdb->collate ) ) {
+            $charset_collation_sql .= " COLLATE $wpdb->collate";
+        }
+
+        $sql = "CREATE TABLE {$table_name} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            subject varchar(255) NOT NULL DEFAULT '',
+            message longtext NOT NULL,
+            name varchar(255) NOT NULL DEFAULT '',
+            email varchar(255) NOT NULL DEFAULT '',
+            created_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+            PRIMARY KEY (id),
+            KEY created_at (created_at)
+        ) {$charset_collation_sql}";
+
+        require_once ABSPATH . '/wp-admin/includes/upgrade.php';
+
+        dbDelta( $sql );
+
+        return true;
+    }
+
+    /**
+     * Part of Disable Embeds module
+     * Remove embeds rewrite rules on plugin activation.
+     *
+     * @link https://plugins.trac.wordpress.org/browser/disable-embeds/tags/1.5.0/disable-embeds.php#L101
+     * @since 8.0.0
+     */
+    public function disable_embeds_remove_rewrite_rules() {
+        $common_methods = new Common_Methods;
+        add_filter( 'rewrite_rules_array', [ $common_methods, 'disable_embeds_rewrites' ] );
+        flush_rewrite_rules( false );
+    }
+
+    /**
+     * Deferred flush for the Disable Embeds module.
+     * Runs on init (late priority) so all CPTs/taxonomies are already registered.
+     *
+     * @since 8.5.1
+     */
+    public function maybe_flush_disable_embeds_rewrite_rules() {
+        $options = get_option( ASENHA_SLUG_U );
+
+        if ( ! is_array( $options ) ) {
+            return;
+        }
+
+        if ( isset( $options['disable_embeds_flush_rewrite_rules_needed'] )
+            && true === $options['disable_embeds_flush_rewrite_rules_needed']
+        ) {
+            $common_methods = new Common_Methods;
+            add_filter( 'rewrite_rules_array', [ $common_methods, 'disable_embeds_rewrites' ] );
+            flush_rewrite_rules( false );
+
+            $options['disable_embeds_flush_rewrite_rules_needed'] = false;
+            update_option( ASENHA_SLUG_U, $options, true );
+        }
+    }
+
+}

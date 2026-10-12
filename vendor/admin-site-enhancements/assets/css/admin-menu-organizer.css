@@ -1,0 +1,219 @@
+.wrap.admin-menu-organizer {
+    margin: 10px 20px 0;
+}
+
+.admin-menu-organizer-main {
+    display: flex;
+    gap: 16px;
+}
+
+.module-description {
+    margin-top: 8px;
+    margin-bottom: 24px;
+}
+
+.admin-menu-sortables-wrapper {
+    width: 696px;
+    box-sizing: border-box;
+    margin-top: 16px;
+    padding: 32px 48px 32px;
+    background: #fff;
+}
+
+.admin-menu-actions {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+}
+
+.admin-menu-actions #amo-save-changes {
+    position: sticky;
+    margin-top: 16px;
+    top: 48px;
+    border-style: solid;
+    border-color: #fff;
+    border-width: 24px 40px;
+}
+
+.admin-menu-actions #amo-save-changes:focus {
+    box-shadow: none !important;
+}
+
+.asenha-saving-changes,
+.asenha-changes-saved {
+    position: sticky;
+}
+
+.asenha-saving-changes {
+    top: 76px;
+    margin-top: 44px;
+    margin-left: -31px;
+}
+
+.asenha-changes-saved {
+    top: 74px;
+    margin-top: 42px;
+    margin-left: -33px;
+}
+
+.admin-menu-organizer ul.menu {
+    margin-top: 0;
+    padding-top: 0;
+/*    overflow: auto; */
+}
+
+.admin-menu-organizer .menu-item-bar {
+    display: flex;
+    align-items: center;
+    margin: 8px 0 0;
+}
+
+.admin-menu-organizer .menu-item-bar .menu-item-handle {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    padding: 3px 15px 3px 7px;
+    max-width: 600px;
+    width: 600px;
+    min-height: 30px;
+}
+
+.admin-menu-organizer .title-wrapper {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 4px;
+}
+
+.admin-menu-organizer .menu-item-handle .menu-item-checkbox {
+    display: inline-block;
+}
+
+.admin-menu-organizer .menu-item-handle .item-title {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+    margin-right: 0;
+    line-height: 30px;
+}
+.rtl .admin-menu-organizer .menu-item-handle .item-title {
+    
+}
+
+.admin-menu-organizer .menu-item-handle .item-title .menu-item-title a {
+    color: #666;
+    text-decoration: none;
+    margin-left: 6px;
+}
+
+.admin-menu-organizer .menu-item-handle .item-title .menu-item-title a:hover {
+    color: inherit;
+}
+
+.menu-item-title input[type="text"],
+.item-title .title-wrapper input[type="text"] {
+    border: 1px solid #dcdcde;
+    margin-left: -5px;
+    padding: 0 8px 0 4px;
+    font-size: 13px;
+    min-height: 28px;
+    line-height: 28px;
+}
+
+.menu-item-title input[type="text"]:focus,
+.item-title .title-wrapper input[type="text"]:focus {
+    border: 1px solid #999;
+    box-shadow: none;
+    outline: none;
+}
+
+.menu-item-checkbox-label span {
+    font-weight: normal;
+}
+
+#separator1 .menu-item-title,
+#separator2 .menu-item-title,
+#separator-last .menu-item-title,
+#separator-woocommerce .menu-item-title,
+li[id^="separator"] .menu-item-title {
+    font-weight: normal;
+    color: #999;
+}
+
+/* Scoped to AMO root list so other screens (e.g. ABCE) can style .sortable-placeholder independently. */
+#custom-admin-menu .sortable-placeholder {
+    width: 600px !important;
+    max-width: 600px !important;
+    height: 46px;
+    min-height: 42px;
+    max-height: 42px;
+    background: #cdddd6;
+    border: 1px dashed #508871;
+    border-radius: 0 !important;
+}
+
+.form-table .asenha-subfields td:not(.datatable-td) label.menu-item-checkbox-label {
+    top: 0;
+}
+
+#custom-admin-menu .menu-item-depth-0 {
+    display: list-item !important;
+    margin-block-start: 0;
+    padding: 0;
+    position: relative;
+}
+
+#custom-admin-menu .parent-menu-item .dashicons-menu {
+    padding: 5px 8px;
+    cursor: move;
+    color: #ddd;
+}
+#custom-admin-menu .menu-item-bar .menu-item-handle:hover .dashicons-menu {
+    color: #1d2327;
+}
+
+.submenu-sortable li.menu-item {
+    position: relative;
+}
+
+.admin-menu-actions-wrapper {
+    width: 600px;
+    margin-top: -4px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.reset-menu-wrapper {
+    display: flex;
+    width: 120px;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    margin-left: auto;
+}
+
+.reset-menu-wrapper a {
+    text-decoration: none;
+    transition: .25s;
+}
+
+.reset-menu-wrapper a:hover {
+    text-decoration: underline;
+}
+
+.reset-menu-spinner {
+    width: 20px;
+    height: 20px;
+    margin-right: 6px;
+}
+
+
+
+/* WPvivid Quick Snapshot confirmation markup leftover when dialog() fails. */
+#wpvivid_quick_snapshot_dialog {
+    display: none;
+}

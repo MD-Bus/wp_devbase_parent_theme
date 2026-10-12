@@ -1,0 +1,5 @@
+{
+  "forms": [
+    { "name": "devbase_test_form", "label": "Dev Base Test Form" }
+  ]
+}

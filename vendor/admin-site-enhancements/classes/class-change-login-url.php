@@ -1,0 +1,685 @@
+<?php
+
+namespace ASENHA\Classes;
+
+/**
+ * Class for Change Login URL module
+ *
+ * @since 6.9.5
+ */
+class Change_Login_URL {
+    /**
+     * Redirect to valid login URL when custom login slug is part of the request URL
+     *
+     * @link https://plugins.trac.wordpress.org/browser/admin-login-url-change/trunk/admin-login-url-change.php#L134
+     * @since 1.4.0
+     */
+    public function redirect_on_custom_login_url() {
+        $options = get_option( ASENHA_SLUG_U );
+        $custom_login_slug = $options['custom_login_slug'];
+        $url_input = sanitize_text_field( $_SERVER['REQUEST_URI'] );
+        // Make sure $url_input ends with /
+        if ( false !== strpos( $url_input, $custom_login_slug ) ) {
+            if ( substr( $url_input, -1 ) != '/' ) {
+                $url_input = $url_input . '/';
+            }
+        }
+        // If URL contains the custom login slug, redirect to the dashboard
+        if ( false !== strpos( $url_input, '/' . $custom_login_slug . '/' ) ) {
+            if ( is_user_logged_in() ) {
+                if ( array_key_exists( 'redirect_after_login', $options ) && $options['redirect_after_login'] ) {
+                    $redirect_after_login = new Redirect_After_Login();
+                    $redirect_after_login_type = ( isset( $options['redirect_after_login_type'] ) ? $options['redirect_after_login_type'] : 'single_url' );
+                    // Does the user have roles data in array form?
+                    $user = wp_get_current_user();
+                    if ( isset( $user->roles ) && is_array( $user->roles ) ) {
+                        $current_user_roles = $user->roles;
+                        // sort by value in descending order, so roles with custom redirection enabled comes first
+                    }
+                    if ( 'single_url' == $redirect_after_login_type && array_key_exists( 'redirect_after_login_for', $options ) && !empty( $options['redirect_after_login_for'] ) ) {
+                        $redirect_after_login_to_slug_raw = ( isset( $options['redirect_after_login_to_slug'] ) ? $options['redirect_after_login_to_slug'] : '' );
+                        $relative_path = $redirect_after_login->get_redirect_relative_path( $redirect_after_login_to_slug_raw );
+                        $redirect_after_login_for = $options['redirect_after_login_for'];
+                        if ( isset( $redirect_after_login_for ) && count( $redirect_after_login_for ) > 0 ) {
+                            // Assemble single-dimensional array of roles for which custom URL redirection should happen
+                            $roles_for_custom_redirect = array();
+                            foreach ( $redirect_after_login_for as $role_slug => $custom_redirect ) {
+                                if ( $custom_redirect ) {
+                                    $roles_for_custom_redirect[] = $role_slug;
+                                }
+                            }
+                            // Set custom redirect URL for roles set in the settings. Otherwise, leave redirect URL to the default, i.e. admin dashboard.
+                            foreach ( $current_user_roles as $role ) {
+                                if ( in_array( $role, $roles_for_custom_redirect ) ) {
+                                    if ( isset( $_GET['action'] ) ) {
+                                        // User Switching plugin
+                                        if ( 'switch_to_user' == $_GET['action'] || 'switch_to_olduser' == $_GET['action'] ) {
+                                            return;
+                                            // This ensures user switching proceeds
+                                        } else {
+                                            wp_safe_redirect( home_url( $relative_path ) );
+                                            exit;
+                                        }
+                                    } else {
+                                        // Redirect to custom redirect slug
+                                        wp_safe_redirect( home_url( $relative_path ) );
+                                        exit;
+                                    }
+                                } else {
+                                    if ( isset( $_GET['action'] ) ) {
+                                        // User Switching plugin
+                                        if ( 'switch_to_user' == $_GET['action'] || 'switch_to_olduser' == $_GET['action'] ) {
+                                            return;
+                                            // This ensures user switching proceeds
+                                        } else {
+                                            // Redirect to dashboard
+                                            wp_safe_redirect( get_admin_url() );
+                                            exit;
+                                        }
+                                    } else {
+                                        // Redirect to dashboard
+                                        wp_safe_redirect( get_admin_url() );
+                                        exit;
+                                    }
+                                }
+                            }
+                        } else {
+                            if ( isset( $_GET['action'] ) && ('switch_to_user' == $_GET['action'] || 'switch_to_olduser' == $_GET['action']) ) {
+                                return;
+                                // This ensures user switching proceeds
+                            }
+                        }
+                    } else {
+                        if ( 'separate_urls' == $redirect_after_login_type && array_key_exists( 'redirect_after_login_for_separate_role', $options ) && !empty( $options['redirect_after_login_for_separate_role'] ) ) {
+                            // Redirect to dashboard
+                            wp_safe_redirect( get_admin_url() );
+                        } else {
+                            // Redirect to dashboard
+                            wp_safe_redirect( get_admin_url() );
+                            exit;
+                        }
+                    }
+                } else {
+                    if ( isset( $_GET['action'] ) ) {
+                        // User Switching plugin
+                        if ( 'switch_to_user' == $_GET['action'] || 'switch_to_olduser' == $_GET['action'] ) {
+                            return;
+                            // This ensures user switching proceeds
+                        } else {
+                            // Redirect to dashboard
+                            wp_safe_redirect( get_admin_url() );
+                            exit;
+                        }
+                    } else {
+                        // Redirect to dashboard
+                        wp_safe_redirect( get_admin_url() );
+                        exit;
+                    }
+                }
+            } else {
+                // Redirect to the login URL with custom login slug in the query parameters
+                wp_safe_redirect( site_url( '/wp-login.php?' . $custom_login_slug . '&redirect=false' ) );
+                exit;
+            }
+        }
+    }
+
+    /**
+     * Prevent redirect to custom login URL when Gravity Forms is active, and non-logged-in user opens a page with ?gf_page URL string
+     * 
+     * @since 7.8.5
+     */
+    public function prevent_redirect_to_custom_login_url() {
+        $url_input = sanitize_text_field( $_SERVER['REQUEST_URI'] );
+        $options = get_option( ASENHA_SLUG_U );
+        $custom_login_slug = $options['custom_login_slug'];
+        // Make sure $url_input ends with /
+        if ( false !== strpos( $url_input, $custom_login_slug ) ) {
+            if ( substr( $url_input, -1 ) != '/' ) {
+                $url_input = $url_input . '/';
+            }
+        }
+        if ( false === strpos( $url_input, '/' . $custom_login_slug . '/' ) && 'GET' === $_SERVER['REQUEST_METHOD'] && isset( $_GET['gf_page'] ) && !is_user_logged_in() && !wp_doing_ajax() ) {
+            wp_safe_redirect( site_url() );
+            exit;
+        }
+    }
+
+    /**
+     * Customize login URL returned when calling wp_login_url(). Add the custom login slug.
+     * 
+     * @since 5.8.0
+     */
+    public function customize_login_url( $login_url, $redirect, $force_reauth ) {
+        $options = get_option( ASENHA_SLUG_U );
+        $custom_login_slug = $options['custom_login_slug'];
+        $login_url = home_url( '/' . $custom_login_slug . '/' );
+        if ( !empty( $redirect ) ) {
+            $login_url = add_query_arg( 'redirect_to', urlencode( $redirect ), $login_url );
+        }
+        if ( $force_reauth ) {
+            $login_url = add_query_arg( 'reauth', '1', $login_url );
+        }
+        return $login_url;
+    }
+
+    /**
+     * Customize lost password URL. Add the custom login slug.
+     * 
+     * @since 5.8.0
+     */
+    public function customize_lost_password_url( $lostpassword_url ) {
+        $options = get_option( ASENHA_SLUG_U );
+        $custom_login_slug = $options['custom_login_slug'];
+        // return home_url( '/wp-login.php?backend&action=lostpassword' );
+        return $lostpassword_url . '&' . $custom_login_slug;
+    }
+
+    /**
+     * Customize registration URL. Add the custom login slug.
+     * 
+     * @since 6.2.5
+     */
+    public function customize_register_url( $registration_url ) {
+        $options = get_option( ASENHA_SLUG_U );
+        $custom_login_slug = $options['custom_login_slug'];
+        // return home_url( '/wp-login.php?action=register&custom_login_slug' );
+        return $registration_url . '&' . $custom_login_slug;
+    }
+
+    /**
+     * Trimmed "Allow login from" path segments, with empty lines removed.
+     *
+     * Surrounding slashes are stripped so `dashboard/`, `/dashboard`, and
+     * `dashboard` all match the first path segment `dashboard`.
+     *
+     * @since 9.1.3
+     *
+     * @return string[]
+     */
+    public function get_custom_login_whitelist_paths() {
+        $options = get_option( ASENHA_SLUG_U, array() );
+        if ( !is_array( $options ) || !isset( $options['custom_login_whitelist'] ) ) {
+            return array();
+        }
+        $raw = $options['custom_login_whitelist'];
+        if ( !is_string( $raw ) || '' === $raw ) {
+            return array();
+        }
+        $paths = array();
+        foreach ( explode( PHP_EOL, $raw ) as $path ) {
+            $trimmed = trim( $path );
+            $trimmed = trim( $trimmed, '/' );
+            if ( '' !== $trimmed ) {
+                $paths[] = $trimmed;
+            }
+        }
+        return $paths;
+    }
+
+    /**
+     * Collapse duplicate slashes in a request URI (path plus optional query).
+     *
+     * REQUEST_URI is a path, never a protocol-relative URL. Collapsing `//`
+     * before wp_parse_url() prevents `//wp-login.php` from being parsed as
+     * host `wp-login.php` with an empty path.
+     *
+     * @since 9.1.3
+     *
+     * @param string $uri Request URI, e.g. `//wp-login.php?slug`.
+     * @return string
+     */
+    public function normalize_request_path( $uri ) {
+        $uri = (string) $uri;
+        if ( '' === $uri ) {
+            return '';
+        }
+        $query = '';
+        $hash = '';
+        $hash_pos = strpos( $uri, '#' );
+        if ( false !== $hash_pos ) {
+            $hash = substr( $uri, $hash_pos );
+            $uri = substr( $uri, 0, $hash_pos );
+        }
+        $query_pos = strpos( $uri, '?' );
+        if ( false !== $query_pos ) {
+            $query = substr( $uri, $query_pos );
+            $uri = substr( $uri, 0, $query_pos );
+        }
+        $normalized = preg_replace( '#/+#', '/', $uri );
+        if ( !is_string( $normalized ) || '' === $normalized ) {
+            $normalized = '/';
+        }
+        return $normalized . $query . $hash;
+    }
+
+    /**
+     * First non-empty path segment of a full URL or a request path.
+     *
+     * @since 9.1.3
+     *
+     * @param string $url_or_path Absolute URL or path, possibly with `//`.
+     * @return string Empty string when there is no path segment.
+     */
+    public function get_first_path_segment( $url_or_path ) {
+        $url_or_path = (string) $url_or_path;
+        if ( '' === $url_or_path ) {
+            return '';
+        }
+        $path = $url_or_path;
+        if ( preg_match( '#^https?://#i', $url_or_path ) ) {
+            $parsed_path = wp_parse_url( $url_or_path, PHP_URL_PATH );
+            $path = ( is_string( $parsed_path ) ? $parsed_path : '' );
+        }
+        $normalized = $this->normalize_request_path( $path );
+        $path_only = wp_parse_url( $normalized, PHP_URL_PATH );
+        if ( !is_string( $path_only ) || '' === $path_only ) {
+            return '';
+        }
+        $segments = array_values( array_filter( explode( '/', trim( $path_only, '/' ) ), 'strlen' ) );
+        return ( isset( $segments[0] ) ? $segments[0] : '' );
+    }
+
+    /**
+     * Whether the Referer host matches this site's host.
+     *
+     * Strict host comparison. A substring match on get_site_url() would allow
+     * `https://site.com.evil.tld/…`.
+     *
+     * @since 9.1.3
+     *
+     * @param string $referer Absolute Referer URL.
+     * @return bool
+     */
+    public function is_same_site_referer( $referer ) {
+        $referer = (string) $referer;
+        if ( '' === $referer ) {
+            return false;
+        }
+        $referer_host = wp_parse_url( $referer, PHP_URL_HOST );
+        $site_host = wp_parse_url( home_url(), PHP_URL_HOST );
+        if ( !is_string( $referer_host ) || '' === $referer_host || !is_string( $site_host ) || '' === $site_host ) {
+            return false;
+        }
+        return strtolower( $referer_host ) === strtolower( $site_host );
+    }
+
+    /**
+     * Whether the Referer's first path segment is a real "Allow login from" path.
+     *
+     * Empty segments never match. `wp-login.php` and `wp-signup.php` are never
+     * treated as whitelist paths, even if listed in the setting.
+     *
+     * @since 9.1.3
+     *
+     * @param string $referer Absolute Referer URL.
+     * @return bool
+     */
+    public function is_whitelisted_login_referer( $referer ) {
+        $referer = (string) $referer;
+        if ( '' === $referer ) {
+            return false;
+        }
+        $whitelist = $this->get_custom_login_whitelist_paths();
+        if ( empty( $whitelist ) ) {
+            return false;
+        }
+        $segment = $this->get_first_path_segment( $referer );
+        if ( '' === $segment ) {
+            return false;
+        }
+        if ( in_array( $segment, array('wp-login.php', 'wp-signup.php'), true ) ) {
+            return false;
+        }
+        return in_array( $segment, $whitelist, true );
+    }
+
+    /**
+     * Whether the current request is served by a given PHP script.
+     *
+     * Uses $pagenow, with SCRIPT_FILENAME as fallback when REQUEST_URI is a
+     * non-canonical form such as `//wp-login.php`.
+     *
+     * @since 9.1.3
+     *
+     * @param string $script_basename Script filename, e.g. wp-login.php.
+     * @return bool
+     */
+    private function is_request_script( $script_basename ) {
+        if ( isset( $GLOBALS['pagenow'] ) && $script_basename === $GLOBALS['pagenow'] ) {
+            return true;
+        }
+        if ( !empty( $_SERVER['SCRIPT_FILENAME'] ) ) {
+            $script_filename = sanitize_text_field( wp_unslash( $_SERVER['SCRIPT_FILENAME'] ) );
+            return $script_basename === basename( $script_filename );
+        }
+        return false;
+    }
+
+    /**
+     * Whether the current request is served by wp-login.php.
+     *
+     * @since 9.1.3
+     *
+     * @return bool
+     */
+    public function is_wp_login_script_request() {
+        return $this->is_request_script( 'wp-login.php' );
+    }
+
+    /**
+     * Whether the current request is served by wp-signup.php.
+     *
+     * @since 9.1.3
+     *
+     * @return bool
+     */
+    public function is_wp_signup_script_request() {
+        return $this->is_request_script( 'wp-signup.php' );
+    }
+
+    /**
+     * Whether the current request is the bare wp-login.php login screen.
+     *
+     * Logout, admin-email confirmation, 2FA, and interim-login must still run
+     * while the user is authenticated. The logged-in dashboard redirect should
+     * only apply to a plain login page visit (empty action or action=login).
+     *
+     * @since 9.1.4
+     *
+     * @return bool
+     */
+    public function is_plain_login_page_request() {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only action detection
+        $action = ( isset( $_REQUEST['action'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['action'] ) ) : '' );
+        if ( '' !== $action && 'login' !== $action ) {
+            return false;
+        }
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only interim-login detection
+        if ( isset( $_GET['interim-login'] ) && '1' === sanitize_text_field( wp_unslash( $_GET['interim-login'] ) ) ) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Redirect to /not_found when login URL does not contain the custom login slug
+     * This will redirect /wp-login.php and /wp-admin/ to /not_found/
+     *
+     * @link https://plugins.trac.wordpress.org/browser/admin-login-url-change/trunk/admin-login-url-change.php#L121
+     * @since 1.4.0
+     */
+    public function redirect_on_default_login_urls() {
+        global $interim_login;
+        if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+            return;
+        }
+        if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
+            return;
+        }
+        // Skip REST API requests. REST_REQUEST is not defined yet on wp_loaded
+        // (set later in rest_api_loaded during parse_request), so also detect by URL.
+        // Prevents blocking plugin auth endpoints whose path contains a "login" segment,
+        // e.g. /wp-json/storeengine/v1/auth/login.
+        if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+            return;
+        }
+        if ( isset( $_GET['rest_route'] ) ) {
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only route detection
+            return;
+        }
+        $request_uri_raw = ( isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '' );
+        $url_input = $this->normalize_request_path( $request_uri_raw );
+        $request_path_for_rest = (string) wp_parse_url( $url_input, PHP_URL_PATH );
+        $rest_prefix = trim( rest_get_url_prefix(), '/' );
+        // typically 'wp-json'
+        if ( '' !== $rest_prefix && '' !== $request_path_for_rest ) {
+            $rest_prefix_slash = '/' . $rest_prefix . '/';
+            $rest_prefix_exact = '/' . $rest_prefix;
+            if ( false !== strpos( $request_path_for_rest, $rest_prefix_slash ) || $rest_prefix_exact === rtrim( $request_path_for_rest, '/' ) ) {
+                return;
+            }
+        }
+        $options = get_option( ASENHA_SLUG_U );
+        $custom_login_slug = $options['custom_login_slug'];
+        $redirect_slug = 'not_found';
+        if ( isset( $_POST['log'] ) && !empty( $_POST['log'] ) && isset( $_POST['pwd'] ) && !empty( $_POST['pwd'] ) ) {
+            // When logging-in
+            $http_referrer = ( isset( $_SERVER['HTTP_REFERER'] ) ? sanitize_url( wp_unslash( $_SERVER['HTTP_REFERER'] ) ) : '' );
+            $http_user_agent = ( isset( $_SERVER['HTTP_USER_AGENT'] ) ? $_SERVER['HTTP_USER_AGENT'] : '' );
+            if ( in_array( 'paid-memberships-pro/paid-memberships-pro.php', get_option( 'active_plugins', array() ) ) && isset( $_POST['pmpro_login_form_used'] ) && '1' == $_POST['pmpro_login_form_used'] ) {
+                // Do nothing. i.e. do not redirect to /not_found/
+                // This is a login attempt from Paid Membership Pro login form, which may include a modal/pop-up form.
+            } elseif ( !empty( $http_referrer ) && !$this->is_same_site_referer( $http_referrer ) ) {
+                // The referer host does not match this site. This is an attempt to do a login POST from an external URL / illegitimate method. Let's redirect that.
+                wp_safe_redirect( home_url( $redirect_slug . '/' ), 302 );
+                exit;
+            } elseif ( !empty( $http_user_agent ) && preg_match( '/^(curl|wget)/i', $http_user_agent ) ) {
+                // The post request is coming from a cURL or Wget request, let's redirect that.
+                wp_safe_redirect( home_url( $redirect_slug . '/' ), 302 );
+                exit;
+            } elseif ( empty( $http_referrer ) ) {
+                // The login request does not have HTTP_REFERER info. e.g. coming from cURL but with a user agent set to a browser's.
+                // Let's redirect that
+                wp_safe_redirect( home_url( $redirect_slug . '/' ), 302 );
+                exit;
+            } elseif ( !empty( $http_referrer ) && false === strpos( $http_referrer, $custom_login_slug ) ) {
+                // The referrer URL does not contain the custom login slug. Could be an attempt to login via cURL POST.
+                if ( $this->is_whitelisted_login_referer( $http_referrer ) ) {
+                    // Do nothing. i.e. do not redirect to /not_found/ as this contains a URL keyword that's been exlucded from redirection
+                } else {
+                    wp_safe_redirect( home_url( $redirect_slug . '/' ), 302 );
+                    exit;
+                }
+            } else {
+                // Do nothing. i.e. do not redirect to /not_found/ as this contains a valin login POST request
+                // upon successful login, redirection to logged-in view of /wp-admin/ happens.
+                // Without this condition, login attempt will redirect to /not_found/
+            }
+        } elseif ( isset( $_POST['post_password'] ) && !empty( $_POST['post_password'] ) ) {
+            // When entering password for a password-protected post/page
+            // Do nothing. i.e. do not redirect to /not_found/
+        } elseif ( is_user_logged_in() ) {
+            // Do nothing user is already logged-in
+            // Redirect to /wp-admin/ (Dashboard) when accessing the plain login screen
+            // without $_POST data. Skip logout, 2FA, interim-login, and other actions
+            // that must run while the user is still authenticated.
+            if ( ($this->is_wp_login_script_request() || false !== strpos( $url_input, 'wp-login.php' )) && empty( $_POST ) && $this->is_plain_login_page_request() ) {
+                wp_safe_redirect( admin_url(), 302 );
+                exit;
+            }
+        } elseif ( !is_user_logged_in() ) {
+            // Block default login/admin paths when any path segment matches (not only the first).
+            // Covers /wp-admin/, /prefix/wp-admin/, /wp-admin/network/, /admin/, /login/, etc.
+            // Prevents auth_redirect() + login_url filter from exposing the custom login slug.
+            // wp-login.php / login.php are handled by the dedicated branch below (custom slug allow/deny).
+            $blocked_login_path_segments = array(
+                'admin',
+                'wp-admin',
+                'login',
+                'wp-login'
+            );
+            $request_path = wp_parse_url( $url_input, PHP_URL_PATH );
+            $request_path_segments = array();
+            if ( is_string( $request_path ) && '' !== $request_path ) {
+                $request_path_segments = array_values( array_filter( explode( '/', trim( $request_path, '/' ) ), 'strlen' ) );
+            }
+            $has_blocked_login_path_segment = false;
+            foreach ( $request_path_segments as $path_segment ) {
+                if ( in_array( $path_segment, $blocked_login_path_segments, true ) ) {
+                    $has_blocked_login_path_segment = true;
+                    break;
+                }
+            }
+            // Login page CSS/JS loaders must remain reachable under /wp-admin/.
+            $last_path_segment = ( !empty( $request_path_segments ) ? end( $request_path_segments ) : '' );
+            $is_allowed_wp_admin_asset = in_array( $last_path_segment, array('load-styles.php', 'load-scripts.php'), true );
+            $is_wp_login_request = $this->is_wp_login_script_request() || false !== strpos( $url_input, 'wp-login.php' );
+            $is_wp_signup_request = $this->is_wp_signup_script_request() || false !== strpos( $url_input, 'wp-signup.php' );
+            // WHen trying to access /wp-signup.php without the ?custom_login_slug, redirect to the redriect_slug
+            if ( $is_wp_signup_request && false === strpos( $url_input, $custom_login_slug ) ) {
+                // Redirect to /not_found/
+                wp_safe_redirect( home_url( $redirect_slug . '/' ), 302 );
+                exit;
+            } elseif ( false !== strpos( $url_input, 'wp-admin/admin-post.php' ) ) {
+                // Do nothing. i.e. do not redirect to /not_found/
+            } elseif ( $has_blocked_login_path_segment && !$is_allowed_wp_admin_asset ) {
+                // Redirect to /not_found/ or custom redirect slug
+                wp_safe_redirect( home_url( $redirect_slug . '/' ), 302 );
+                exit;
+            } elseif ( $is_wp_login_request ) {
+                if ( isset( $_GET['action'] ) && ('logout' == $_GET['action'] || 'rp' == $_GET['action'] || 'resetpass' == $_GET['action']) || isset( $_GET['checkemail'] ) && ('confirm' == $_GET['checkemail'] || 'registered' == $_GET['checkemail']) || isset( $_GET['interim-login'] ) && '1' == $_GET['interim-login'] || 'success' == $interim_login || isset( $_GET['redirect_to'] ) && isset( $_GET['reauth'] ) && false !== strpos( $url_input, 'comment' ) ) {
+                    // When we're logging out, inside the reset password flow, inside the registration flow or within the interim login flow
+                    // e.g. https://www.example.com/wp-login.php?action=logout&_wpnonce=49bb818269
+                    // e.g. https://www.example.com/wp-login.php?action=rp --> reset password
+                    // e.g. https://www.example.com/wp-login.php?action=resetpass --> reset password
+                    // e.g. https://www.example.com/wp-login.php?checkmail=confirm --> reset password
+                    // e.g. https://www.example.com/wp-login.php?checkmail=registered --> register account
+                    // e.g. https://www.example.com/wp-login.php?interim-login=1&wp_lang=en_US
+                    // e.g. https://www.example.com/wp-admin/comment.php?action=approve&c=14#wpbody-content --> https://www.example.com/wp-login.php?redirect_to=https%3A%2F%2Fwww.example.com%2Fwp-admin%2Fcomment.php%3Faction%3Dapprove%26c%3D14&reauth=1#wpbody-content --> comment approve
+                    // Do nothing.. proceed...
+                } elseif ( isset( $_GET['action'] ) && ('lostpassword' == $_GET['action'] || 'register' == $_GET['action']) ) {
+                    // When resetting password or registering an account
+                    if ( isset( $_POST['user_login'] ) ) {
+                        // Sending the form to reset password or register an account...
+                        // Do nothing.. proceed with password reset or account registration
+                    } else {
+                        // When landing on the password reset or registration form
+                        // ...and custom login slug is not in the URL
+                        if ( false === strpos( $url_input, $custom_login_slug ) ) {
+                            // Redirect to /not_found/
+                            wp_safe_redirect( home_url( $redirect_slug . '/' ), 302 );
+                            exit;
+                        }
+                        // or, custom login slug is in the url
+                        // e.g. https://www.example.com/wp-login.php?action=lostpassword&customloginslug
+                        // e.g. https://www.example.com/wp-login.php?action=register&customloginslug
+                        // Do nothing... allow reset password or registration
+                    }
+                } elseif ( isset( $_GET['action'] ) && 'validate_2fa' == $_GET['action'] ) {
+                    // When performing two-factor authentication
+                    // Do nothing. Do not redirect. Allow login.
+                } elseif ( false === strpos( $url_input, $custom_login_slug ) ) {
+                    // When landing on the login form /wp-login.php
+                    // ...and custom login slug is not in the URL
+                    // Redirect to /not_found/
+                    wp_safe_redirect( home_url( $redirect_slug . '/' ), 302 );
+                    exit;
+                } elseif ( false !== strpos( $url_input, $custom_login_slug ) ) {
+                    // When landing on the login form /wp-login.php
+                    // ...and custom login slug is in the URL
+                    // e.g. https://www.example.com/wp-login.php?customloginslug&redirect=false
+                    // Do nothing. Do not redirect. Allow login.
+                } else {
+                }
+            } else {
+            }
+        } else {
+        }
+    }
+
+    /**
+     * Redirect to custom login URL on failed login
+     *
+     * @link https://plugins.trac.wordpress.org/browser/admin-login-url-change/trunk/admin-login-url-change.php#L148
+     * @since 1.4.0
+     *
+     * @param string         $username Username or email (WordPress 4.5+).
+     * @param \WP_Error|null $error    Authentication error (WordPress 5.4+).
+     */
+    public function redirect_to_custom_login_url_on_login_fail( $username = '', $error = null ) {
+        global $asenha_limit_login;
+        $options = get_option( ASENHA_SLUG_U );
+        $custom_login_slug = $options['custom_login_slug'];
+        if ( isset( $asenha_limit_login ) && is_array( $asenha_limit_login ) && $asenha_limit_login['within_lockout_period'] ) {
+            // Do nothing. This prevents redirection loop.
+        } else {
+            $should_redirect = true;
+            // Prevent redirection to wp-login.php if the login process is initiated by a custom login form, e.g. WooCommerce, JetFormBuilder
+            // i.e. the POST request will not contain WP login process defaults as follows
+            if ( !isset( $_POST['log'] ) && !isset( $_POST['pwd'] ) && !isset( $_POST['wp-submit'] ) && !isset( $_POST['testcookie'] ) ) {
+                $should_redirect = false;
+            }
+            if ( $should_redirect ) {
+                $request_uri = ( isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '' );
+                $http_referrer = ( isset( $_SERVER['HTTP_REFERER'] ) ? sanitize_url( wp_unslash( $_SERVER['HTTP_REFERER'] ) ) : '' );
+                $has_custom_slug = '' !== $custom_login_slug && (false !== strpos( $request_uri, $custom_login_slug ) || false !== strpos( $http_referrer, $custom_login_slug ));
+                if ( !$has_custom_slug && !$this->is_whitelisted_login_referer( $http_referrer ) ) {
+                    $redirect_slug = 'not_found';
+                    wp_safe_redirect( home_url( $redirect_slug . '/' ), 302 );
+                    exit;
+                }
+                $is_disabled_account = false;
+                if ( is_wp_error( $error ) && in_array( Disable_User_Account::ERROR_CODE, $error->get_error_codes(), true ) ) {
+                    $is_disabled_account = true;
+                    Disable_User_Account::consume_pending_disabled_login_redirect_user_id();
+                } else {
+                    $pending_disabled_id = Disable_User_Account::consume_pending_disabled_login_redirect_user_id();
+                    if ( null !== $pending_disabled_id ) {
+                        $is_disabled_account = true;
+                    }
+                }
+                if ( $is_disabled_account ) {
+                    // Preserve Disable User Account message (not the generic failed_login copy).
+                    wp_safe_redirect( site_url( 'wp-login.php?' . $custom_login_slug . '&redirect=false&asenha_account_disabled=1' ) );
+                } else {
+                    // Append 'failed_login=true' so we can output custom error message above the login form
+                    wp_safe_redirect( site_url( 'wp-login.php?' . $custom_login_slug . '&redirect=false&failed_login=true' ) );
+                }
+                exit;
+            }
+        }
+    }
+
+    /**
+     * Add login error message on top of the login form. 
+     * Only shown if there's a failed_login URL parameter, and Limit Login Attempts module is not enabled. 
+     * If LLA module is enabled, the same custom login error message is handled there.
+     *
+     * @since 6.9.1
+     */
+    public function add_failed_login_message( $message ) {
+        global $asenha_limit_login;
+        $asenha_account_disabled = ( isset( $_REQUEST['asenha_account_disabled'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['asenha_account_disabled'] ) ) : '' );
+        if ( '1' === $asenha_account_disabled ) {
+            $message = '<div id="login_error" class="notice notice-error"><b>' . esc_html__( 'Error:', 'admin-site-enhancements' ) . '</b> ' . esc_html__( 'Your account has been disabled.', 'admin-site-enhancements' ) . '</div>';
+            return $message;
+        }
+        if ( isset( $_REQUEST['failed_login'] ) && $_REQUEST['failed_login'] == 'true' ) {
+            if ( is_null( $asenha_limit_login ) ) {
+                $message = '<div id="login_error" class="notice notice-error"><b>' . __( 'Error:', 'admin-site-enhancements' ) . '</b> ' . __( 'Invalid username/email or incorrect password.', 'admin-site-enhancements' ) . '</div>';
+            }
+        }
+        return $message;
+    }
+
+    /**
+     * Redirect to custom login URL on successful logout
+     *
+     * @link https://plugins.trac.wordpress.org/browser/admin-login-url-change/trunk/admin-login-url-change.php#L148
+     * @since 1.4.0
+     */
+    public function redirect_to_custom_login_url_on_logout_success() {
+        $options = get_option( ASENHA_SLUG_U );
+        $custom_login_slug = $options['custom_login_slug'];
+        // Redirect to the login URL with custom login slug in it
+        wp_safe_redirect( home_url( 'wp-login.php?' . $custom_login_slug . '&redirect=false' ) );
+        exit;
+    }
+
+    /**
+     * Customize logout URL by adding the custom login slug to it
+     * 
+     * @since 7.0.2.3
+     */
+    public function customize_logout_url( $logout_url, $redirect ) {
+        $options = get_option( ASENHA_SLUG_U );
+        $custom_login_slug = $options['custom_login_slug'];
+        if ( !empty( $redirect ) ) {
+            $logout_url = add_query_arg( 'redirect_to', urlencode( $redirect ), $logout_url );
+        }
+        $logout_url .= '&' . $custom_login_slug;
+        return $logout_url;
+    }
+
+}

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="tests/vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
+         colors="true">
+	<testsuites>
+		<testsuite name="devbase_parent_theme">
+			<directory suffix=".php">tests</directory>
+			<exclude>tests/bootstrap.php</exclude>
+			<exclude>tests/wp-tests-config.php</exclude>
+			<exclude>tests/composer.json</exclude>
+			<!-- tests/vendor/ (PHPUnit's own dependencies, its own
+			     tests/composer.json — see tests/AGENT.md) didn't exist when
+			     the plain "tests" directory glob above was first written; it
+			     now needs excluding explicitly, or PHPUnit tries to load
+			     every .php file inside it as a candidate test file,
+			     including files that legitimately declare the same class
+			     twice under different names (nikic/php-parser's deprecated-
+			     alias shims) — a real "Cannot redeclare class" fatal this
+			     caused, root-caused by checking PHPUnit's own load-order
+			     stack trace, not by assuming which specific package version
+			     was "buggy". -->
+			<exclude>tests/vendor</exclude>
+		</testsuite>
+	</testsuites>
+	<php>
+		<env name="WP_PHPUNIT__TESTS_CONFIG" value="tests/wp-tests-config.php" />
+	</php>
+</phpunit>
