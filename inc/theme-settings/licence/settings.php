@@ -38,7 +38,7 @@ add_action( 'acf/init', function () {
 			'name'      => '',
 			'type'      => 'message',
 			'message'   => '<p style="margin:0;padding:12px 14px;border:2px solid #d63638;border-radius:4px;background:#fcf0f1;color:#d63638;font-size:14px;font-weight:700;">'
-				. esc_html__( 'If you are not the developer, please do not edit anything on this page.', 'devbase_parent_theme' )
+				. esc_html__( 'Please do not edit anything on this page, and contact the developer for any licence-related issue.', 'devbase_parent_theme' )
 				. '</p>',
 			'new_lines' => '',
 			'esc_html'  => 0,
