@@ -145,14 +145,10 @@ function devbase_inject_theme_updates( $transient ) {
 add_filter( 'pre_set_site_transient_update_themes', 'devbase_inject_theme_updates' );
 
 /**
- * Opts our two themes into core's unattended auto-updates.
- *
- * Gated on a setting (Theme Settings > Licence) rather than forced, and ON
- * by default: the point of this whole system is that a client site keeps
- * itself current without anyone remembering to log in. The escape hatch
- * matters anyway — mid-project, a theme updating underneath you while
- * you're building against it is genuinely disruptive, so being able to
- * switch it off for one site without editing code is worth the one field.
+ * Opts our two themes into core's unattended auto-updates. Always on: the point
+ * of this whole system is that a client site keeps itself current without anyone
+ * remembering to log in, so there is deliberately no setting to turn it off (it
+ * used to be a field on Theme Settings > Licence; a stale stored value is ignored).
  *
  * Returns $update untouched for every other theme, so this never changes
  * auto-update behaviour for anything but ours.
@@ -164,6 +160,6 @@ function devbase_enable_theme_auto_updates( $update, $item ) {
 		return $update;
 	}
 
-	return devbase_warden_auto_update_enabled();
+	return true;
 }
 add_filter( 'auto_update_theme', 'devbase_enable_theme_auto_updates', 10, 2 );

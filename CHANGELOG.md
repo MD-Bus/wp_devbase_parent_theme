@@ -10,6 +10,16 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+### Changed
+
+- Theme Settings > Licence: the two licence keys are now masked (password fields), and the
+  page opens with a red warning that anyone who is not the developer must not edit it.
+
+### Removed
+
+- The "Install Updates Automatically" setting. Theme updates always install themselves; a
+  leftover stored value is ignored.
+
 ### Fixed
 
 - Updates from Warden were never offered: `devbase_warden_pending_update()`

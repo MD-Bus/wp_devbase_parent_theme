@@ -376,18 +376,22 @@ class Test_Warden_Updates extends WP_UnitTestCase {
 		);
 	}
 
-	public function test_auto_updates_are_on_by_default_for_our_themes() {
+	public function test_auto_updates_are_always_on_for_our_themes() {
 		$item = (object) array( 'theme' => get_template() );
 
 		$this->assertTrue( devbase_enable_theme_auto_updates( false, $item ) );
 	}
 
-	public function test_auto_updates_can_be_switched_off() {
-		update_field( 'warden_auto_update', 0, 'option' );
+	public function test_auto_updates_cannot_be_switched_off() {
+		// The setting was removed; a value left over in the database must not matter.
+		update_option( 'options_warden_auto_update', 0 );
 
 		$item = (object) array( 'theme' => get_template() );
 
-		$this->assertFalse( devbase_enable_theme_auto_updates( true, $item ) );
+		$this->assertTrue( devbase_enable_theme_auto_updates( false, $item ) );
+		$this->assertTrue( devbase_enable_theme_auto_updates( true, $item ) );
+
+		delete_option( 'options_warden_auto_update' );
 	}
 
 	public function test_auto_update_behaviour_for_other_themes_is_untouched() {

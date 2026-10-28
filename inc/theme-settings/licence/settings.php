@@ -33,6 +33,17 @@ add_action( 'acf/init', function () {
 
 	$fields = array(
 		array(
+			'key'       => 'field_devbase_licence_warning',
+			'label'     => '',
+			'name'      => '',
+			'type'      => 'message',
+			'message'   => '<p style="margin:0;padding:12px 14px;border:2px solid #d63638;border-radius:4px;background:#fcf0f1;color:#d63638;font-size:14px;font-weight:700;">'
+				. esc_html__( 'If you are not the developer, do not edit anything on this page.', 'devbase_parent_theme' )
+				. '</p>',
+			'new_lines' => '',
+			'esc_html'  => 0,
+		),
+		array(
 			'key'   => 'field_devbase_licence_tab_connection',
 			'label' => __( 'Connection', 'devbase_parent_theme' ),
 			'type'  => 'tab',
@@ -53,15 +64,6 @@ add_action( 'acf/init', function () {
 			'instructions' => __( 'Base64 Ed25519 public key, copied from the licence page in Warden. Every response is verified against this before it is trusted; without it, update checks are skipped entirely rather than trusted unverified.', 'devbase_parent_theme' ),
 		),
 		array(
-			'key'           => 'field_devbase_warden_auto_update',
-			'label'         => __( 'Install Updates Automatically', 'devbase_parent_theme' ),
-			'name'          => 'warden_auto_update',
-			'type'          => 'true_false',
-			'ui'            => 1,
-			'default_value' => 1,
-			'instructions'  => __( 'Let WordPress install new theme releases on its own schedule, with no manual step. Switch this off while actively building a site, so the theme cannot change underneath you mid-project.', 'devbase_parent_theme' ),
-		),
-		array(
 			'key'   => 'field_devbase_licence_tab_keys',
 			'label' => __( 'Licence Keys', 'devbase_parent_theme' ),
 			'type'  => 'tab',
@@ -70,15 +72,15 @@ add_action( 'acf/init', function () {
 			'key'          => 'field_devbase_warden_parent_licence',
 			'label'        => __( 'Base Theme Licence Key', 'devbase_parent_theme' ),
 			'name'         => 'warden_parent_licence',
-			'type'         => 'text',
-			'instructions' => __( 'Licence key covering this base (parent) theme. Leave empty to disable update checks for it.', 'devbase_parent_theme' ),
+			'type'         => 'password',
+			'instructions' => __( 'Licence key covering this base (parent) theme. Shown as dots; paste a new key to replace it. Leave empty to disable update checks for it.', 'devbase_parent_theme' ),
 		),
 		array(
 			'key'          => 'field_devbase_warden_child_licence',
 			'label'        => __( 'Child Theme Licence Key', 'devbase_parent_theme' ),
 			'name'         => 'warden_child_licence',
-			'type'         => 'text',
-			'instructions' => __( 'Licence key covering this site\'s own child theme. Leave empty to disable update checks for it.', 'devbase_parent_theme' ),
+			'type'         => 'password',
+			'instructions' => __( 'Licence key covering this site\'s own child theme. Shown as dots; paste a new key to replace it. Leave empty to disable update checks for it.', 'devbase_parent_theme' ),
 		),
 		array(
 			'key'   => 'field_devbase_licence_tab_status',
@@ -168,27 +170,6 @@ function devbase_warden_child_licence() {
 	}
 
 	return trim( (string) get_field( 'warden_child_licence', 'option' ) );
-}
-
-/**
- * Defaults to TRUE when the field has never been saved — a site that has
- * entered a licence key but never opened this page should still receive
- * updates, since that's the entire point of the system. get_field()
- * returns null (not the field's default_value) for an options field that
- * has no stored row yet, so this cannot be left to ACF.
- */
-function devbase_warden_auto_update_enabled() {
-	if ( ! function_exists( 'get_field' ) ) {
-		return true;
-	}
-
-	$value = get_field( 'warden_auto_update', 'option' );
-
-	if ( null === $value || '' === $value ) {
-		return true;
-	}
-
-	return (bool) $value;
 }
 
 // Loads the "Check for Updates Now" button's JS only on this specific admin
