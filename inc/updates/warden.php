@@ -18,9 +18,15 @@
 //     "valid": true, "status": "active", "message": "",
 //     "license_key": "WRD-...", "domain": "client-site.org", "nonce": "...",
 //     "expires_at": "...", "grace_ends_at": null, "checked_at": "...",
-//     "update": { "version": "1.4.0", "download_url": "...",
-//                 "changelog": "...", "checksum": "..." }
+//     "update": {
+//       "current": "1.3.0", "available": true,
+//       "latest": { "version": "1.4.0", "download_url": "...", "changelog": "...",
+//                   "sha256": "...", "signature": "..." }
+//     }
 //   }
+//
+// The release is NESTED under update.latest and update.available says whether
+// it is newer than the version the site sent (Warden's docs, guide/releases.md).
 //
 // Three of Warden's documented rules are implemented here rather than left
 // to callers, because getting any of them wrong is a security or
@@ -269,10 +275,12 @@ function devbase_warden_offer_window( $track ) {
 
 /**
  * The update offer inside a verified Warden response, if it's both present
- * and actually newer than what's installed.
+ * and actually newer than what's installed. Returns the release itself
+ * (Warden's `update.latest`: version, download_url, sha256, ...).
  *
- * Warden decides whether to include an `update` block at all (it knows the
- * release track and the licence's status), but this re-checks the version
+ * Warden's documented shape is `update.available` plus the release nested
+ * under `update.latest`. Warden decides whether anything is offered (it knows
+ * the release track and the licence's status), but this re-checks the version
  * locally anyway: a release track misconfigured to a lower version must
  * never produce a "downgrade" that WordPress would then install.
  */
@@ -285,7 +293,13 @@ function devbase_warden_pending_update( array $response, $installed_version ) {
 		return null;
 	}
 
-	$update = $response['update'];
+	$offer = $response['update'];
+
+	if ( empty( $offer['available'] ) || empty( $offer['latest'] ) || ! is_array( $offer['latest'] ) ) {
+		return null;
+	}
+
+	$update = $offer['latest'];
 
 	if ( empty( $update['version'] ) || empty( $update['download_url'] ) ) {
 		return null;

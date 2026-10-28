@@ -10,7 +10,15 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- Updates from Warden were never offered: `devbase_warden_pending_update()`
+  read `update.version` and `update.download_url` at the top level, but Warden
+  documents (and sends) `update.available` with the release nested under
+  `update.latest`. A real release showed as "Up to date" on the Licence status
+  tab and in WordPress's update list. It now reads the documented shape, with
+  tests. Sites already running the old code must install the fixed
+  `inc/updates/warden.php` by hand once; after that updates flow normally.
 
 ## [1.0.0] — 2026-10-11
 

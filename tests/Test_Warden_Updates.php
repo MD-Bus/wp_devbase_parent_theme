@@ -102,6 +102,18 @@ class Test_Warden_Updates extends WP_UnitTestCase {
 		add_filter( 'pre_http_request', $this->filter, 10, 3 );
 	}
 
+	/**
+	 * An `update` block in the shape Warden documents (guide/releases.md): the
+	 * availability flag, plus the release nested under `latest`.
+	 */
+	private static function offer( $version, $download_url, array $extra = array(), $available = true ) {
+		return array(
+			'current'   => '1.0.0',
+			'available' => $available,
+			'latest'    => array_merge( array( 'version' => $version, 'download_url' => $download_url ), $extra ),
+		);
+	}
+
 	private function check( $force = true ) {
 		return devbase_warden_check( get_template(), self::LICENCE, '1.0.0', $force );
 	}
@@ -260,7 +272,7 @@ class Test_Warden_Updates extends WP_UnitTestCase {
 	public function test_a_newer_version_is_offered() {
 		$response = array(
 			'valid'  => true,
-			'update' => array( 'version' => '1.1.0', 'download_url' => 'https://warden.test/download/x' ),
+			'update' => self::offer( '1.1.0', 'https://warden.test/download/x' ),
 		);
 
 		$update = devbase_warden_pending_update( $response, '1.0.0' );
@@ -271,12 +283,13 @@ class Test_Warden_Updates extends WP_UnitTestCase {
 	public function test_the_same_or_an_older_version_is_not_offered() {
 		$response = array(
 			'valid'  => true,
-			'update' => array( 'version' => '1.0.0', 'download_url' => 'https://warden.test/download/x' ),
+			'update' => self::offer( '1.0.0', 'https://warden.test/download/x', array(), false ),
 		);
 
 		$this->assertNull( devbase_warden_pending_update( $response, '1.0.0' ) );
 
-		$response['update']['version'] = '0.9.0';
+		// Even if Warden said "available", the local version check still decides.
+		$response['update'] = self::offer( '0.9.0', 'https://warden.test/download/x' );
 		$this->assertNull(
 			devbase_warden_pending_update( $response, '1.0.0' ),
 			'A misconfigured release track must never produce a downgrade.'
@@ -287,14 +300,40 @@ class Test_Warden_Updates extends WP_UnitTestCase {
 		$response = array(
 			'valid'  => false,
 			'status' => 'expired',
-			'update' => array( 'version' => '9.9.9', 'download_url' => 'https://warden.test/download/x' ),
+			'update' => self::offer( '9.9.9', 'https://warden.test/download/x' ),
 		);
 
 		$this->assertNull( devbase_warden_pending_update( $response, '1.0.0' ) );
 	}
 
 	public function test_an_update_block_missing_its_download_url_is_ignored() {
-		$response = array( 'valid' => true, 'update' => array( 'version' => '9.9.9' ) );
+		$response = array(
+			'valid'  => true,
+			'update' => array( 'current' => '1.0.0', 'available' => true, 'latest' => array( 'version' => '9.9.9' ) ),
+		);
+
+		$this->assertNull( devbase_warden_pending_update( $response, '1.0.0' ) );
+	}
+
+	public function test_a_release_Warden_says_is_not_available_is_not_offered() {
+		// `latest` is present even when nothing newer exists; `available` is
+		// what says whether to offer it.
+		$response = array(
+			'valid'  => true,
+			'update' => self::offer( '9.9.9', 'https://warden.test/download/x', array(), false ),
+		);
+
+		$this->assertNull( devbase_warden_pending_update( $response, '1.0.0' ) );
+	}
+
+	public function test_the_old_flat_update_shape_is_not_what_Warden_sends() {
+		// Regression: the client once read update.version / update.download_url
+		// at the top level, which Warden never sends, so a real release was
+		// reported as "Up to date" and never offered.
+		$response = array(
+			'valid'  => true,
+			'update' => array( 'version' => '9.9.9', 'download_url' => 'https://warden.test/download/x' ),
+		);
 
 		$this->assertNull( devbase_warden_pending_update( $response, '1.0.0' ) );
 	}
@@ -308,11 +347,10 @@ class Test_Warden_Updates extends WP_UnitTestCase {
 	public function test_an_available_update_is_injected_into_the_theme_transient() {
 		$installed = devbase_update_installed_version( get_template() );
 
-		$this->fake_warden( array(), false, array(
-			'version'      => '99.0.0',
-			'download_url' => 'https://warden.test/download/abc?domain=example.org',
-			'changelog'    => 'Fixed things.',
-			'checksum'     => 'deadbeef',
+		$this->fake_warden( array(), false, self::offer(
+			'99.0.0',
+			'https://warden.test/download/abc?domain=example.org',
+			array( 'changelog' => 'Fixed things.', 'sha256' => 'deadbeef' )
 		) );
 
 		$transient = devbase_inject_theme_updates( new stdClass() );
@@ -378,7 +416,7 @@ class Test_Warden_Updates extends WP_UnitTestCase {
 		$this->fake_warden(
 			array( 'valid' => false, 'status' => 'expired' ),
 			false,
-			array( 'version' => '99.0.0', 'download_url' => 'https://warden.test/d' )
+			self::offer( '99.0.0', 'https://warden.test/d' )
 		);
 
 		$this->assertNull( $this->offered_version(), 'An expired licence must not receive updates.' );
@@ -388,7 +426,7 @@ class Test_Warden_Updates extends WP_UnitTestCase {
 		$this->fake_warden(
 			array( 'valid' => false, 'status' => 'suspended' ),
 			false,
-			array( 'version' => '99.0.0', 'download_url' => 'https://warden.test/d' )
+			self::offer( '99.0.0', 'https://warden.test/d' )
 		);
 
 		$this->assertNull( $this->offered_version() );
@@ -414,10 +452,7 @@ class Test_Warden_Updates extends WP_UnitTestCase {
 		// 404. That 404 must not be treated as a revocation (it isn't
 		// signed, so it can't be trusted to revoke anything) — but the
 		// cached offer must not stand forever either.
-		$this->fake_warden( array(), false, array(
-			'version'      => '99.0.0',
-			'download_url' => 'https://warden.test/d',
-		) );
+		$this->fake_warden( array(), false, self::offer( '99.0.0', 'https://warden.test/d' ) );
 
 		$this->assertSame( '99.0.0', $this->offered_version(), 'baseline: offered while the licence is valid' );
 
