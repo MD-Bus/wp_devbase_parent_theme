@@ -10,10 +10,12 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.0.1] — 2026-10-28
+
 ### Changed
 
 - Theme Settings > Licence: the two licence keys are now masked (password fields), and the
-  page opens with a red warning that anyone who is not the developer must not edit it.
+  page opens with a red warning not to edit it and to contact the developer for any licence issue.
 
 ### Removed
 
