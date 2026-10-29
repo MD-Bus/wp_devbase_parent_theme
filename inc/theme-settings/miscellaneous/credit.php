@@ -56,8 +56,9 @@
 //     'fetched_at' => int,
 //   )
 //
-// devbase_credit_html() returns "message <a ...>text</a>" ready to print, every
-// part escaped. A child theme decides where it sits and how it looks.
+// devbase_credit_html() returns "message <a href rel>text</a>" ready to print,
+// every part escaped, in the same form as Brand Relay's reference snippets. A
+// child theme decides where it sits and how it looks.
 
 define( 'DEVBASE_CREDIT_OPTION', 'devbase_credit_data' );
 define( 'DEVBASE_CREDIT_HOOK', 'devbase_credit_refresh' );
@@ -156,6 +157,18 @@ function devbase_credit_url( $value ) {
 function devbase_credit_clean( $data ) {
 	if ( ! is_array( $data ) ) {
 		return null;
+	}
+
+	// `unavailable` is Brand Relay saying it has no credit to give right now:
+	// not an answer to store, so the last good copy stays.
+	if ( isset( $data['status'] ) && 'unavailable' === $data['status'] ) {
+		return null;
+	}
+
+	// A brand that asks for no credit (`show: false`) must replace the old copy,
+	// or a credit it turned off would keep showing. Nothing else is kept.
+	if ( isset( $data['show'] ) && ! $data['show'] ) {
+		return array( 'show' => false );
 	}
 
 	$brand = isset( $data['brand'] ) && is_array( $data['brand'] ) ? $data['brand'] : array();
@@ -340,13 +353,17 @@ function devbase_credit_html() {
 		return '';
 	}
 
-	$rel = trim( $credit['link']['rel'] . ' noopener' );
+	// Same markup as Brand Relay's own reference snippet: the message, a space,
+	// then a plain direct link. `rel` only when there is something to say (a
+	// followed link has none), and no target: opening in a new tab is a design
+	// choice for the theme, not something the credit imposes.
+	$rel = '' !== $credit['link']['rel'] ? sprintf( ' rel="%s"', esc_attr( $credit['link']['rel'] ) ) : '';
 
 	$html  = '' !== $credit['message'] ? esc_html( $credit['message'] ) . ' ' : '';
 	$html .= sprintf(
-		'<a href="%s" target="_blank" rel="%s">%s</a>',
+		'<a href="%s"%s>%s</a>',
 		esc_url( $credit['link']['url'] ),
-		esc_attr( $rel ),
+		$rel,
 		esc_html( $credit['link']['text'] )
 	);
 

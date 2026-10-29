@@ -142,7 +142,7 @@ public details, keeps a local copy, and builds the credit ("Designed by
   Brand Relay is slow or down, nothing changes on the site.
 - **Fails soft.** A failed or unexpected download keeps the last good copy and
   is written to the PHP error log. If there has never been a good copy, no
-  credit is shown. A brand marked `show: false` shows none.
+  credit is shown. A brand marked `show: false` shows none and replaces the old copy; an `unavailable` answer is treated as a failure and keeps the last good copy.
 - **Only public data, and only named fields.** The address is fetched with no
   key. The saved copy is built from an allowlist (message, link text, link
   address, `rel`, brand name and address, logo address and alt text), each
@@ -170,7 +170,7 @@ overrides the hiding.)
 In a template:
 
 ```php
-<?= devbase_credit_html() ?>   // 'Designed by <a href="…" target="_blank" rel="noopener">Brand</a>', escaped; '' when none
+<?= devbase_credit_html() ?>   // 'Designed by <a href="…">Brand</a>', escaped; '' when none
 ```
 
 ```php
@@ -182,8 +182,13 @@ $credit = devbase_credit();    // array|null, from the saved copy only
 //   'fetched_at' => 1767225600 ]
 ```
 
-`devbase_credit_html()` always adds `noopener`, and `nofollow` when Brand Relay
-says the link is not followed. The `devbase/credit` filter can adjust the array.
+`devbase_credit_html()` prints the same markup as Brand Relay's own reference
+snippets: the message, a space, then a plain direct link. A followed link has no
+`rel`; an unfollowed one carries `rel="nofollow"`. There is no `target`, so
+opening in a new tab is left to the theme. The `devbase/credit` filter can adjust the array.
+
+It deliberately does **not** print Brand Relay's `embed` HTML/CSS, which the
+reference snippets do; see the allowlist note above for why.
 The site's language is sent as `?lang=` so a multilingual brand answers in it.
 
 ## The front end

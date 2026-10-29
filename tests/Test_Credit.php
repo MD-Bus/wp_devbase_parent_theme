@@ -126,7 +126,6 @@ class Test_Credit extends WP_UnitTestCase {
 		$html = devbase_credit_html();
 
 		$this->assertStringContainsString( '>Acme &quot;&amp;&quot; Co</a>', $html );
-		$this->assertStringContainsString( 'rel="noopener"', $html );
 		$this->assertStringNotContainsString( '<3', $html );
 	}
 
@@ -144,11 +143,48 @@ class Test_Credit extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'onclick', $rel );
 	}
 
-	public function test_a_follow_link_has_no_nofollow() {
+	public function test_a_followed_link_is_a_plain_direct_link_like_the_reference_snippet() {
 		$this->fake( 200, $this->brand() );
 		devbase_credit_refresh( true );
 
-		$this->assertStringNotContainsString( 'nofollow', devbase_credit_html() );
+		$this->assertSame( 'Designed by <a href="https://acme.example/restaurants">Acme Web</a>', devbase_credit_html() );
+	}
+
+	public function test_an_unfollowed_link_carries_rel_and_still_has_no_target() {
+		$this->fake( 200, $this->brand( array( 'link' => array( 'follow' => false, 'rel' => 'nofollow' ) ) ) );
+		devbase_credit_refresh( true );
+
+		$this->assertSame( 'Designed by <a href="https://acme.example/restaurants" rel="nofollow">Acme Web</a>', devbase_credit_html() );
+		$this->assertStringNotContainsString( 'target', devbase_credit_html() );
+	}
+
+	public function test_no_message_means_just_the_link() {
+		$this->fake( 200, $this->brand( array( 'message' => '' ) ) );
+		devbase_credit_refresh( true );
+
+		$this->assertSame( '<a href="https://acme.example/restaurants">Acme Web</a>', devbase_credit_html() );
+	}
+
+	public function test_an_unavailable_answer_keeps_the_last_good_credit() {
+		$this->fake( 200, $this->brand() );
+		devbase_credit_refresh( true );
+
+		$this->fake( 200, array( 'v' => 1, 'status' => 'unavailable', 'show' => false, 'reason' => 'database_unavailable' ) );
+
+		$this->assertFalse( devbase_credit_refresh( true )['ok'] );
+		$this->assertSame( 'Acme Web', devbase_credit()['link']['text'] );
+	}
+
+	public function test_a_hidden_answer_replaces_the_old_credit_even_without_a_link() {
+		$this->fake( 200, $this->brand() );
+		devbase_credit_refresh( true );
+		$this->assertNotNull( devbase_credit() );
+
+		$this->fake( 200, array( 'v' => 1, 'status' => 'hidden', 'show' => false ) );
+
+		$this->assertTrue( devbase_credit_refresh( true )['ok'] );
+		$this->assertNull( devbase_credit() );
+		$this->assertSame( '', devbase_credit_html() );
 	}
 
 	// --- Failing soft ---------------------------------------------------------

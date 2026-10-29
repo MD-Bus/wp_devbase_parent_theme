@@ -10,6 +10,17 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.2.3] — 2026-10-29
+
+### Fixed
+
+- The credit markup now matches Brand Relay's reference snippets: `message <a href rel>text</a>`, with
+  `rel` only when non-empty and no `target`. It previously added `target="_blank"` and `rel="noopener"`
+  to every link.
+- A `status: "unavailable"` answer now keeps the last good credit instead of being stored, and a
+  `show: false` answer without a link now replaces the old credit instead of being rejected (which left
+  a credit the brand had turned off showing).
+
 ## [1.2.2] — 2026-10-29
 
 ### Removed
