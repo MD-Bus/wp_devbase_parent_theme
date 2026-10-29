@@ -10,6 +10,26 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.3.0] — 2026-10-29
+
+### Changed
+
+- **reCAPTCHA is now v3 (score-based, invisible) instead of the v2 checkbox. A v2 key no longer works.**
+  A site that uses reCAPTCHA must enter a v3 key on Theme Settings > Security > reCAPTCHA (or switch to
+  Turnstile). The theme rendered the v2 checkbox widget, so a v3 key, or any key made in Google Cloud as
+  score-based or Enterprise, showed "ERROR for site owner: Invalid key type".
+- Forms now carry a hidden `g-recaptcha-response` field filled by the new `assets/js/recaptcha-v3.js`, which
+  keeps a fresh one-use token in it (refreshed every 90 seconds, when the tab returns to the front, and after
+  each submit). Google's script is loaded as `api.js?render=<site key>`.
+- The server accepts a token only when Google reports success, the token's action matches (`submit`,
+  filterable: `devbase/security/recaptcha_action`), and the score is at least the minimum. An answer with
+  no score fails.
+
+### Added
+
+- **Minimum Score** setting on the reCAPTCHA tab (0.1 to 1, default 0.5).
+- 13 tests for the v3 widget, script and verification.
+
 ## [1.2.8] — 2026-10-29
 
 ### Changed

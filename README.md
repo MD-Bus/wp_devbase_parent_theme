@@ -97,6 +97,29 @@ Turnstile and reCAPTCHA on separate tabs. Only one may be active; a
 server-side `acf/validate_save_post` handler enforces that, with the
 JavaScript toggle being a convenience that proves nothing.
 
+**reCAPTCHA is v3 only**: invisible, score-based, with no checkbox. Use a
+*score-based (v3)* key and add the site's domain to it in Google. A checkbox
+(v2) or Enterprise key is the wrong type, and Google answers "ERROR for site
+owner: Invalid key type". How it works:
+
+- A form that prints `devbase_security_widget_html()` gets a hidden
+  `g-recaptcha-response` field. The page loads Google's script
+  (`api.js?render=<site key>`) and `assets/js/recaptcha-v3.js` keeps a fresh
+  one-use token in that field, so a normal post and an AJAX `FormData` both carry
+  it. Tokens last 2 minutes, so they are refreshed every 90 seconds, when the tab
+  comes back to the front, and after each submit.
+- The server (`devbase_security_verify()`) accepts a token only when Google says
+  it is genuine, it was made for the expected action (`submit`, filterable with
+  `devbase/security/recaptcha_action`), and its score is at least the **Minimum
+  Score** setting. Google scores a visitor from 0.0 (most likely a bot) to 1.0
+  (most likely human); the default minimum is 0.5. An answer with no score is
+  not a v3 answer and fails.
+- Google's floating reCAPTCHA badge shows on pages with a form, as Google
+  requires.
+
+Upgrading from a version that used v2: a v2 key stops working here. Create a v3
+key and enter it on the reCAPTCHA tab, or switch to Turnstile.
+
 ### Tracking
 
 ![Tracking settings](docs/screenshots/tracking-settings.png)

@@ -77,7 +77,8 @@ add_action( 'acf/init', function () {
 				'conditional_logic' => $turnstile_enabled_condition,
 			),
 
-			// Tab 2: Google reCAPTCHA (v2 checkbox).
+			// Tab 2: Google reCAPTCHA v3 (score-based, invisible). v2 and Enterprise keys
+			// are the wrong type and are not supported.
 			array(
 				'key'   => 'field_devbase_recaptcha_tab',
 				'label' => __( 'reCAPTCHA', 'devbase_parent_theme' ),
@@ -91,12 +92,14 @@ add_action( 'acf/init', function () {
 				'type'          => 'true_false',
 				'ui'            => 1,
 				'default_value' => 0,
+				'instructions'  => __( 'Google reCAPTCHA v3: invisible, with no box to tick. Each visitor gets a score and low scores are blocked. Use a score-based (v3) key; a checkbox (v2) or Enterprise key shows "Invalid key type".', 'devbase_parent_theme' ),
 			),
 			array(
 				'key'               => 'field_devbase_recaptcha_site_key',
 				'label'             => __( 'Site Key', 'devbase_parent_theme' ),
 				'name'              => 'recaptcha_site_key',
 				'type'              => 'text',
+				'instructions'      => __( 'The v3 site key. Add this website\'s domain to the key in Google.', 'devbase_parent_theme' ),
 				'required'          => 1,
 				'wrapper'           => array( 'width' => '50' ),
 				'conditional_logic' => $recaptcha_enabled_condition,
@@ -107,6 +110,19 @@ add_action( 'acf/init', function () {
 				'name'              => 'recaptcha_secret_key',
 				'type'              => 'password',
 				'required'          => 1,
+				'wrapper'           => array( 'width' => '50' ),
+				'conditional_logic' => $recaptcha_enabled_condition,
+			),
+			array(
+				'key'               => 'field_devbase_recaptcha_min_score',
+				'label'             => __( 'Minimum Score', 'devbase_parent_theme' ),
+				'name'              => 'recaptcha_min_score',
+				'type'              => 'number',
+				'default_value'     => 0.5,
+				'min'               => 0.1,
+				'max'               => 1,
+				'step'              => 0.1,
+				'instructions'      => __( 'Google scores each visitor from 0.0 (most likely a bot) to 1.0 (most likely human). Anyone scoring below this is blocked. 0.5 is Google\'s default; raise it to block more bots, lower it if real visitors are being blocked.', 'devbase_parent_theme' ),
 				'wrapper'           => array( 'width' => '50' ),
 				'conditional_logic' => $recaptcha_enabled_condition,
 			),

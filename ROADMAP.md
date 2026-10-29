@@ -121,6 +121,12 @@ copies only named fields.
 on one disk and are not backed up by git. A private repository or a backup rule
 would fix that.
 
+**reCAPTCHA Enterprise.** The theme supports reCAPTCHA v3 through Google's classic
+`siteverify`, and Turnstile. A key made in Google Cloud as Enterprise is checked
+through a different API (an assessment with a Cloud project and API key) and
+loads a different script, so it is not supported. Worth building only if a client
+needs Enterprise specifically; Turnstile avoids the Cloud project entirely.
+
 **Per-destination retry for form dispatch.** A failed webhook is recorded
 but not retried. Worth building when a client is actually affected.
 
