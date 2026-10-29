@@ -10,6 +10,12 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.2.8] — 2026-10-29
+
+### Changed
+
+- `screenshot.png` now says "Built by Momar" at the bottom right. No code change.
+
 ## [1.2.7] — 2026-10-29
 
 ### Added
