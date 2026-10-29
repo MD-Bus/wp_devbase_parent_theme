@@ -9,7 +9,7 @@
 // contributing tabs from separate folders, and this is one file with
 // room to grow more tabs later without restructuring).
 //
-// Three tabs so far: Retention Policy, System Status, MCP Access.
+// Four tabs so far: Retention Policy, System Status, MCP Access, Credit.
 add_action( 'acf/init', function () {
 	if ( ! function_exists( 'acf_add_options_sub_page' ) || ! function_exists( 'acf_add_local_field_group' ) ) {
 		return;
@@ -225,6 +225,29 @@ add_action( 'acf/init', function () {
 				'ui'           => 1,
 				'instructions' => __( 'Which options pages an MCP client can list, read, and update. Unlisted options pages are completely invisible to MCP.', 'devbase_parent_theme' ),
 				'choices'      => array(), // populated dynamically, see below
+			),
+
+			// Tab: Credit. One setting; everything else is downloaded. See credit.php.
+			array(
+				'key'   => 'field_devbase_misc_credit_tab',
+				'label' => __( 'Credit', 'devbase_parent_theme' ),
+				'name'  => '',
+				'type'  => 'tab',
+			),
+			array(
+				'key'          => 'field_devbase_credit_brand_url',
+				'label'        => __( 'Brand Address', 'devbase_parent_theme' ),
+				'name'         => 'credit_brand_url',
+				'type'         => 'url',
+				'instructions' => __( 'The public address of the brand in Brand Relay, for example https://relay.example.com/v1/brand/yourbrand. It is downloaded when you save this page and then once a day, and the credit is built from the saved copy. Leave it empty for no credit.', 'devbase_parent_theme' ),
+			),
+			array(
+				'key'      => 'field_devbase_credit_status',
+				'label'    => __( 'Current Credit', 'devbase_parent_theme' ),
+				'name'     => '',
+				'type'     => 'message',
+				'message'  => devbase_credit_status_html(),
+				'esc_html' => 0,
 			),
 		),
 		'location' => array(

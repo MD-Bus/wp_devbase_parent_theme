@@ -124,6 +124,54 @@ webhook) plus the forms it applies to.
 admin explicitly ticks it here. A newly registered post type starts fully
 locked down.
 
+### Credit
+
+**Theme Settings > Miscellaneous > Credit** takes one setting, the brand's
+public address in [Brand Relay](https://github.com/momardia54/brand-relay), for example
+`https://relay.example.com/v1/brand/yourbrand`. The theme downloads the brand's
+public details, keeps a local copy, and builds the credit ("Designed by
+*Brand*") from that copy.
+
+- **When it downloads:** when the setting is saved, shortly after it is first
+  set, and then once a day through WP-Cron. Brand Relay's own `ttl` is
+  respected as a minimum gap between automatic downloads (never less than 15
+  minutes, never more than a day). Clearing the address stops it.
+- **Rendering never waits on the network.** Pages read the saved copy only. If
+  Brand Relay is slow or down, nothing changes on the site.
+- **Fails soft.** A failed or unexpected download keeps the last good copy and
+  shows the error under *Current Credit*. If there has never been a good
+  copy, no credit is shown. A brand marked `show: false` shows none.
+- **Only public data, and only named fields.** The address is fetched with no
+  key. The saved copy is built from an allowlist (message, link text, link
+  address, `rel`, brand name and address, logo address and alt text), each
+  value validated and limited to `http(s)` addresses and sensible lengths. The
+  response is never stored whole, so `params`, `rules`, `embed` and anything
+  Brand Relay adds later are dropped, and a private value can never end up in
+  the copy. Remote HTML and CSS are never printed: the markup is built here
+  from the plain fields, so a compromised Brand Relay account can't inject
+  markup into client sites.
+- **A changed address drops the old copy** immediately; the credit of the brand
+  you moved away from is never shown for the new one.
+
+In a template:
+
+```php
+<?= devbase_credit_html() ?>   // 'Designed by <a href="…" target="_blank" rel="noopener">Brand</a>', escaped; '' when none
+```
+
+```php
+$credit = devbase_credit();    // array|null, from the saved copy only
+// [ 'message' => 'Designed by',
+//   'link'    => [ 'text', 'url', 'rel', 'follow' ],
+//   'brand'   => [ 'name', 'url' ],
+//   'logo'    => [ 'url', 'alt' ] | null,
+//   'fetched_at' => 1767225600 ]
+```
+
+`devbase_credit_html()` always adds `noopener`, and `nofollow` when Brand Relay
+says the link is not followed. The `devbase/credit` filter can adjust the array.
+The site's language is sent as `?lang=` so a multilingual brand answers in it.
+
 ## The front end
 
 This theme ships exactly one template — a branded placeholder, so a fresh

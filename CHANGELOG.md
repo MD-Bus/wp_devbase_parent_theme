@@ -10,6 +10,21 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.2.0] — 2026-10-29
+
+### Added
+
+- **Brand credit** (`inc/theme-settings/miscellaneous/credit.php`). Theme Settings > Miscellaneous >
+  **Credit** takes one setting, a brand's public Brand Relay address. The theme downloads the
+  brand's public details (on save, shortly after first set, then daily; Brand Relay's `ttl` is a
+  minimum gap), keeps a local copy in one non-autoloaded option, and builds the credit from it.
+  `devbase_credit()` returns the data and `devbase_credit_html()` returns the escaped markup.
+- Pages never wait on the network: rendering reads the saved copy only. A failed download keeps the
+  last good copy; a brand marked `show: false` shows no credit; a changed address drops the old copy.
+- The saved copy is built from an allowlist of fields, never stored whole, so `params`, `rules`,
+  `embed` and private values cannot reach it, and remote HTML/CSS is never printed.
+- 17 PHPUnit tests, including one proving a licence key in the response never reaches the stored copy.
+
 ## [1.1.0] — 2026-10-29
 
 ### Added

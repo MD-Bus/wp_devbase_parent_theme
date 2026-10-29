@@ -155,6 +155,11 @@ require_once __DIR__ . '/inc/forms/dispatch/status.php';
 require_once __DIR__ . '/inc/theme-settings/miscellaneous/settings.php';
 require_once __DIR__ . '/inc/theme-settings/miscellaneous/purge-ajax.php';
 
+// The brand credit: downloads a brand's public details from Brand Relay, keeps a
+// local copy and builds the credit from it (Miscellaneous > Credit). Must load
+// before settings.php runs on acf/init, which calls its status function.
+require_once __DIR__ . '/inc/theme-settings/miscellaneous/credit.php';
+
 // devbase_form_log_submission() — the one function form authors call.
 // devbase_form_build_content() — turns $_POST into the array it expects.
 // devbase_form_nonce_field() — the CSRF field log_submission() requires.
