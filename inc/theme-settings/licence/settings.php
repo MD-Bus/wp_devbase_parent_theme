@@ -38,10 +38,29 @@ add_action( 'acf/init', function () {
 			'name'      => '',
 			'type'      => 'message',
 			'message'   => '<p style="margin:0;padding:12px 14px;border:2px solid #d63638;border-radius:4px;background:#fcf0f1;color:#d63638;font-size:14px;font-weight:700;">'
-				. esc_html__( 'Please do not edit anything on this page, and contact the developer for any licence-related issue.', 'devbase_parent_theme' )
+				. esc_html__( 'These fields are provisioned automatically. Please contact the developer for any licence-related issue.', 'devbase_parent_theme' )
 				. '</p>',
 			'new_lines' => '',
 			'esc_html'  => 0,
+		),
+		array(
+			'key'   => 'field_devbase_licence_tab_relay',
+			'label' => __( 'Brand Relay', 'devbase_parent_theme' ),
+			'type'  => 'tab',
+		),
+		array(
+			'key'          => 'field_devbase_relay_base_url',
+			'label'        => __( 'Brand Relay URL', 'devbase_parent_theme' ),
+			'name'         => 'relay_base_url',
+			'type'         => 'url',
+			'instructions' => __( 'The two fields on this tab are the only ones to fill in. Address of the Brand Relay, with no trailing path, e.g. https://relay.example.com. Pings to this site are only accepted from this address.', 'devbase_parent_theme' ),
+		),
+		array(
+			'key'          => 'field_devbase_relay_site_key',
+			'label'        => __( 'Brand Relay Site Key', 'devbase_parent_theme' ),
+			'name'         => 'relay_site_key',
+			'type'         => 'password',
+			'instructions' => __( 'This site\'s key from Brand Relay (it starts with brs_). Once both fields are saved, the Warden address, signing key and licence keys on the next tab are provisioned automatically and kept up to date.', 'devbase_parent_theme' ),
 		),
 		array(
 			'key'   => 'field_devbase_licence_tab_connection',
@@ -171,6 +190,43 @@ function devbase_warden_child_licence() {
 
 	return trim( (string) get_field( 'warden_child_licence', 'option' ) );
 }
+
+// These four values are provisioned from Brand Relay (inc/updates/relay-sync.php),
+// so they are always shown but never editable. `disabled` rather than `readonly`:
+// a disabled input is not submitted, so saving this page can never rewrite them,
+// and browsers grey it out.
+//
+// Matched on the field KEY, not its name: acf_prepare_field() overwrites
+// $field['name'] with the key (and an acf[...] prefix) before this filter runs,
+// so a name check silently never matches.
+add_filter( 'acf/prepare_field', function ( $field ) {
+	$provisioned = array(
+		'field_devbase_warden_base_url',
+		'field_devbase_warden_public_key',
+		'field_devbase_warden_parent_licence',
+		'field_devbase_warden_child_licence',
+	);
+
+	if ( isset( $field['key'] ) && in_array( $field['key'], $provisioned, true ) ) {
+		$field['disabled']     = 1;
+		$field['instructions'] = __( 'Provisioned automatically. Contact the developer to change it.', 'devbase_parent_theme' );
+	}
+
+	// A value baked in as a constant wins over its field (see relay-sync.php),
+	// so the field is shown locked rather than offering an edit that does nothing.
+	$baked = array(
+		'field_devbase_relay_base_url' => 'DEVBASE_RELAY_URL',
+		'field_devbase_relay_site_key' => 'DEVBASE_RELAY_SITE_KEY',
+	);
+
+	if ( isset( $field['key'], $baked[ $field['key'] ] ) && defined( $baked[ $field['key'] ] ) ) {
+		$field['disabled']     = 1;
+		$field['required']     = 0;
+		$field['instructions'] = __( 'Set in the site\'s code and managed by the developer.', 'devbase_parent_theme' );
+	}
+
+	return $field;
+} );
 
 // Loads the "Check for Updates Now" button's JS only on this specific admin
 // page — same narrow enqueue as SMTP Settings' test.js and Miscellaneous's

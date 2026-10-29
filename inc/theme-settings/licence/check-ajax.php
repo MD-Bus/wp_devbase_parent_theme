@@ -25,6 +25,16 @@ add_action( 'wp_ajax_devbase_check_updates', function () {
 
 	$lines = array();
 
+	// 0. Pull the licence settings from Brand Relay first, so the checks below
+	//    run against the newest keys. A no-op when it isn't configured.
+	if ( devbase_relay_enabled() ) {
+		$sync    = devbase_relay_sync( false );
+		$lines[] = $sync['ok']
+			? esc_html__( 'Brand Relay: synced.', 'devbase_parent_theme' )
+			/* translators: %s: the error the sync returned. */
+			: sprintf( esc_html__( 'Brand Relay: sync failed (%s).', 'devbase_parent_theme' ), $sync['error'] );
+	}
+
 	// 1. The two vendored-dependency checks. Identical calls to the cron
 	//    ones; each records its own last-run option, so the System Status
 	//    tab reflects this run too.

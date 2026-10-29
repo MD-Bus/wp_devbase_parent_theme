@@ -56,6 +56,13 @@ require_once __DIR__ . '/inc/dependencies/mcp-adapter/mcp-adapter-updater.php';
 require_once __DIR__ . '/inc/updates/warden.php';
 require_once __DIR__ . '/inc/updates/theme-updates.php';
 
+// Provisions the Warden address, signing key and licence keys from Brand Relay,
+// only when pinged (signed) or when an administrator saves the Licence page.
+// Inert until a Brand Relay URL and site key are entered on Theme Settings >
+// Licence > Brand Relay.
+require_once __DIR__ . '/inc/updates/relay-sync.php';
+
+
 // Registers the (currently empty) Theme Settings options page.
 require_once __DIR__ . '/inc/theme-settings/theme-settings.php';
 

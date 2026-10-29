@@ -36,7 +36,7 @@ function devbase_licence_status_html() {
 		$rows .= devbase_licence_status_row( $stylesheet, $licence );
 	}
 
-	return '<table class="widefat striped"><thead><tr>'
+	return devbase_relay_status_html() . '<table class="widefat striped"><thead><tr>'
 		. '<th>' . esc_html__( 'Theme', 'devbase_parent_theme' ) . '</th>'
 		. '<th>' . esc_html__( 'Installed', 'devbase_parent_theme' ) . '</th>'
 		. '<th>' . esc_html__( 'Licence', 'devbase_parent_theme' ) . '</th>'
@@ -109,4 +109,35 @@ function devbase_licence_status_row( $stylesheet, $licence ) {
 		. '<td>' . esc_html( (string) $installed ) . '</td>'
 		. '<td>' . $licence_cell . '</td>'
 		. '<td>' . $update_cell . '</td></tr>';
+}
+
+/**
+ * One line above the table saying where the licence settings come from, so a
+ * key that changed by itself isn't a mystery.
+ */
+function devbase_relay_status_html() {
+	if ( ! function_exists( 'devbase_relay_enabled' ) ) {
+		return '';
+	}
+
+	if ( ! devbase_relay_enabled() ) {
+		return '<p><strong>' . esc_html__( 'The Brand Relay URL and site key are not both entered, so nothing is being provisioned.', 'devbase_parent_theme' ) . '</strong></p>';
+	}
+
+	$state = devbase_relay_get_state();
+	$error = ! empty( $state['last_error'] ) ? (string) $state['last_error'] : '';
+
+	if ( ! empty( $state['succeeded_at'] ) ) {
+		/* translators: %s: how long ago the last successful sync was, e.g. "3 hours". */
+		$line = sprintf( esc_html__( 'Licence settings are provisioned from Brand Relay. Last synced %s ago.', 'devbase_parent_theme' ), esc_html( human_time_diff( (int) $state['succeeded_at'] ) ) );
+	} else {
+		$line = esc_html__( 'Licence settings are provisioned from Brand Relay. Not synced yet.', 'devbase_parent_theme' );
+	}
+
+	if ( '' !== $error ) {
+		/* translators: %s: the error the last sync returned. */
+		$line .= ' ' . sprintf( esc_html__( 'Last sync failed (%s); keeping the current values.', 'devbase_parent_theme' ), esc_html( $error ) );
+	}
+
+	return '<p><strong>' . $line . '</strong></p>';
 }

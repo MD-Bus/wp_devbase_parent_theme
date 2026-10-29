@@ -64,8 +64,15 @@ registered in code, so it is identical on every site running this theme.
 
 ![Licence settings](docs/screenshots/licence-connection.png)
 
-The endpoint, signing key and one licence key per theme. Leave a key empty
-and that theme simply never checks for updates.
+The endpoint, signing key and one licence key per theme. These four fields
+are **provisioned automatically and cannot be edited here**; contact the
+developer for any licence issue. Leave a key empty and that theme simply
+never checks for updates.
+
+The only two fields to fill in are the **Brand Relay URL** and **Brand Relay
+Site Key** (the *Brand Relay* tab). Saving them pulls everything else straight
+away; see
+[Provisioning from Brand Relay](#provisioning-from-brand-relay).
 
 ![Licence status](docs/screenshots/licence-status.png)
 
@@ -161,6 +168,121 @@ parent's, so no parent function exists yet while it runs. Register filters
 at the top level — they only store a callable. Never *call* a `devbase_*`
 function there, and never guard one with `function_exists()`: it will be
 false, the code will silently do nothing, and the cause is not obvious.
+
+### Provisioning from Brand Relay
+
+Licences are delivered by [Brand Relay](https://github.com/momardia54/brand-relay), so a licence can be
+issued, replaced or fixed from a distance without opening the site, and a
+removed or altered key is restored on the next sync. Warden remains the
+authority: it still validates every key and binds it to the domain. Brand
+Relay only carries the values.
+
+**One name per value.** Each is a *site* param in Brand Relay (never a brand
+param, which is public) named exactly like the field it fills:
+
+| Param | Fills | Behaviour |
+|---|---|---|
+| `warden_parent_licence` | Base Theme Licence Key | always brought back in line |
+| `warden_child_licence` | Child Theme Licence Key | always brought back in line |
+| `warden_base_url` | Warden URL | **fill-only**: accepted when empty, never overwritten; `https` only |
+| `warden_public_key` | Warden Public Key | **fill-only**: accepted when empty, never overwritten; must be a base64 Ed25519 key |
+
+The address and signing key are fill-only because they decide where theme
+code is downloaded from and which signature is trusted; they are not
+changeable by whoever controls a Brand Relay account. An empty or missing
+param means "no change", never "clear": revoke a licence in Warden.
+
+**When it syncs:** only when asked. There is no schedule. A sync runs on a
+ping (below), when an administrator saves the Licence page, and on **Check for
+Updates Now**. A value changed or removed on the site is therefore restored by
+the next ping, not before, so ping the site whenever a licence is changed in
+Brand Relay. If Brand
+Relay cannot be reached the current values stay, and the Status tab shows
+the last error.
+
+**Baking it in.** The Brand Relay URL and site key are what a sync needs, so a
+sync cannot restore them. To keep a site's users from clearing them, set them
+in code instead of the fields; a constant wins over its field, and the field
+then shows locked:
+
+```php
+define( 'DEVBASE_RELAY_URL',      'https://relay.example.com' );
+define( 'DEVBASE_RELAY_SITE_KEY', 'brs_...' );
+```
+
+in `wp-config.php` or the site's child theme. Anyone with file access can still
+remove them; this stops the admin screen, not a determined developer.
+
+#### The ping endpoint
+
+```
+POST /wp-json/devbase/v1/sync
+X-Relay-Timestamp: 1767225600
+X-Relay-Nonce:     7f3c9a1e5b2d4c8e
+Origin:            https://relay.example.com
+X-Relay-Signature: <hex>
+```
+
+A ping carries **no licence data**. It only tells the site to pull from the
+configured Brand Relay, so a forged or replayed ping can cause one
+rate-limited fetch and nothing else. The route exists only when both the
+Brand Relay URL and the site key are set.
+
+**Only the configured Brand Relay may ping.** The `Origin` header must equal
+the Brand Relay URL's origin (`scheme://host[:port]`, compared without regard
+to case or a trailing slash); a missing or different origin is refused with
+`401`. The origin is part of the signed string, so a signature cannot be
+reused under another origin. Note that a header is a claim a server-to-server
+caller can write; the signature is what proves the caller holds the site key.
+The origin rule stops a pinger set up for a different Brand Relay from being
+accepted by mistake.
+
+**Rate limits.** Two, because they protect different things. Every request to
+the route counts against its IP, signed or not, at 10 a minute (adjustable with
+the `devbase/relay/ping_limit` filter); this is checked first, so a flood of
+forged requests is cut off before any signature work. Separately, a valid ping
+can trigger at most one sync every 30 seconds, which protects the outbound call
+to Brand Relay. Behind a proxy or CDN the IP is the proxy's, so the first limit
+is shared by everything behind it.
+
+- `X-Relay-Timestamp`: Unix seconds; refused if more than 5 minutes from the
+  site's clock.
+- `X-Relay-Nonce`: 16–64 characters of `A-Z a-z 0-9 _ -`, single use.
+- `Origin`: the Brand Relay's origin, exactly as configured on the site.
+- `X-Relay-Signature`: lowercase hex HMAC-SHA256 of
+  `{timestamp}.{nonce}.{origin}.{body}` (the origin lowercased without a
+  trailing slash; the raw request body, empty is fine) under the **ping secret**,
+  which is `HMAC-SHA256("devbase-relay-ping", site key)` as hex. There is no
+  second secret to provision: whoever holds the site key can derive it.
+
+| Status | Meaning |
+|---|---|
+| `200` | Verified. Body `{ "ok": true, "error": "", "changed": ["warden_parent_licence"] }` (names only, never values). `ok: false` with an `error` when Brand Relay could not be read. |
+| `401` | Wrong or missing `Origin`, bad signature, stale timestamp, malformed headers or a reused nonce. |
+| `404` | Not wired to Brand Relay (no URL or site key). |
+| `429` | Too many requests from this IP (more than 10 a minute, valid or not), or a sync already ran in the last 30 seconds. |
+
+Signing, in PHP:
+
+```php
+$secret = hash_hmac( 'sha256', 'devbase-relay-ping', $site_key );
+$ts     = (string) time();
+$nonce  = bin2hex( random_bytes( 12 ) );
+$origin = 'https://relay.example.com';
+$sig    = hash_hmac( 'sha256', "$ts.$nonce.$origin.", $secret ); // empty body
+
+// POST https://client-site.org/wp-json/devbase/v1/sync with the four headers.
+```
+
+Or from a shell:
+
+```bash
+SECRET=$(printf 'devbase-relay-ping' | openssl dgst -sha256 -hmac "$SITE_KEY" -hex | awk '{print $NF}')
+TS=$(date +%s); NONCE=$(openssl rand -hex 12); ORIGIN=https://relay.example.com
+SIG=$(printf '%s.%s.%s.' "$TS" "$NONCE" "$ORIGIN" | openssl dgst -sha256 -hmac "$SECRET" -hex | awk '{print $NF}')
+curl -X POST https://client-site.org/wp-json/devbase/v1/sync \
+  -H "Origin: $ORIGIN" -H "X-Relay-Timestamp: $TS" -H "X-Relay-Nonce: $NONCE" -H "X-Relay-Signature: $SIG"
+```
 
 ## Updates
 

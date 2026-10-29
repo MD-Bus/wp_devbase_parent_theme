@@ -10,6 +10,35 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-10-29
+
+### Added
+
+- **Provisioning from Brand Relay** (`inc/updates/relay-sync.php`). The Warden URL, Warden public
+  key and both licence keys are delivered by [Brand Relay](https://github.com/momardia54/brand-relay)
+  and written into the Licence page, so a licence can be set or fixed from a distance and a value
+  removed on the site is restored by the next sync. Brand Relay params use the same names as the
+  fields (`warden_base_url`, `warden_public_key`, `warden_parent_licence`, `warden_child_licence`).
+  The Warden URL and public key are fill-only: accepted when empty, never overwritten.
+- **Ping endpoint** `POST /wp-json/devbase/v1/sync`. It carries no licence data and only makes the site
+  pull from its configured Brand Relay. It requires the `Origin` to equal the Brand Relay URL and an
+  HMAC-SHA256 signature (derived from the site key) over timestamp, nonce, origin and body, with a
+  five-minute window and single-use nonces. Rate limited to 10 requests a minute per IP (signed or
+  not) and one sync per 30 seconds. The route exists only when a Brand Relay URL and site key are set.
+- Theme Settings > Licence > **Brand Relay** tab: Brand Relay URL and Brand Relay Site Key, the only
+  two fields to fill in. `DEVBASE_RELAY_URL` and `DEVBASE_RELAY_SITE_KEY` constants win over the
+  fields, which then show locked, so a site's users cannot clear them.
+- A sync status line on the Licence page, and a sync step in "Check for Updates Now".
+- 21 PHPUnit tests for the sync and the ping.
+
+### Changed
+
+- The four Warden fields on the Licence page are now always shown but not editable, and the red
+  message reads "These fields are provisioned automatically. Please contact the developer for any
+  licence-related issue."
+- There is no scheduled sync. It runs only on a signed ping, when an administrator saves the Licence
+  page, or on "Check for Updates Now".
+
 ## [1.0.1] — 2026-10-28
 
 ### Changed
