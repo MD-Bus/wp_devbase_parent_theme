@@ -238,6 +238,56 @@ class Test_Credit extends WP_UnitTestCase {
 		$this->assertSame( '', devbase_credit_brand_url() );
 	}
 
+	// --- Hiding the settings --------------------------------------------------
+
+	private function credit_fields() {
+		return array(
+			array( 'key' => 'field_devbase_misc_credit_tab', 'name' => '', 'type' => 'tab' ),
+			array( 'key' => 'field_devbase_credit_brand_url', 'name' => 'credit_brand_url', 'type' => 'url' ),
+			array( 'key' => 'field_devbase_credit_status', 'name' => '', 'type' => 'message' ),
+		);
+	}
+
+	public function test_the_credit_tab_shows_by_default() {
+		foreach ( $this->credit_fields() as $field ) {
+			$this->assertIsArray( apply_filters( 'acf/prepare_field', $field ) );
+		}
+	}
+
+	public function test_the_credit_tab_is_removed_when_the_settings_are_hidden() {
+		add_filter( 'devbase/credit/hide_settings', '__return_true' );
+
+		foreach ( $this->credit_fields() as $field ) {
+			$this->assertFalse( apply_filters( 'acf/prepare_field', $field ) );
+		}
+
+		remove_filter( 'devbase/credit/hide_settings', '__return_true' );
+	}
+
+	public function test_hiding_the_settings_leaves_other_fields_and_the_credit_itself_alone() {
+		add_filter( 'devbase/credit/hide_settings', '__return_true' );
+		$this->fake( 200, $this->brand() );
+
+		$other = array( 'key' => 'field_devbase_retention_enabled', 'name' => 'retention_enabled', 'type' => 'true_false' );
+
+		$this->assertIsArray( apply_filters( 'acf/prepare_field', $other ) );
+		$this->assertTrue( devbase_credit_refresh( true )['ok'] );
+		$this->assertNotSame( '', devbase_credit_html() );
+
+		remove_filter( 'devbase/credit/hide_settings', '__return_true' );
+	}
+
+	public function test_the_address_can_come_from_code_instead_of_the_field() {
+		update_field( 'credit_brand_url', '', 'option' );
+		add_filter( 'devbase/credit/brand_url', fn() => 'https://relay.test/v1/brand/acme' );
+		$this->fake( 200, $this->brand() );
+
+		$this->assertTrue( devbase_credit_refresh( true )['ok'] );
+		$this->assertSame( 'Acme Web', devbase_credit()['link']['text'] );
+
+		remove_all_filters( 'devbase/credit/brand_url' );
+	}
+
 	// --- Scheduling -----------------------------------------------------------
 
 	public function test_an_automatic_refresh_inside_the_minimum_gap_does_not_download_again() {

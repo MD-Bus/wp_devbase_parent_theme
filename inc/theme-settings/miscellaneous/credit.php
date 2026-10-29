@@ -8,6 +8,16 @@
 //
 //   https://relay.example.com/v1/brand/yourbrand
 //
+// INVISIBLE TO CLIENTS. To keep the setting out of a client's admin, define it
+// in code (wp-config.php or the child theme) instead of typing it:
+//
+//   define( 'DEVBASE_CREDIT_BRAND_URL', 'https://relay.example.com/v1/brand/yourbrand' );
+//
+// The constant wins over the field, and while it is defined the whole Credit
+// tab (field and status) is removed from Theme Settings > Miscellaneous. The
+// credit itself still works and still shows on the site; only the settings
+// are hidden. The `devbase/credit/hide_settings` filter overrides the hiding.
+//
 // WHAT IT DOES
 //
 // - Downloads that address (no key, no private data) when the setting is
@@ -62,11 +72,12 @@ const DEVBASE_CREDIT_REL_TOKENS = array( 'nofollow', 'sponsored', 'ugc', 'norefe
  * environment.
  */
 function devbase_credit_brand_url() {
-	if ( ! function_exists( 'get_field' ) ) {
+	if ( ! function_exists( 'get_field' ) && ! defined( 'DEVBASE_CREDIT_BRAND_URL' ) ) {
 		return '';
 	}
 
-	$url = esc_url_raw( trim( (string) get_field( 'credit_brand_url', 'option' ) ), array( 'http', 'https' ) );
+	$url = defined( 'DEVBASE_CREDIT_BRAND_URL' ) ? (string) DEVBASE_CREDIT_BRAND_URL : (string) get_field( 'credit_brand_url', 'option' );
+	$url = esc_url_raw( trim( (string) apply_filters( 'devbase/credit/brand_url', $url ) ), array( 'http', 'https' ) );
 
 	if ( '' === $url ) {
 		return '';
@@ -78,6 +89,28 @@ function devbase_credit_brand_url() {
 
 	return $url;
 }
+
+/**
+ * Whether the Credit tab is hidden from the admin: when the address is set in
+ * code, there is nothing for an admin to edit, and nothing for a client to
+ * wonder about.
+ */
+function devbase_credit_settings_hidden() {
+	return (bool) apply_filters( 'devbase/credit/hide_settings', defined( 'DEVBASE_CREDIT_BRAND_URL' ) );
+}
+
+// Removes the Credit tab's three fields from the page. Matched on the field KEY:
+// acf_prepare_field() has already replaced $field['name'] with the key by the
+// time this filter runs.
+add_filter( 'acf/prepare_field', function ( $field ) {
+	$keys = array( 'field_devbase_misc_credit_tab', 'field_devbase_credit_brand_url', 'field_devbase_credit_status' );
+
+	if ( isset( $field['key'] ) && in_array( $field['key'], $keys, true ) && devbase_credit_settings_hidden() ) {
+		return false;
+	}
+
+	return $field;
+} );
 
 function devbase_credit_get_state() {
 	$state = get_option( DEVBASE_CREDIT_OPTION );

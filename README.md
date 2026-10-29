@@ -153,6 +153,18 @@ public details, keeps a local copy, and builds the credit ("Designed by
 - **A changed address drops the old copy** immediately; the credit of the brand
   you moved away from is never shown for the new one.
 
+**Keeping it out of a client's admin.** Define the address in code instead of
+typing it, in `wp-config.php` or the child theme:
+
+```php
+define( 'DEVBASE_CREDIT_BRAND_URL', 'https://relay.example.com/v1/brand/yourbrand' );
+```
+
+The constant wins over the field, and while it is defined the whole Credit tab
+is removed from Theme Settings > Miscellaneous. The credit still downloads and
+still shows on the site; only its settings are hidden. (`devbase/credit/hide_settings`
+overrides the hiding.)
+
 In a template:
 
 ```php

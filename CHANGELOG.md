@@ -10,6 +10,14 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.2.1] — 2026-10-29
+
+### Added
+
+- `DEVBASE_CREDIT_BRAND_URL` constant: sets the credit's brand address in code and removes the
+  Credit tab from Theme Settings > Miscellaneous, so a client with admin access doesn't see it. The
+  credit itself is unchanged. Filters `devbase/credit/brand_url` and `devbase/credit/hide_settings`.
+
 ## [1.2.0] — 2026-10-29
 
 ### Added
