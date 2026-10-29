@@ -1,9 +1,10 @@
 # ---------------------------------------------------------------------------
-# AGENT.md files (the internal design notes) ARE version-controlled. They are
-# kept out of every release by .gitattributes (export-ignore), so they never
-# reach a client site. Check them for secrets and client details before
-# committing: they describe how and why, never credentials.
+# Internal engineering notes: kept on the developer's disk, never pushed (same as
+# CLAUDE.md). They describe how and why, and are not for the public repository
+# or for client sites. NOTE: ignoring them means they are not backed up by git;
+# back them up separately if that matters.
 # ---------------------------------------------------------------------------
+AGENT.md
 
 # ---------------------------------------------------------------------------
 # Test tooling.
