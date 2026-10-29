@@ -10,6 +10,15 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.2.6] — 2026-10-29
+
+### Changed
+
+- The theme's display name is now "Dev Base Parent Theme (DO NOT REMOVE)", so nobody deletes it from
+  Appearance > Themes thinking it is unused: the active child theme depends on it. Display name only; the
+  folder name `wp_devbase_parent_theme`, which is what the child's `Template:` header and Warden use, is
+  unchanged.
+
 ## [1.2.5] — 2026-10-29
 
 ### Changed
