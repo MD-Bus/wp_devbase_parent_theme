@@ -34,7 +34,7 @@ fix reaches every client site through a single release.
 | **Security** | Cloudflare Turnstile or Google reCAPTCHA v2, mutually exclusive and enforced server-side. Forms call one function and never learn which is active. |
 | **Tracking** | GTM/GA4 IDs plus raw header/footer script fields. |
 | **Schema** | Organization, Website and Breadcrumb JSON-LD, each independently toggleable. |
-| **Archives** | Custom fields on a CPT archive (which ACF has no location rule for) and CPT archives in the internal link picker. |
+| **Archives** | Custom fields on a CPT archive (which ACF has no location rule for), an **SEO** tab on each archive that sets its search title and description, and CPT archives in the internal link picker. |
 | **MCP** | Content abilities over the WordPress MCP Adapter — list/get/create/update posts and options values, generic across every post type, behind an opt-in allow-list. |
 | **Updates** | Vendored dependencies track upstream on a daily schedule; both themes update themselves from [Warden](https://github.com/momardia54/Warden), a self-hosted licensing and release service. |
 
@@ -119,6 +119,27 @@ owner: Invalid key type". How it works:
 
 Upgrading from a version that used v2: a v2 key stops working here. Create a v3
 key and enter it on the reCAPTCHA tab, or switch to Turnstile.
+
+### Archive SEO
+
+A post type archive (News, Events, ...) has no post, so an SEO plugin has nowhere to put
+its title and description. Each archive's **Archive** options page now has an **SEO** tab
+with two fields, **Search Title** and **Search Description**, and the theme prints them on
+the archive's own URL. If a group of fields already targets that page (a child theme's
+Banner, List and Search groups), the tab is added to it; otherwise the same two fields get a
+small "SEO" box of their own.
+
+- **Only when filled.** An empty field leaves the SEO plugin's, or WordPress's, default.
+- **Title.** Set as the document title; on page 2 and after, " – Page N" is added, so the pages of a
+  list do not share one title. Length is limited to 70 characters; aim for 50 to 60.
+- **Description.** First page of the list only. `wp_head` is buffered on archive requests and an
+  existing `<meta name="description">` is replaced (or one is added if there is none), so there is never a
+  second tag whether or not an SEO plugin is active. Open Graph and Twitter title and description tags
+  that something has already printed are updated to match; none are added. Limited to 170 characters;
+  aim for 120 to 155.
+- **MCP.** The fields are `seo_title` and `seo_description` on the page `archive-{post_type}`, so
+  `devbase/update-options` can set them.
+- `devbase/archive_seo/enabled` (`bool`, post type) switches it off for a type.
 
 ### Tracking
 

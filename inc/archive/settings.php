@@ -49,5 +49,11 @@ add_action( 'wp_loaded', function () {
 			// isolated per archive.
 			'post_id'     => $menu_slug,
 		) );
+
+		// The SEO tab (inc/archive/seo.php). Runs here, after the field groups that target
+		// this page exist, so it can join one of them as a tab.
+		if ( function_exists( 'devbase_archive_seo_register_fields' ) ) {
+			devbase_archive_seo_register_fields( $post_type->name, $menu_slug );
+		}
 	}
 } );

@@ -195,6 +195,10 @@ require_once __DIR__ . '/inc/forms/test-form.php';
 // no location rule for one.
 require_once __DIR__ . '/inc/archive/settings.php';
 
+// SEO title and description for each archive (an "SEO" tab on its Archive options page), printed on the
+// archive's own URL, since no SEO plugin can attach to an archive.
+require_once __DIR__ . '/inc/archive/seo.php';
+
 // Makes CPT archive links show up in the WP internal link picker (used by
 // ACF/SCF link fields and the editor's link dialog), which otherwise only
 // searches actual posts and has no notion of an archive URL.

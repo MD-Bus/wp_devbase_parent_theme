@@ -10,6 +10,23 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.4.0] — 2026-10-29
+
+### Added
+
+- **SEO tab on every post type archive.** An archive has no post, so no SEO plugin can attach a title and
+  description to it. Each Archive options page now gets an **SEO** tab with **Search Title** (`seo_title`) and
+  **Search Description** (`seo_description`): a real tab inside the field group that already targets the page,
+  or a small "SEO" box of its own where there is none (`inc/archive/seo.php`).
+- The theme prints them on the archive's own URL, only when filled. The title replaces the document title
+  (with " – Page N" after the first page). The description is printed on the first page only, by buffering
+  `wp_head` for archive requests and replacing any existing description tag, or adding one, so there is never
+  a duplicate whether or not an SEO plugin is active. Open Graph and Twitter title and description tags that
+  something has already printed are updated to match; none are added.
+- The fields are visible to MCP (`devbase/update-options` on `archive-{post_type}`).
+- Filter `devbase/archive_seo/enabled` to switch it off for a post type.
+- 18 tests.
+
 ## [1.3.0] — 2026-10-29
 
 ### Changed
