@@ -103,11 +103,13 @@ JavaScript toggle being a convenience that proves nothing.
 owner: Invalid key type". How it works:
 
 - A form that prints `devbase_security_widget_html()` gets a hidden
-  `g-recaptcha-response` field. The page loads Google's script
-  (`api.js?render=<site key>`) and `assets/js/recaptcha-v3.js` keeps a fresh
-  one-use token in that field, so a normal post and an AJAX `FormData` both carry
-  it. Tokens last 2 minutes, so they are refreshed every 90 seconds, when the tab
-  comes back to the front, and after each submit.
+  `g-recaptcha-response` field. `assets/js/recaptcha-v3.js` is the only script the
+  page loads; it loads Google's (`api.js?render=<site key>`) **the first time a form
+  is touched**, not with the page, and keeps a fresh one-use token in that field, so a
+  normal post and an AJAX `FormData` both carry it. A submit before the token has
+  arrived is held, the token fetched, and the submit sent again. Tokens last 2
+  minutes, so they are refreshed every 90 seconds, when the tab comes back to the
+  front, and after each submit.
 - The server (`devbase_security_verify()`) accepts a token only when Google says
   it is genuine, it was made for the expected action (`submit`, filterable with
   `devbase/security/recaptcha_action`), and its score is at least the **Minimum

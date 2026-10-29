@@ -80,18 +80,33 @@ class Test_Security_Settings extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'g-recaptcha"', str_replace( 'name="g-recaptcha-response"', '', $html ), 'The v2 checkbox box (class g-recaptcha) must not be rendered.' );
 	}
 
-	public function test_recaptcha_loads_googles_v3_script_with_the_site_key_and_our_token_script() {
+	public function test_googles_script_is_not_loaded_with_the_page_only_ours_is() {
 		update_field( 'recaptcha_enabled', 1, 'option' );
 		update_field( 'recaptcha_site_key', 'test-site-key', 'option' );
 		wp_dequeue_script( 'devbase-recaptcha' );
+		wp_dequeue_script( 'devbase-recaptcha-v3' );
+
+		$html = devbase_security_widget_html();
+
+		// Google's script (about 350 KiB plus a frame, a stylesheet and a font) is loaded on demand by
+		// our script the first time a form is touched, so the page itself must not enqueue it.
+		$this->assertFalse( wp_script_is( 'devbase-recaptcha', 'enqueued' ), 'Google\'s api.js must not be enqueued by the page.' );
+		$this->assertTrue( wp_script_is( 'devbase-recaptcha-v3', 'enqueued' ) );
+		$this->assertFileExists( get_template_directory() . '/assets/js/recaptcha-v3.js' );
+		$this->assertStringContainsString( 'data-sitekey="test-site-key"', $html, 'The key reaches our script through the field.' );
+		$this->assertStringNotContainsString( 'recaptcha/api.js', $html );
+	}
+
+	public function test_our_script_is_deferred_in_the_footer() {
+		update_field( 'recaptcha_enabled', 1, 'option' );
+		update_field( 'recaptcha_site_key', 'test-site-key', 'option' );
+		wp_dequeue_script( 'devbase-recaptcha-v3' );
 
 		devbase_security_widget_html();
 
-		$google = wp_scripts()->registered['devbase-recaptcha'];
-		$this->assertSame( 'https://www.google.com/recaptcha/api.js?render=test-site-key', $google->src );
-		$this->assertNull( $google->ver, 'A null version means WordPress adds no ?ver= to Google\'s script.' );
-		$this->assertTrue( wp_script_is( 'devbase-recaptcha-v3', 'enqueued' ) );
-		$this->assertFileExists( get_template_directory() . '/assets/js/recaptcha-v3.js' );
+		$script = wp_scripts()->registered['devbase-recaptcha-v3'];
+		$this->assertSame( 'defer', $script->extra['strategy'] ?? null );
+		$this->assertSame( 1, $script->extra['group'] ?? null, 'In the footer.' );
 	}
 
 	public function test_a_high_score_for_the_right_action_passes() {

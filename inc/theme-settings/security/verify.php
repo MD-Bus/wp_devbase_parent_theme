@@ -9,9 +9,9 @@
 //
 // reCAPTCHA here is v3 ONLY: score-based, invisible, no checkbox. A v2 or an
 // Enterprise key is the wrong type and Google answers "Invalid key type". The
-// page loads Google's script with the site key (render=KEY), assets/js/
-// recaptcha-v3.js keeps a fresh one-use token in a hidden g-recaptcha-response
-// field of each form, and the server accepts it only when Google says it is
+// page loads only assets/js/recaptcha-v3.js, which loads Google's script (with the
+// site key, render=KEY) the first time a form is touched and keeps a fresh one-use
+// token in a hidden g-recaptcha-response field of each form. The server accepts it only when Google says it is
 // genuine, is for the expected action, and scores at least the minimum set in
 // Security Settings.
 
@@ -57,10 +57,10 @@ function devbase_security_widget_html() {
 			return '';
 		}
 
-		// v3 needs the site key in the script address. No version argument: Google's
-		// script must not get a ?ver= added to it.
-		wp_enqueue_script( 'devbase-recaptcha', 'https://www.google.com/recaptcha/api.js?render=' . rawurlencode( $site_key ), array(), null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
-		wp_enqueue_script( 'devbase-recaptcha-v3', get_template_directory_uri() . '/assets/js/recaptcha-v3.js', array(), (string) filemtime( get_template_directory() . '/assets/js/recaptcha-v3.js' ), true );
+		// Only OUR script is enqueued. Google's (about 350 KiB, plus a frame, a stylesheet and a font) is
+		// loaded by it on demand, the first time someone touches a form, so pages that merely have a form in
+		// the footer do not pay for it. The site key travels in the field's data-sitekey.
+		wp_enqueue_script( 'devbase-recaptcha-v3', get_template_directory_uri() . '/assets/js/recaptcha-v3.js', array(), (string) filemtime( get_template_directory() . '/assets/js/recaptcha-v3.js' ), array( 'in_footer' => true, 'strategy' => 'defer' ) );
 
 		return '<input type="hidden" name="g-recaptcha-response" value="" data-devbase-recaptcha data-sitekey="' . esc_attr( $site_key ) . '" data-action="' . esc_attr( devbase_security_recaptcha_action() ) . '">';
 	}

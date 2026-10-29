@@ -10,6 +10,20 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.4.1] — 2026-10-29
+
+### Changed
+
+- **reCAPTCHA no longer loads with the page.** Google's script is about 350 KiB, plus a frame, a stylesheet and a
+  font, and it was loaded on every page that has a form, including a newsletter box in the footer. It now loads the
+  first time a visitor touches a form that has a token field (focus, click, touch or key press), and a submit sent
+  before a token has arrived is held for a moment, the token fetched, and the submit sent again. Measured in a real
+  browser: a page view makes no request to Google at all (before, four or more, about 450 KiB); clicking into the form
+  loads it. Only `assets/js/recaptcha-v3.js` is enqueued now, deferred, in the footer; Google's `api.js` is no longer
+  enqueued by PHP. This also stops Google's own console message ("requestStorageAccess: Permission denied") appearing on
+  every page: it comes from Google's frame and now only shows once a form is used.
+- 2 tests changed to match.
+
 ## [1.4.0] — 2026-10-29
 
 ### Added
