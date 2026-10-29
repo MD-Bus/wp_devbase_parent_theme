@@ -10,6 +10,16 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.2.5] — 2026-10-29
+
+### Changed
+
+- A release tag now publishes the same files `bin/build-zip.sh` does. Warden publishes GitHub's archive of the
+  tag, so the development files are marked `export-ignore` in a new `.gitattributes`: `tests/`, `bin/`,
+  `docs/`, `.github/`, `phpunit.xml.dist`, the development `README`/`CHANGELOG`/`ROADMAP`/`SECURITY`,
+  translation sources and the dotfiles. Before, a tag shipped the whole repository to client sites, so those
+  files were publicly readable on them. `License.md` still ships. No code change.
+
 ## [1.2.4] — 2026-10-29
 
 ### Fixed
