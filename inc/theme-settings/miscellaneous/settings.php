@@ -241,14 +241,6 @@ add_action( 'acf/init', function () {
 				'type'         => 'url',
 				'instructions' => __( 'The public address of the brand in Brand Relay, for example https://relay.example.com/v1/brand/yourbrand. It is downloaded when you save this page and then once a day, and the credit is built from the saved copy. Leave it empty for no credit.', 'devbase_parent_theme' ),
 			),
-			array(
-				'key'      => 'field_devbase_credit_status',
-				'label'    => __( 'Current Credit', 'devbase_parent_theme' ),
-				'name'     => '',
-				'type'     => 'message',
-				'message'  => devbase_credit_status_html(),
-				'esc_html' => 0,
-			),
 		),
 		'location' => array(
 			array(

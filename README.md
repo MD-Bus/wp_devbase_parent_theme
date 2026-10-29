@@ -136,11 +136,13 @@ public details, keeps a local copy, and builds the credit ("Designed by
   set, and then once a day through WP-Cron. Brand Relay's own `ttl` is
   respected as a minimum gap between automatic downloads (never less than 15
   minutes, never more than a day). Clearing the address stops it.
+- **Nothing is shown in the admin about it.** The tab has the one field and no
+  status or preview.
 - **Rendering never waits on the network.** Pages read the saved copy only. If
   Brand Relay is slow or down, nothing changes on the site.
 - **Fails soft.** A failed or unexpected download keeps the last good copy and
-  shows the error under *Current Credit*. If there has never been a good
-  copy, no credit is shown. A brand marked `show: false` shows none.
+  is written to the PHP error log. If there has never been a good copy, no
+  credit is shown. A brand marked `show: false` shows none.
 - **Only public data, and only named fields.** The address is fetched with no
   key. The saved copy is built from an allowlist (message, link text, link
   address, `rel`, brand name and address, logo address and alt text), each

@@ -14,7 +14,7 @@
 //   define( 'DEVBASE_CREDIT_BRAND_URL', 'https://relay.example.com/v1/brand/yourbrand' );
 //
 // The constant wins over the field, and while it is defined the whole Credit
-// tab (field and status) is removed from Theme Settings > Miscellaneous. The
+// tab (its field) is removed from Theme Settings > Miscellaneous. The
 // credit itself still works and still shows on the site; only the settings
 // are hidden. The `devbase/credit/hide_settings` filter overrides the hiding.
 //
@@ -24,7 +24,9 @@
 //   saved, then once a day through WP-Cron, and once shortly after it is first
 //   set. Brand Relay's own `ttl` is honoured as a minimum gap between
 //   automatic downloads.
-// - Saves the result in ONE non-autoloaded option, `devbase_credit_data`.
+// - Saves the result in ONE non-autoloaded option, `devbase_credit_data`. The
+//   admin shows nothing about it: no status, no preview. A failed download is
+//   written to the PHP error log and kept in that option as `last_error`.
 // - devbase_credit() and devbase_credit_html() read ONLY that copy. Rendering
 //   a page never makes an HTTP request, so a slow or dead Brand Relay can't
 //   slow a page down or break it.
@@ -103,7 +105,7 @@ function devbase_credit_settings_hidden() {
 // acf_prepare_field() has already replaced $field['name'] with the key by the
 // time this filter runs.
 add_filter( 'acf/prepare_field', function ( $field ) {
-	$keys = array( 'field_devbase_misc_credit_tab', 'field_devbase_credit_brand_url', 'field_devbase_credit_status' );
+	$keys = array( 'field_devbase_misc_credit_tab', 'field_devbase_credit_brand_url' );
 
 	if ( isset( $field['key'] ) && in_array( $field['key'], $keys, true ) && devbase_credit_settings_hidden() ) {
 		return false;
@@ -385,37 +387,3 @@ add_action( 'acf/save_post', function () {
 		devbase_credit_refresh( true );
 	}
 }, 20 );
-
-/**
- * The read-only status shown in the Credit tab: what is stored, when, and the
- * last error. Presentation only; it never downloads.
- */
-function devbase_credit_status_html() {
-	if ( '' === devbase_credit_brand_url() ) {
-		return '<p><em>' . esc_html__( 'No brand address entered, so no credit is downloaded.', 'devbase_parent_theme' ) . '</em></p>';
-	}
-
-	$state = devbase_credit_get_state();
-	$error = ! empty( $state['last_error'] ) ? (string) $state['last_error'] : '';
-	$html  = '';
-
-	if ( ! empty( $state['data'] ) && ! empty( $state['fetched_at'] ) ) {
-		/* translators: %s: how long ago the credit was last downloaded, e.g. "3 hours". */
-		$html .= '<p><strong>' . sprintf( esc_html__( 'Downloaded %s ago.', 'devbase_parent_theme' ), esc_html( human_time_diff( (int) $state['fetched_at'] ) ) ) . '</strong></p>';
-
-		$preview = devbase_credit_html();
-
-		$html .= '' !== $preview
-			? '<p>' . esc_html__( 'The credit currently reads:', 'devbase_parent_theme' ) . ' ' . $preview . '</p>'
-			: '<p>' . esc_html__( 'The brand is set to show no credit.', 'devbase_parent_theme' ) . '</p>';
-	} else {
-		$html .= '<p><strong>' . esc_html__( 'Nothing downloaded yet.', 'devbase_parent_theme' ) . '</strong></p>';
-	}
-
-	if ( '' !== $error ) {
-		/* translators: %s: the error the last download returned. */
-		$html .= '<p>' . sprintf( esc_html__( 'The last download failed (%s). The previous credit, if any, is still used.', 'devbase_parent_theme' ), esc_html( $error ) ) . '</p>';
-	}
-
-	return $html;
-}

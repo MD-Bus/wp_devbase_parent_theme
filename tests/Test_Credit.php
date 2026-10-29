@@ -244,8 +244,12 @@ class Test_Credit extends WP_UnitTestCase {
 		return array(
 			array( 'key' => 'field_devbase_misc_credit_tab', 'name' => '', 'type' => 'tab' ),
 			array( 'key' => 'field_devbase_credit_brand_url', 'name' => 'credit_brand_url', 'type' => 'url' ),
-			array( 'key' => 'field_devbase_credit_status', 'name' => '', 'type' => 'message' ),
 		);
+	}
+
+	public function test_the_admin_has_no_status_function_or_status_field() {
+		$this->assertFalse( function_exists( 'devbase_credit_status_html' ) );
+		$this->assertFalse( acf_get_field( 'field_devbase_credit_status' ) );
 	}
 
 	public function test_the_credit_tab_shows_by_default() {

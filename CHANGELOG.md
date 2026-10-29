@@ -10,6 +10,15 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.2.2] — 2026-10-29
+
+### Removed
+
+- The "Current Credit" status block on Theme Settings > Miscellaneous > Credit ("Downloaded … ago",
+  the credit preview, the last error). The tab is now just the one field; the credit downloads and is
+  used without anything about it appearing in the admin. A failed download is still written to the PHP
+  error log.
+
 ## [1.2.1] — 2026-10-29
 
 ### Added
