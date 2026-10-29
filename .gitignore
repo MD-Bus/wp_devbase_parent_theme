@@ -1,16 +1,9 @@
 # ---------------------------------------------------------------------------
-# Internal engineering notes — not published.
-#
-# AGENT.md files throughout this theme carry the detailed design reasoning:
-# why each subsystem is shaped the way it is, the bugs that shaped it, and
-# the traps to avoid when changing it. They are written for whoever works
-# on this next, not for people installing it, and some of it describes
-# internal process rather than the code.
-#
-# NOTE: excluding them means they are not version-controlled and not backed
-# up anywhere. If that matters, mirror them to a private repository.
+# AGENT.md files (the internal design notes) ARE version-controlled. They are
+# kept out of every release by .gitattributes (export-ignore), so they never
+# reach a client site. Check them for secrets and client details before
+# committing: they describe how and why, never credentials.
 # ---------------------------------------------------------------------------
-AGENT.md
 
 # ---------------------------------------------------------------------------
 # Test tooling.

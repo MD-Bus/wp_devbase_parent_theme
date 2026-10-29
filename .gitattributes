@@ -1,0 +1,22 @@
+# Left out of the package a release tag publishes.
+#
+# Warden publishes GitHub's archive of the tag, and GitHub's archive honours
+# export-ignore. This list mirrors the exclusions in bin/build-zip.sh, so a tag
+# ships the same files that script's zip does: the theme itself and its vendored
+# dependencies, without tests, tooling, notes or development documents.
+# (License.md is NOT excluded: the licence text must travel with the code.)
+/tests                  export-ignore
+/bin                    export-ignore
+/docs                   export-ignore
+/.github                export-ignore
+/phpunit.xml.dist       export-ignore
+.phpunit.result.cache   export-ignore
+AGENT.md                export-ignore
+/README.md              export-ignore
+/CHANGELOG.md           export-ignore
+/ROADMAP.md             export-ignore
+/SECURITY.md            export-ignore
+/languages/*.po         export-ignore
+/languages/*.pot        export-ignore
+.gitignore              export-ignore
+.gitattributes          export-ignore
