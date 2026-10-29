@@ -10,6 +10,13 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.2.7] — 2026-10-29
+
+### Added
+
+- `screenshot.png` (1200x900): the preview shown for the theme in Appearance > Themes. It was missing, so the
+  theme showed an empty box. It shows the parent/child layering, with no version number so it never goes stale.
+
 ## [1.2.6] — 2026-10-29
 
 ### Changed
