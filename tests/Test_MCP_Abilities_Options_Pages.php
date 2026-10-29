@@ -102,4 +102,96 @@ class Test_MCP_Abilities_Options_Pages extends WP_UnitTestCase {
 		$this->assertWPError( $attempt, 'Attempting to write the allow-list through MCP must be rejected, not silently succeed.' );
 		$this->assertSame( array( 'page' ), get_field( 'mcp_allowed_post_types', 'option' ), 'The real allow-list must be completely unchanged after a rejected write attempt.' );
 	}
+
+	// --- Options pages with their OWN storage (the Archive pages) -----------
+	//
+	// inc/archive/settings.php gives every archive page a post_id equal to its
+	// menu slug, so two archives with a same-named field don't share a value.
+	// The options abilities used to read and write the shared 'option' store
+	// regardless, so a value written through MCP to an archive page landed
+	// where no template reads it, and the archives overwrote each other there.
+	// These two pages reproduce that shape with a same-named field.
+
+	private function register_own_storage_page( $slug ) {
+		acf_add_options_sub_page( array(
+			'page_title'  => $slug,
+			'menu_title'  => $slug,
+			'menu_slug'   => $slug,
+			'parent_slug' => 'theme-settings',
+			'post_id'     => $slug,
+		) );
+
+		acf_add_local_field_group( array(
+			'key'      => 'group_' . $slug,
+			'title'    => $slug,
+			'fields'   => array(
+				array(
+					'key'  => 'field_' . $slug . '_title',
+					'name' => 'hero_title',
+					'type' => 'text',
+				),
+			),
+			'location' => array( array( array( 'param' => 'options_page', 'operator' => '==', 'value' => $slug ) ) ),
+		) );
+	}
+
+	private function run_own_storage_pages() {
+		$this->register_own_storage_page( 'test-archive-a' );
+		$this->register_own_storage_page( 'test-archive-b' );
+		update_field( 'mcp_allowed_options_pages', array( 'test-archive-a', 'test-archive-b' ), 'option' );
+	}
+
+	public function test_update_options_writes_to_the_pages_own_storage_not_the_shared_one() {
+		$this->run_own_storage_pages();
+
+		$result = wp_get_ability( 'devbase/update-options' )->execute( array(
+			'menu_slug' => 'test-archive-a',
+			'fields'    => array( 'hero_title' => 'Alpha' ),
+		) );
+
+		$this->assertNotWPError( $result );
+		$this->assertSame( 'Alpha', get_field( 'hero_title', 'test-archive-a' ), 'The page\'s own storage (what its templates read) must hold the value.' );
+		$this->assertEmpty( get_field( 'hero_title', 'option' ), 'The shared store must not receive it.' );
+
+		update_field( 'hero_title', '', 'test-archive-a' );
+	}
+
+	public function test_two_pages_with_a_same_named_field_do_not_overwrite_each_other() {
+		$this->run_own_storage_pages();
+
+		foreach ( array( 'test-archive-a' => 'Alpha', 'test-archive-b' => 'Beta' ) as $slug => $value ) {
+			wp_get_ability( 'devbase/update-options' )->execute( array( 'menu_slug' => $slug, 'fields' => array( 'hero_title' => $value ) ) );
+		}
+
+		$this->assertSame( 'Alpha', get_field( 'hero_title', 'test-archive-a' ) );
+		$this->assertSame( 'Beta', get_field( 'hero_title', 'test-archive-b' ) );
+
+		update_field( 'hero_title', '', 'test-archive-a' );
+		update_field( 'hero_title', '', 'test-archive-b' );
+	}
+
+	public function test_get_options_reads_each_pages_own_storage() {
+		$this->run_own_storage_pages();
+		// Written by field KEY, the way the admin saves them, so each value has its reference.
+		update_field( 'field_test-archive-a_title', 'Alpha', 'test-archive-a' );
+		update_field( 'field_test-archive-b_title', 'Beta', 'test-archive-b' );
+
+		$a = wp_get_ability( 'devbase/get-options' )->execute( array( 'menu_slug' => 'test-archive-a' ) );
+		$b = wp_get_ability( 'devbase/get-options' )->execute( array( 'menu_slug' => 'test-archive-b' ) );
+
+		$this->assertSame( 'Alpha', $a['hero_title'] );
+		$this->assertSame( 'Beta', $b['hero_title'] );
+
+		update_field( 'hero_title', '', 'test-archive-a' );
+		update_field( 'hero_title', '', 'test-archive-b' );
+	}
+
+	public function test_a_page_without_its_own_post_id_still_uses_the_shared_store() {
+		// ACF's default storage name for a page with no post_id is 'options', the same
+		// store as 'option' (ACF treats the two as one), so either spelling is correct.
+		$this->assertContains( devbase_abilities_options_page_post_id( 'miscellaneous-settings' ), array( 'option', 'options' ) );
+		$this->assertContains( devbase_abilities_options_page_post_id( 'no-such-page' ), array( 'option', 'options' ) );
+		$this->run_own_storage_pages();
+		$this->assertSame( 'test-archive-a', devbase_abilities_options_page_post_id( 'test-archive-a' ) );
+	}
 }

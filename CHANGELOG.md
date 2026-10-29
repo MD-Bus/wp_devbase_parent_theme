@@ -10,6 +10,20 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.2.4] — 2026-10-29
+
+### Fixed
+
+- **MCP options abilities wrote to the wrong storage for the Archive pages.** `devbase/update-options`
+  and `devbase/get-options` always used the shared `option` store, but the Archive pages created for each
+  post type with an archive keep their values under their own storage (their menu slug), which is what
+  their templates read. A value written through MCP to an Archive page was saved where nothing reads it,
+  the same-named fields of different archives (`hero_title`, `hero_image`, ...) overwrote each other there,
+  and the call reported success because it read the value back from the same wrong place. Both abilities
+  now use the page's own storage, and other options pages are unaffected. Nothing saved by the old
+  behaviour is migrated: write the Archive pages' values again through MCP (or the admin).
+- 4 new tests that fail on the old code.
+
 ## [1.2.3] — 2026-10-29
 
 ### Fixed

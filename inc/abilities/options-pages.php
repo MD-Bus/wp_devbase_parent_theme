@@ -10,6 +10,15 @@
 // resolved by each field group's 'options_page' location rule, not by a
 // per-page storage key. See e.g. get_field( 'smtp_enabled', 'option' ) in
 // inc/theme-settings/smtp/test.php for the existing convention this reuses.
+//
+// ONE EXCEPTION, which this file used to get wrong: the Archive pages that
+// inc/archive/settings.php creates for each post type with an archive DO pass a
+// custom post_id (their own menu slug), precisely so two archives with a
+// same-named field (hero_title, ...) don't share one value. Anything reading or
+// writing an options page's values must therefore use that page's own
+// post_id (devbase_abilities_options_page_post_id() below), not a hardcoded
+// 'option'. Writing to 'option' for an archive page saved the value where no
+// template reads it, and the three archives overwrote each other there.
 
 /**
  * Resolves the field groups + fields that belong to a given options page,
@@ -53,6 +62,19 @@ function devbase_abilities_options_page_fields( $menu_slug ) {
 	}
 
 	return $fields;
+}
+
+/**
+ * The storage context an options page's values live in: the page's own
+ * post_id when it has one (the Archive pages), else the shared 'option' store
+ * every other page uses. ACF's default for a page with no explicit post_id is
+ * 'options', which is the same store as 'option', so both spellings land in
+ * the same place.
+ */
+function devbase_abilities_options_page_post_id( $menu_slug ) {
+	$page = function_exists( 'acf_get_options_page' ) ? acf_get_options_page( $menu_slug ) : null;
+
+	return ( is_array( $page ) && ! empty( $page['post_id'] ) ) ? $page['post_id'] : 'option';
 }
 
 /**
@@ -194,10 +216,11 @@ add_action( 'wp_abilities_api_init', function () {
 			}
 
 			$page_fields = devbase_abilities_options_page_fields( $input['menu_slug'] );
+			$post_id     = devbase_abilities_options_page_post_id( $input['menu_slug'] );
 			$values      = array();
 
 			foreach ( $page_fields as $field ) {
-				$values[ $field['name'] ] = get_field( $field['key'], 'option' );
+				$values[ $field['name'] ] = get_field( $field['key'], $post_id );
 			}
 
 			return $values;
@@ -253,14 +276,16 @@ add_action( 'wp_abilities_api_init', function () {
 				);
 			}
 
+			$post_id = devbase_abilities_options_page_post_id( $input['menu_slug'] );
+
 			foreach ( $input['fields'] as $name => $value ) {
-				update_field( $by_name[ $name ], $value, 'option' );
+				update_field( $by_name[ $name ], $value, $post_id );
 			}
 
 			$updated = array();
 
 			foreach ( array_keys( $input['fields'] ) as $name ) {
-				$updated[ $name ] = get_field( $by_name[ $name ], 'option' );
+				$updated[ $name ] = get_field( $by_name[ $name ], $post_id );
 			}
 
 			return $updated;
