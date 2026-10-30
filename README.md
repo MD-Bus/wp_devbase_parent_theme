@@ -175,6 +175,7 @@ active child theme registers, without the parent knowing any of them:
 
 | Ability | What it does |
 | --- | --- |
+| `devbase/get-site-guide` | The site owner's **Instructions for AI Assistants** (who the site is for, the tone, how pages are built), with the site's name, address and language. The other tools tell a client to read it first. |
 | `devbase/list-blocks` | The blocks the editor allows (name, title, description, category), and whether each can be written. |
 | `devbase/get-block-schema` | One block's fields: type, required, default, choices, sub-fields, and the shape of the value (an image takes an attachment ID). |
 | `devbase/create-post`, `update-post` | Accept `blocks` instead of `content`: the page's whole content, in order. |
@@ -188,6 +189,13 @@ active child theme registers, without the parent knowing any of them:
 ] }
 ```
 
+- **The AI knows only what the site tells it.** Block descriptions (`block.json`)
+  and field instructions are what a client reads to choose a block and fill it,
+  so a child theme should say in each description when to use the block and
+  where it goes, and give every non-obvious field an instruction with a rough
+  length. The **Instructions for AI Assistants** field (MCP Access tab) holds
+  the rest: who the site is for, its tone, and its page-structure rules. An MCP
+  client can read it but never change it.
 - **Only what the editor allows.** The block list is the editor's own
   allow-list (`allowed_block_types_all`), so a child that limits the inserter
   limits MCP the same way.

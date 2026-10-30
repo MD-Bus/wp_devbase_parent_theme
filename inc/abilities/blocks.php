@@ -514,7 +514,7 @@ add_action( 'wp_abilities_api_init', function () {
 
 	wp_register_ability( 'devbase/list-blocks', array(
 		'label'               => __( 'List Blocks', 'devbase_parent_theme' ),
-		'description'         => __( 'Lists the blocks the editor allows on this site (name, title, description, category), and whether each can be written through devbase/create-post and update-post (ACF blocks, built from fields). Use devbase/get-block-schema for one block\'s fields.', 'devbase_parent_theme' ),
+		'description'         => __( 'Read devbase/get-site-guide first: it says how this site\'s pages are built. Lists the blocks the editor allows on this site (name, title, description, category), and whether each can be written through devbase/create-post and update-post (ACF blocks, built from fields). Use devbase/get-block-schema for one block\'s fields.', 'devbase_parent_theme' ),
 		'category'            => 'devbase',
 		'input_schema'        => array(
 			'type'       => 'object',

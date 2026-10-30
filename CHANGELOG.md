@@ -10,6 +10,17 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.10.0] — 2026-10-30
+
+### Added
+
+- **Instructions for AI Assistants** (Theme Settings → Miscellaneous → MCP Access, `mcp_site_guide`): the
+  owner's brief for an AI connected through MCP — who the site is for, the tone, how its pages are built.
+  Returned by the new **`devbase/get-site-guide`** ability (`inc/abilities/site-guide.php`) with the site's
+  name, tagline, address and language; `devbase/list-blocks` and `devbase/list-post-types` tell a client to
+  read it first. Protected like the allow-lists: an MCP client reads it but cannot rewrite it through
+  `update-options`. Tests: `tests/Test_MCP_Site_Guide.php` (5).
+
 ## [1.9.0] — 2026-10-30
 
 ### Added

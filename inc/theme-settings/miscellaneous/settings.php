@@ -225,6 +225,17 @@ add_action( 'acf/init', function () {
 				'default_value' => 0,
 				'instructions'  => __( 'Lets an MCP client add images and files to the media library, for example a photo for a block. Off: it can only use what is already in the library.', 'devbase_parent_theme' ),
 			),
+			// devbase/get-site-guide (inc/abilities/site-guide.php) returns it. Protected:
+			// an MCP client reads it but can never change it.
+			array(
+				'key'          => 'field_devbase_mcp_site_guide',
+				'label'        => __( 'Instructions for AI Assistants', 'devbase_parent_theme' ),
+				'name'         => 'mcp_site_guide',
+				'type'         => 'textarea',
+				'rows'         => 14,
+				'new_lines'    => '',
+				'instructions' => __( 'What an AI assistant connected through MCP should know before it writes on this site: who the site is for, the tone to write in, and how pages are put together (which block starts a page, which ends it, what each block is for, how long the text should be). It reads this first. Plain text; it cannot change it.', 'devbase_parent_theme' ),
+			),
 
 			// Tab: Credit. One setting; everything else is downloaded. See credit.php.
 			array(

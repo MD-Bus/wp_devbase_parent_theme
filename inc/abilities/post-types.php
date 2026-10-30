@@ -16,7 +16,7 @@ add_action( 'wp_abilities_api_init', function () {
 
 	wp_register_ability( 'devbase/list-post-types', array(
 		'label'               => __( 'List Post Types', 'devbase_parent_theme' ),
-		'description'         => __( 'Lists every content post type on this site (name, label, whether it supports hierarchy, its REST base). Excludes internal/system post types.', 'devbase_parent_theme' ),
+		'description'         => __( 'Lists every content post type on this site (name, label, whether it supports hierarchy, its REST base). Excludes internal/system post types. Before writing content, read devbase/get-site-guide for the site owner\'s instructions.', 'devbase_parent_theme' ),
 		'category'            => 'devbase',
 		'output_schema'       => array(
 			'type'  => 'array',
