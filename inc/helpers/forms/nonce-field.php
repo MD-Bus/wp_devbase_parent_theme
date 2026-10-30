@@ -24,3 +24,16 @@
 function devbase_form_nonce_field( $form_name ) {
 	wp_nonce_field( 'devbase_form_' . $form_name, '_devbase_form_nonce' );
 }
+
+/**
+ * Whether the submitted data carries a valid nonce for this form.
+ *
+ * @param string     $form_name The registered form name.
+ * @param array|null $data      Raw submitted values; null reads $_POST.
+ */
+function devbase_form_nonce_valid( $form_name, $data = null ) {
+	$data  = is_array( $data ) ? $data : $_POST; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+	$nonce = isset( $data['_devbase_form_nonce'] ) && is_string( $data['_devbase_form_nonce'] ) ? sanitize_text_field( wp_unslash( $data['_devbase_form_nonce'] ) ) : '';
+
+	return '' !== $nonce && false !== wp_verify_nonce( $nonce, 'devbase_form_' . $form_name );
+}

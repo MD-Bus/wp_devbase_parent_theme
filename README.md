@@ -29,7 +29,7 @@ fix reaches every client site through a single release.
 
 | Area | What it does |
 | --- | --- |
-| **Forms** | Two CPTs (`registered_form`, `form_data`), a JSON registry, automatic submission logging and dispatch to email/webhook destinations. A form author calls three functions and gets CSRF, CAPTCHA gating, logging and notifications. |
+| **Forms** | Two CPTs (`registered_form`, `form_data`), a JSON registry, automatic submission logging and dispatch to email/webhook destinations. A form is its markup plus one handler call: the theme adds CSRF, the CAPTCHA, a honeypot, a per-visitor rate limit, the AJAX script, logging and notifications. |
 | **SMTP** | Real SMTP transport with a "Send Test Email" button that surfaces the actual PHPMailer error, not a generic failure. |
 | **Security** | Cloudflare Turnstile or Google reCAPTCHA v2, mutually exclusive and enforced server-side. Forms call one function and never learn which is active. |
 | **Tracking** | GTM/GA4 IDs plus raw header/footer script fields. |
@@ -303,11 +303,61 @@ add_filter( 'devbase/forms/registered_forms', function ( $forms ) {
 } );
 ```
 
+### Building a form
+
+A form is its fields, its rules and its words; the theme does the rest. In the
+template, one call prints the hidden fields (the AJAX action, a per-form nonce,
+a honeypot and the active CAPTCHA) and loads the shared script,
+`assets/js/forms.js`, which sends any `<form data-devbase-form>` and shows the
+answer:
+
+```twig
+<form data-devbase-form method="post" action="{{ function('admin_url', 'admin-ajax.php') }}" novalidate data-failure="Something went wrong.">
+    {{ function('devbase_form_fields', 'contact_form', { action: 'my_contact' })|raw }}
+    <input name="email" type="email" required data-error="Enter a valid email address.">
+    <span data-error-for="email"></span>
+    <p data-form-message hidden></p>
+    <button type="submit">Send</button>
+    <template data-form-success>Thank you, {name}.</template>
+</form>
+```
+
+The browser checks each field's own rules (`required`, `type`, `minlength`...)
+before sending, and shows its `data-error`. On success the form is replaced by
+its `<template data-form-success>`, with `{name}`-style placeholders filled from
+the reply. The handler is one call:
+
+```php
+add_action( 'wp_ajax_nopriv_my_contact', 'my_contact' );
+add_action( 'wp_ajax_my_contact', 'my_contact' );
+
+function my_contact() {
+    devbase_form_send( 'contact_form', array(
+        'fields'   => array( 'name' => 'Name', 'email' => array( 'label' => 'Email', 'sanitize' => 'sanitize_email' ) ),
+        'validate' => function ( $values ) {
+            return is_email( $values['email'] ) ? array() : array( 'email' => 'Enter a valid email address.' );
+        },
+        'success'  => function ( $values ) { return array( 'name' => strtok( $values['name'], ' ' ) ); },
+    ) );
+}
+```
+
+It refuses, in order: a filled honeypot (answered as a success, nothing
+stored), more than 5 requests in 10 minutes from one visitor to one form (429),
+a missing or wrong nonce (403), the rules in `validate` (422, every failing
+field), and a CAPTCHA token the provider rejects (403). Only then is the
+submission stored and sent to its destinations. Validation comes before the
+CAPTCHA so a typo does not spend the visitor's one-time token.
+`devbase_form_log_submission()` remains for a form with its own handler, and
+applies the same rate limit, nonce and CAPTCHA.
+
 | Filter | Purpose |
 | --- | --- |
 | `devbase/ase/defaults` | Adjust an admin-hardening default. Fills gaps only — a value the site has already saved wins. |
 | `devbase/ase/enforced` | Adjust it authoritatively. Reasserted on every admin page load. |
 | `devbase/forms/registered_forms` | Register this site's forms. |
+| `devbase/forms/rate_limit` | Change a form's limit (`max` requests per `window` seconds; `max` 0 turns it off). Default 5 per 10 minutes. |
+| `devbase/forms/client_ip` | Return the real visitor address when the site sits behind a proxy or CDN (otherwise every visitor shares the proxy's limit). |
 | `devbase/admin_menu/hidden_items` | Change which admin menu items are hidden. |
 | `devbase/schema/tabs` | Contribute an extra schema.org type. |
 | `devbase/updates/tracks` | Override update track detection (rarely needed). |

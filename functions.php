@@ -159,15 +159,20 @@ require_once __DIR__ . '/inc/theme-settings/miscellaneous/purge-ajax.php';
 // before settings.php runs on acf/init, which calls its status function.
 require_once __DIR__ . '/inc/theme-settings/miscellaneous/credit.php';
 
-// devbase_form_log_submission() — the one function form authors call.
+// devbase_form_submit() — the whole server side of an AJAX form.
+// devbase_form_fields() — the hidden fields (nonce, honeypot, CAPTCHA) + forms.js.
+// devbase_form_log_submission() — the lower-level call for a form of its own.
 // devbase_form_build_content() — turns $_POST into the array it expects.
 // devbase_form_nonce_field() — the CSRF field log_submission() requires.
-// All three live in inc/helpers/, not inc/forms/, since they're the
-// public surface of the feature, not internal machinery — see
-// inc/helpers/AGENT.md.
+// devbase_form_rate_limited() — the per-form, per-visitor limit both apply.
+// All live in inc/helpers/, not inc/forms/, since they're the public
+// surface of the feature, not internal machinery — see inc/helpers/AGENT.md.
+require_once __DIR__ . '/inc/helpers/forms/rate-limit.php';
 require_once __DIR__ . '/inc/helpers/forms/log-submission.php';
 require_once __DIR__ . '/inc/helpers/forms/build-content.php';
 require_once __DIR__ . '/inc/helpers/forms/nonce-field.php';
+require_once __DIR__ . '/inc/helpers/forms/submit.php';
+require_once __DIR__ . '/inc/helpers/forms/fields.php';
 
 // Per-channel submission senders, required before dispatch/orchestrator.php
 // which calls both.

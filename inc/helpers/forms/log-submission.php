@@ -1,8 +1,9 @@
 <?php
 
 // devbase_form_log_submission() — the one function any form built in this
-// theme (or a client site built on it) needs to call. It handles CSRF
-// verification, spam gating, and logging; inc/forms/dispatch/orchestrator.php
+// theme (or a client site built on it) needs to call (or devbase_form_submit()
+// in submit.php, which wraps it for an AJAX form). It handles the rate limit,
+// CSRF verification, spam gating, and logging; inc/forms/dispatch/orchestrator.php
 // picks up from there automatically via the save_post_form_data hook, so a
 // form author never needs to touch notification logic at all.
 //
@@ -29,37 +30,58 @@
 //   ]
 
 /**
- * Logs a form submission, gated by a per-form CSRF nonce and whichever
- * CAPTCHA provider (if any) is currently active. Both gates are automatic
- * and not optional — a form author calling this function gets them for
- * free, without needing to remember devbase_security_verify_request()
- * or a manual wp_verify_nonce() call themselves.
+ * Logs a form submission, gated by the form's rate limit, a per-form CSRF
+ * nonce and whichever CAPTCHA provider (if any) is currently active. All
+ * three gates are automatic and not optional — a form author calling this
+ * function gets them for free, without needing to remember
+ * devbase_security_verify_request() or a manual wp_verify_nonce() call.
  *
- * @param string $form_name Must match a 'name' entry in registered-forms.json,
- *                           and the name passed to devbase_form_nonce_field().
- * @param array  $content   See the shape documented above.
+ * A form that wants to tell its visitor WHY it was refused (too many
+ * attempts, a field to fix) uses devbase_form_submit() instead, which runs
+ * the same gates and answers with the reason.
+ *
+ * @param string     $form_name Must match a 'name' entry in registered-forms.json,
+ *                               and the name passed to devbase_form_nonce_field().
+ * @param array      $content   See the shape documented above.
+ * @param array|null $data      The submitted values the nonce and CAPTCHA token
+ *                               are read from, raw as in $_POST. Null reads $_POST.
  * @return int|false The new form_data post ID, or false if the submission
- *                    was blocked (missing/invalid nonce, spam gate failed,
- *                    or bad input).
+ *                    was blocked (rate limit, missing/invalid nonce, spam
+ *                    gate failed, or bad input).
  */
-function devbase_form_log_submission( $form_name, array $content ) {
+function devbase_form_log_submission( $form_name, array $content, $data = null ) {
 	$form_name = is_string( $form_name ) ? trim( $form_name ) : '';
 
 	if ( '' === $form_name ) {
 		return false;
 	}
 
-	$nonce = isset( $_POST['_devbase_form_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_devbase_form_nonce'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+	$data = is_array( $data ) ? $data : $_POST; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
-	if ( ! wp_verify_nonce( $nonce, 'devbase_form_' . $form_name ) ) {
+	if ( devbase_form_rate_limited( $form_name ) ) {
 		return false;
 	}
 
-	if ( ! devbase_security_verify_request() ) {
+	if ( ! devbase_form_nonce_valid( $form_name, $data ) ) {
 		return false;
 	}
 
-	if ( empty( $content ) ) {
+	if ( ! devbase_security_verify_request( $data ) ) {
+		return false;
+	}
+
+	return devbase_form_store( $form_name, $content );
+}
+
+/**
+ * Stores an already-verified submission as a form_data post, which triggers
+ * dispatch. Internal: forms call devbase_form_log_submission() or
+ * devbase_form_submit(), which verify first.
+ *
+ * @return int|false The new form_data post ID, or false.
+ */
+function devbase_form_store( $form_name, array $content ) {
+	if ( '' === $form_name || empty( $content ) ) {
 		return false;
 	}
 

@@ -157,20 +157,25 @@ function devbase_security_verify( $token ) {
 }
 
 /**
- * Convenience wrapper for the common case: read the right $_POST field for
- * whichever provider is active and verify it in one call. Returns true
- * (nothing to check) when no provider is active, same as devbase_security_verify().
+ * Convenience wrapper for the common case: read the right field for whichever
+ * provider is active from the submitted data and verify it in one call.
+ * Returns true (nothing to check) when no provider is active, same as
+ * devbase_security_verify().
+ *
+ * @param array|null $data The submitted values, raw (slashed, as in $_POST).
+ *                         Null reads $_POST.
  */
-function devbase_security_verify_request() {
+function devbase_security_verify_request( $data = null ) {
 	$provider = devbase_security_active_provider();
 
 	if ( null === $provider ) {
 		return true;
 	}
 
+	$data  = is_array( $data ) ? $data : $_POST; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 	$field = 'turnstile' === $provider ? 'cf-turnstile-response' : 'g-recaptcha-response';
 
-	$token = isset( $_POST[ $field ] ) ? sanitize_text_field( wp_unslash( $_POST[ $field ] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+	$token = isset( $data[ $field ] ) && is_string( $data[ $field ] ) ? sanitize_text_field( wp_unslash( $data[ $field ] ) ) : '';
 
 	return devbase_security_verify( $token );
 }

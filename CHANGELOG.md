@@ -10,6 +10,34 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.9.0] — 2026-10-30
+
+### Added
+
+- **A rate limit on every form** (`inc/helpers/forms/rate-limit.php`): 5 requests per visitor per form in
+  10 minutes, counted in the pipeline, so `devbase_form_log_submission()` and the new submit step both
+  apply it and no form can forget it. Changeable per form with `devbase/forms/rate_limit`; a site behind
+  a proxy returns the real address from `devbase/forms/client_ip`.
+- **`devbase_form_submit()` / `devbase_form_send()`** (`inc/helpers/forms/submit.php`): the server side of
+  an AJAX form in one call. A form passes its fields, its rules and its reply; the step runs the honeypot,
+  rate limit, nonce, validation (every failing field, 422), CAPTCHA, then stores and dispatches, and
+  answers with one JSON shape. Validation runs before the CAPTCHA so a typo does not spend the one-time
+  token. `before_log`/`after_log` hooks cover rules such as "the same signup twice is not stored again".
+- **`devbase_form_fields()`** (`inc/helpers/forms/fields.php`): prints the AJAX action, the per-form
+  nonce (without the duplicate `id` two forms on a page used to share), a honeypot and the CAPTCHA, and
+  loads the shared script.
+- **`assets/js/forms.js`**: sends any `<form data-devbase-form>`, checks the fields' own rules first,
+  shows each error where the form says (`data-error-for`, `data-form-message`), and swaps in the
+  `<template data-form-success>`; resets a Turnstile widget after each reply.
+- Tests: `tests/Test_Form_Submit.php` (20), including the fail-closed cases: no valid nonce, or a CAPTCHA
+  provider on without a good token, stores nothing.
+
+### Changed
+
+- `devbase_form_log_submission()`, `devbase_security_verify_request()` and the new
+  `devbase_form_nonce_valid()` take the submitted data as an argument (default `$_POST`, so every
+  existing call works unchanged).
+
 ## [1.8.2] — 2026-10-29
 
 ### Changed

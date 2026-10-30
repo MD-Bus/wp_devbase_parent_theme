@@ -80,33 +80,6 @@ through a different API (an assessment with a Cloud project and API key) and
 loads a different script, so it is not supported. Worth building only if a client
 needs Enterprise specifically; Turnstile avoids the Cloud project entirely.
 
-**Less repetition per form.** The form system is the stack's best idea: every
-submission goes through `devbase_form_log_submission()`, so the nonce, the
-CAPTCHA, the stored Form Data post and the dispatch to destinations live in one
-place, and a form that forgets a check is blocked rather than let through.
-Adding the second real form on a site (the OCWOF newsletter, after the contact
-form) showed what each form still repeats by hand:
-
-- **The nonce and the CAPTCHA field are printed by every form's template.** A
-  form could carry a marker (such as `data-devbase-form="newsletter"`) and the
-  parent add both, so a new form cannot forget them.
-- **The AJAX handler is copied per form.** The honeypot, the response shape, the
-  error codes and the call into the pipeline are the same in the contact and
-  newsletter handlers. A shared submit step that takes a field list and a
-  validator would leave a form only its fields and its rules.
-- **Each form has its own script** to post, show an error and swap in the
-  thank-you. One shared form script, driven by data attributes, would do it.
-- **There is no rate limit in the pipeline.** The newsletter handler has a small
-  per-address throttle of its own, and the contact form has none (the security
-  review's M1). It belongs in the shared step so every form gets it.
-- **The pipeline reads the global `$_POST`** (`devbase_security_verify_request()`
-  and the nonce check), which makes it harder to test and reuse than passing the
-  submitted data in.
-
-None of this is a defect. It is the next round of simplification, and it should
-land with tests that keep the fail-closed behaviour: a form without a valid nonce
-or CAPTCHA token is still refused.
-
 **Per-destination retry for form dispatch.** A failed webhook is recorded
 but not retried. Worth building when a client is actually affected.
 
