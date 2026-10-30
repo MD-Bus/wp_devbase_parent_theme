@@ -121,11 +121,24 @@
             return;
          }
 
-         if ( typeof response.smtp_password_description !== 'undefined' ) {
-            $('.asenha-smtp-password-description').text( response.smtp_password_description );
+         var fieldKey = ( typeof response.smtp_password_field === 'string' ) ? response.smtp_password_field : 'smtp_password';
+         if ( fieldKey !== 'smtp_password' && fieldKey !== 'smtp_fallback_password' ) {
+            fieldKey = 'smtp_password';
          }
 
-         var $warning = $('.asenha-smtp-password-warning');
+         var $description = $( '.asenha-smtp-password-' + fieldKey + '-description' );
+         if ( ! $description.length ) {
+            $description = $( '.asenha-smtp-password-description' );
+         }
+
+         if ( typeof response.smtp_password_description !== 'undefined' ) {
+            $description.text( response.smtp_password_description );
+         }
+
+         var $warning = $( '.asenha-smtp-password-' + fieldKey + '-warning' );
+         if ( ! $warning.length ) {
+            $warning = $( '.asenha-smtp-password-warning' );
+         }
          if ( typeof response.smtp_password_warning !== 'undefined' ) {
             if ( response.smtp_password_warning ) {
                $warning.empty().append(
@@ -157,6 +170,7 @@
                data: {
                   'action':'send_test_email',
                   'email_to': emailTo,
+                  'connection': $('input[name="asenha_smtp_test_connection"]:checked').val() || 'primary',
                   'nonce': adminPageVars.sendTestEmailNonce
                },
                success:function(data) {
@@ -529,6 +543,7 @@
       $('.image-upload-control-client-side-processing').appendTo('.fields-optimizations .image-upload-control .asenha-subfields');
       
       
+      $('.clean-media-filenames').appendTo('.fields-optimizations > table > tbody');
       $('.enable-revisions-control').appendTo('.fields-optimizations > table > tbody');
       $('.revisions-max-number').appendTo('.fields-optimizations .enable-revisions-control .asenha-subfields');
       
@@ -544,6 +559,7 @@
       // Place fields into "Utilities" tab
       
       $('.plugins-themes-rollback').appendTo('.fields-utilities > table > tbody');
+      
       $('.smtp-email-delivery').appendTo('.fields-utilities > table > tbody');
       $('.smtp-default-from-description').appendTo('.fields-utilities .smtp-email-delivery .asenha-subfields');
       $('.smtp-default-from-name').appendTo('.fields-utilities .smtp-email-delivery .asenha-subfields');
@@ -561,6 +577,7 @@
       $('.smtp-debug').appendTo('.fields-utilities .smtp-email-delivery .asenha-subfields');
       
       $('.smtp-send-test-email-description').appendTo('.fields-utilities .smtp-email-delivery .asenha-subfields');
+      
       $('.smtp-send-test-email-to').appendTo('.fields-utilities .smtp-email-delivery .asenha-subfields');
       $('.smtp-send-test-email-result').appendTo('.fields-utilities .smtp-email-delivery .asenha-subfields');
       $('.contact-form').appendTo('.fields-utilities > table > tbody');

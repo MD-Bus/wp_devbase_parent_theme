@@ -130,6 +130,11 @@ label[for="asenha-rollback-target-version"] {
 	margin-bottom: 4px;
 }
 
+.asenha-rollback-versions-loading:not([hidden]) {
+	display: block;
+	margin-top: 8px;
+}
+
 .asenha-close-modal {
 	text-decoration: none;
 	font-size: 18px;

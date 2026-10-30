@@ -3051,6 +3051,27 @@ class Settings_Sections_Fields {
                 'class'             => 'asenha-description top-border optimizations ' . $field_slug,
             )
         );
+        // Clean Media Filenames
+        $field_id = 'clean_media_filenames';
+        $field_slug = 'clean-media-filenames';
+        $field_title = __( 'Clean Media Filenames', 'admin-site-enhancements' );
+        add_settings_field(
+            $field_id,
+            $field_title,
+            [$render_field, 'render_checkbox_toggle'],
+            ASENHA_SLUG,
+            'main-section',
+            array(
+                'option_name'           => ASENHA_SLUG_U,
+                'field_id'              => $field_id,
+                'field_slug'            => $field_slug,
+                'field_title'           => $field_title,
+                'field_name'            => ASENHA_SLUG_U . '[' . $field_id . ']',
+                'field_description'     => __( 'On upload, convert filenames to a safe, consistent form: remove accents, strip problematic characters, use lowercase, and replace spaces, dots, pluses and punctuation in the name with hyphens. Applies to all file types, including media library and sideloaded uploads.', 'admin-site-enhancements' ),
+                'field_options_wrapper' => false,
+                'class'                 => 'asenha-toggle optimizations ' . $field_slug,
+            )
+        );
         // Enable Revisions Control
         $field_id = 'enable_revisions_control';
         $field_slug = 'enable-revisions-control';
@@ -3309,6 +3330,7 @@ class Settings_Sections_Fields {
             admin_url( 'tools.php?page=asenha-rollback' )
          );
         $module_description = __( 'Roll back plugins and themes hosted on WordPress.org to an earlier or newer version.', 'admin-site-enhancements' ) . ' ' . $rollback_page_link;
+        $rollback_show_subfields = false;
         add_settings_field(
             $field_id,
             $field_title,
@@ -3323,7 +3345,7 @@ class Settings_Sections_Fields {
                 'field_name'             => ASENHA_SLUG_U . '[' . $field_id . ']',
                 'field_description'      => $module_description,
                 'field_options_wrapper'  => true,
-                'field_options_moreless' => false,
+                'field_options_moreless' => $rollback_show_subfields,
                 'class'                  => 'asenha-toggle utilities ' . $field_slug,
             )
         );
@@ -3557,7 +3579,7 @@ class Settings_Sections_Fields {
                 'field_id'    => $field_id,
                 'field_name'  => ASENHA_SLUG_U . '[' . $field_id . ']',
                 'field_label' => __( 'Enable debug mode and output the debug info into WordPress debug.log file.', 'admin-site-enhancements' ),
-                'class'       => 'asenha-checkbox asenha-hide-th bottom-border utilities ' . $field_slug,
+                'class'       => 'asenha-checkbox asenha-hide-th margin-top-16 bottom-border utilities ' . $field_slug,
             )
         );
         $field_id = 'smtp_send_test_email_description';

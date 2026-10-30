@@ -72,13 +72,13 @@ class Change_Login_URL {
                                             return;
                                             // This ensures user switching proceeds
                                         } else {
-                                            // Redirect to dashboard
-                                            wp_safe_redirect( get_admin_url() );
+                                            // No Redirect After Login rule: honor redirect_to, otherwise the dashboard.
+                                            wp_safe_redirect( $this->get_logged_in_fallback_url() );
                                             exit;
                                         }
                                     } else {
-                                        // Redirect to dashboard
-                                        wp_safe_redirect( get_admin_url() );
+                                        // No Redirect After Login rule: honor redirect_to, otherwise the dashboard.
+                                        wp_safe_redirect( $this->get_logged_in_fallback_url() );
                                         exit;
                                     }
                                 }
@@ -91,11 +91,12 @@ class Change_Login_URL {
                         }
                     } else {
                         if ( 'separate_urls' == $redirect_after_login_type && array_key_exists( 'redirect_after_login_for_separate_role', $options ) && !empty( $options['redirect_after_login_for_separate_role'] ) ) {
-                            // Redirect to dashboard
-                            wp_safe_redirect( get_admin_url() );
+                            // No Redirect After Login rule: honor redirect_to, otherwise the dashboard.
+                            wp_safe_redirect( $this->get_logged_in_fallback_url() );
+                            exit;
                         } else {
-                            // Redirect to dashboard
-                            wp_safe_redirect( get_admin_url() );
+                            // No Redirect After Login rule: honor redirect_to, otherwise the dashboard.
+                            wp_safe_redirect( $this->get_logged_in_fallback_url() );
                             exit;
                         }
                     }
@@ -106,19 +107,27 @@ class Change_Login_URL {
                             return;
                             // This ensures user switching proceeds
                         } else {
-                            // Redirect to dashboard
-                            wp_safe_redirect( get_admin_url() );
+                            // No Redirect After Login rule: honor redirect_to, otherwise the dashboard.
+                            wp_safe_redirect( $this->get_logged_in_fallback_url() );
                             exit;
                         }
                     } else {
-                        // Redirect to dashboard
-                        wp_safe_redirect( get_admin_url() );
+                        // No Redirect After Login rule: honor redirect_to, otherwise the dashboard.
+                        wp_safe_redirect( $this->get_logged_in_fallback_url() );
                         exit;
                     }
                 }
+                // Role rules did not redirect (for example an empty role list). Still honor redirect_to.
+                $preserved_redirect_to = $this->get_validated_login_redirect_to();
+                if ( '' !== $preserved_redirect_to ) {
+                    wp_safe_redirect( $preserved_redirect_to );
+                    exit;
+                }
             } else {
-                // Redirect to the login URL with custom login slug in the query parameters
-                wp_safe_redirect( site_url( '/wp-login.php?' . $custom_login_slug . '&redirect=false' ) );
+                // Redirect to the login URL with custom login slug in the query parameters.
+                // Carry redirect_to and reauth so a successful login can return to the original URL.
+                $login_url = site_url( '/wp-login.php?' . $custom_login_slug . '&redirect=false' );
+                wp_safe_redirect( $this->append_preserved_login_redirect_args( $login_url ) );
                 exit;
             }
         }
@@ -155,7 +164,9 @@ class Change_Login_URL {
         $custom_login_slug = $options['custom_login_slug'];
         $login_url = home_url( '/' . $custom_login_slug . '/' );
         if ( !empty( $redirect ) ) {
-            $login_url = add_query_arg( 'redirect_to', urlencode( $redirect ), $login_url );
+            // add_query_arg() encodes the value. urlencode() here would double-encode it,
+            // so PHP's single query-string decode would leave redirect_to still encoded.
+            $login_url = add_query_arg( 'redirect_to', $redirect, $login_url );
         }
         if ( $force_reauth ) {
             $login_url = add_query_arg( 'reauth', '1', $login_url );
@@ -403,6 +414,83 @@ class Change_Login_URL {
     }
 
     /**
+     * Safe redirect_to from the current request, or an empty string.
+     *
+     * Accepts only destinations wp_validate_redirect() allows: this site, plus
+     * hosts added through the allowed_redirect_hosts filter. A leftover
+     * percent-encoding pass from older double-encoded login links is decoded
+     * once before validation.
+     *
+     * @since 9.2.2
+     *
+     * @return string
+     */
+    public function get_validated_login_redirect_to() {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only redirect target, validated below.
+        if ( !isset( $_REQUEST['redirect_to'] ) || !is_string( $_REQUEST['redirect_to'] ) ) {
+            return '';
+        }
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized by wp_validate_redirect() after an optional decode.
+        $redirect_to = wp_unslash( $_REQUEST['redirect_to'] );
+        if ( !is_string( $redirect_to ) || '' === $redirect_to ) {
+            return '';
+        }
+        // PHP decodes the query string once. A previously double-encoded value
+        // still looks like https%3A%2F%2F... and is not yet an absolute or root-relative URL.
+        $starts_with_http = 0 === stripos( $redirect_to, 'http://' ) || 0 === stripos( $redirect_to, 'https://' );
+        $starts_with_slash = 0 === strpos( $redirect_to, '/' );
+        if ( false !== strpos( $redirect_to, '%' ) && !$starts_with_http && !$starts_with_slash ) {
+            $decoded = rawurldecode( $redirect_to );
+            if ( is_string( $decoded ) && '' !== $decoded && $decoded !== $redirect_to ) {
+                $redirect_to = $decoded;
+            }
+        }
+        $validated = wp_validate_redirect( $redirect_to, '' );
+        return ( is_string( $validated ) ? $validated : '' );
+    }
+
+    /**
+     * Append a validated redirect_to and reauth=1 onto a login URL.
+     *
+     * The custom login slug is already on $url. This does not add it.
+     *
+     * @since 9.2.2
+     *
+     * @param string $url Login URL that already contains the custom slug.
+     * @return string
+     */
+    public function append_preserved_login_redirect_args( $url ) {
+        $redirect_to = $this->get_validated_login_redirect_to();
+        if ( '' !== $redirect_to ) {
+            $url = add_query_arg( 'redirect_to', $redirect_to, $url );
+        }
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only reauth flag copied onto the login URL.
+        $reauth = ( isset( $_REQUEST['reauth'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['reauth'] ) ) : '' );
+        if ( '1' === $reauth ) {
+            $url = add_query_arg( 'reauth', '1', $url );
+        }
+        return $url;
+    }
+
+    /**
+     * Destination for a logged-in visit to the custom login slug when no
+     * Redirect After Login role rule applies.
+     *
+     * A validated redirect_to wins over the dashboard.
+     *
+     * @since 9.2.2
+     *
+     * @return string
+     */
+    private function get_logged_in_fallback_url() {
+        $redirect_to = $this->get_validated_login_redirect_to();
+        if ( '' !== $redirect_to ) {
+            return $redirect_to;
+        }
+        return get_admin_url();
+    }
+
+    /**
      * Redirect to /not_found when login URL does not contain the custom login slug
      * This will redirect /wp-login.php and /wp-admin/ to /not_found/
      *
@@ -621,11 +709,12 @@ class Change_Login_URL {
                 }
                 if ( $is_disabled_account ) {
                     // Preserve Disable User Account message (not the generic failed_login copy).
-                    wp_safe_redirect( site_url( 'wp-login.php?' . $custom_login_slug . '&redirect=false&asenha_account_disabled=1' ) );
+                    $login_url = site_url( 'wp-login.php?' . $custom_login_slug . '&redirect=false&asenha_account_disabled=1' );
                 } else {
                     // Append 'failed_login=true' so we can output custom error message above the login form
-                    wp_safe_redirect( site_url( 'wp-login.php?' . $custom_login_slug . '&redirect=false&failed_login=true' ) );
+                    $login_url = site_url( 'wp-login.php?' . $custom_login_slug . '&redirect=false&failed_login=true' );
                 }
+                wp_safe_redirect( $this->append_preserved_login_redirect_args( $login_url ) );
                 exit;
             }
         }

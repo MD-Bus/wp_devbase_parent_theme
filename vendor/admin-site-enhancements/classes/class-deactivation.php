@@ -19,6 +19,18 @@ class Deactivation {
 	}
 
 	/**
+	 * Clear scheduled SMTP connection checks and any queued failure alerts.
+	 *
+	 * @since 9.2.3
+	 *
+	 * @return void
+	 */
+	public function clear_smtp_health_check_schedule() {
+		wp_clear_scheduled_hook( 'asenha_smtp_health_check' );
+		wp_clear_scheduled_hook( 'asenha_smtp_send_alert' );
+	}
+
+	/**
 	 * Delete failed login log table for Limit Login Attempts feature
 	 *
 	 * @since 2.5.0

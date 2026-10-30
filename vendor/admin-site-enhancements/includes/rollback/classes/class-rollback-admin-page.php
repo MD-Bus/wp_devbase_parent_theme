@@ -158,6 +158,12 @@ class ASENHA_Rollback_Admin_Page {
         $script_data = array(
             'rollbackPageUrl' => admin_url( 'tools.php?page=' . $this->page_slug ),
             'autoOpen'        => $auto_open,
+            'loadVersions'    => array(
+                'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+                'nonce'   => wp_create_nonce( 'asenha_rollback_load_versions' ),
+                'loading' => __( 'Loading versions…', 'admin-site-enhancements' ),
+                'error'   => __( 'Versions could not be loaded. Please try again.', 'admin-site-enhancements' ),
+            ),
             'strings'         => array(
                 'noVersions'     => __( 'No rollback versions are currently available for this item.', 'admin-site-enhancements' ),
                 'selectVersion'  => __( 'Select version', 'admin-site-enhancements' ),
@@ -291,15 +297,27 @@ class ASENHA_Rollback_Admin_Page {
 					<?php 
             foreach ( $rows as $row ) {
                 ?>
-						<tr class="asenha-rollback-row" data-asset-type="<?php 
+						<tr
+							class="asenha-rollback-row"
+							data-asset-type="<?php 
                 echo esc_attr( $row['asset_type'] );
-                ?>" data-asset-key="<?php 
+                ?>"
+							data-asset-key="<?php 
                 echo esc_attr( $row['asset_key'] );
-                ?>" data-asset-name="<?php 
+                ?>"
+							data-asset-name="<?php 
                 echo esc_attr( $row['name'] );
-                ?>" data-current-version="<?php 
+                ?>"
+							data-current-version="<?php 
                 echo esc_attr( $row['current_version'] );
-                ?>">
+                ?>"
+							data-latest-pending="<?php 
+                echo ( !empty( $row['latest_pending'] ) ? '1' : '0' );
+                ?>"
+							data-versions-deferred="<?php 
+                echo ( !empty( $row['versions_deferred'] ) ? '1' : '0' );
+                ?>"
+						>
 							<td><?php 
                 echo esc_html( $row['name'] );
                 ?></td>
@@ -315,7 +333,7 @@ class ASENHA_Rollback_Admin_Page {
 							<?php 
                 $latest_is_newer = '' !== $row['latest_version'] && version_compare( (string) $row['latest_version'], (string) $row['current_version'], '>' );
                 ?>
-							<td class="asenha-rollback-version<?php 
+							<td class="asenha-rollback-version asenha-rollback-latest-version<?php 
                 echo ( $latest_is_newer ? ' asenha-rollback-version-newer' : '' );
                 ?>">
 								<?php 
@@ -324,6 +342,12 @@ class ASENHA_Rollback_Admin_Page {
 									<?php 
                     echo esc_html( $row['latest_version'] );
                     ?>
+								<?php 
+                } elseif ( !empty( $row['latest_pending'] ) ) {
+                    ?>
+									<span class="asenha-rollback-latest-pending" aria-label="<?php 
+                    esc_attr_e( 'Loading latest version', 'admin-site-enhancements' );
+                    ?>">&mdash;</span>
 								<?php 
                 } else {
                     ?>
@@ -353,33 +377,42 @@ class ASENHA_Rollback_Admin_Page {
 							</td>
 							<td>
 								<div class="asenha-rollback-inline-actions">
-									<span class="asenha-rollback-versions-data" aria-hidden="true">
-										<select class="asenha-rollback-select" tabindex="-1">
-											<option value=""><?php 
-                esc_html_e( 'Select version', 'admin-site-enhancements' );
-                ?></option>
-											<?php 
-                foreach ( $row['available_versions'] as $version_option ) {
+									<?php 
+                if ( empty( $row['versions_deferred'] ) ) {
                     ?>
-												<option value="<?php 
-                    echo esc_attr( $version_option['version'] );
-                    ?>" data-source="<?php 
-                    echo esc_attr( $version_option['source'] );
-                    ?>">
-													<?php 
-                    echo esc_html( $version_option['label'] );
+										<span class="asenha-rollback-versions-data" aria-hidden="true">
+											<select class="asenha-rollback-select" tabindex="-1">
+												<option value=""><?php 
+                    esc_html_e( 'Select version', 'admin-site-enhancements' );
+                    ?></option>
+												<?php 
+                    foreach ( $row['available_versions'] as $version_option ) {
+                        ?>
+													<option value="<?php 
+                        echo esc_attr( $version_option['version'] );
+                        ?>" data-source="<?php 
+                        echo esc_attr( $version_option['source'] );
+                        ?>">
+														<?php 
+                        echo esc_html( $version_option['label'] );
+                        ?>
+													</option>
+												<?php 
+                    }
                     ?>
-												</option>
-											<?php 
+											</select>
+										</span>
+									<?php 
                 }
                 ?>
-										</select>
-									</span>
+									<?php 
+                $rollback_available = !empty( $row['available_versions'] ) || !empty( $row['versions_deferred'] );
+                ?>
 									<button
 										type="button"
 										class="button button-primary asenha-open-rollback-modal"
 										<?php 
-                if ( empty( $row['available_versions'] ) ) {
+                if ( !$rollback_available ) {
                     /* translators: Explains why the Rollback button is disabled when no rollback targets exist. */
                     $no_versions_notice = __( 'No rollback versions are currently available for this item.', 'admin-site-enhancements' );
                     ?>
@@ -391,7 +424,7 @@ class ASENHA_Rollback_Admin_Page {
                     ?>"
 											<?php 
                 }
-                disabled( empty( $row['available_versions'] ) );
+                disabled( !$rollback_available );
                 ?>
 									>
 										<?php 
@@ -576,6 +609,9 @@ class ASENHA_Rollback_Admin_Page {
         esc_html_e( 'Rollback to', 'admin-site-enhancements' );
         ?></strong></label>
 							<select id="asenha-rollback-target-version" name="target_version"></select>
+							<span class="asenha-rollback-versions-loading" hidden aria-live="polite"><?php 
+        esc_html_e( 'Loading versions…', 'admin-site-enhancements' );
+        ?></span>
 						</p>
 						<?php 
         ?>

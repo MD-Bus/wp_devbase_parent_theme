@@ -120,13 +120,13 @@ class Hide_Admin_Notices {
                 #wpbody-content > .wrap > .notice-updated,
                 #wpbody-content > .wrap > .updated:not(.inline),
                 #wpbody-content > .wrap > .update-nag,
-                #wpbody-content > .wrap > div:not(#loco-notices,#loco-content) > .notice:not(.system-notice,.hidden,#asenha-fm-warning-notice,#asenha-smtp-password-notice,#asenha-wpml-stale-job-notice,#asenha-view-admin-as-role-recovery-notice,#asenha-leftover-db-runner-notice,[data-id=clone_resolution_options_notice],[data-id=temporary_duplicate_notice]),
+                #wpbody-content > .wrap > div:not(#loco-notices,#loco-content) > .notice:not(.system-notice,.hidden,#asenha-fm-warning-notice,#asenha-smtp-password-notice,#asenha-smtp-connection-notice,#asenha-wpml-stale-job-notice,#asenha-view-admin-as-role-recovery-notice,#asenha-leftover-db-runner-notice,[data-id=clone_resolution_options_notice],[data-id=temporary_duplicate_notice]),
                 #wpbody-content > .wrap > div:not(#loco-notices,#loco-content) > .notice-error,
                 #wpbody-content > .wrap > div:not(#loco-notices,#loco-content) > .error:not(.hidden),
                 #wpbody-content > .wrap > div:not(#loco-notices,#loco-content) > .notice-info,
                 #wpbody-content > .wrap > div:not(#loco-notices,#loco-content) > .notice-information,
                 #wpbody-content > .wrap > div > #message,
-                #wpbody-content > .wrap > div:not(#loco-notices,#loco-content) > .notice-warning:not(.hidden,#asenha-fm-warning-notice,#asenha-smtp-password-notice,#asenha-wpml-stale-job-notice,#asenha-view-admin-as-role-recovery-notice,#asenha-leftover-db-runner-notice,[data-id=clone_resolution_options_notice],[data-id=temporary_duplicate_notice]),
+                #wpbody-content > .wrap > div:not(#loco-notices,#loco-content) > .notice-warning:not(.hidden,#asenha-fm-warning-notice,#asenha-smtp-password-notice,#asenha-smtp-connection-notice,#asenha-wpml-stale-job-notice,#asenha-view-admin-as-role-recovery-notice,#asenha-leftover-db-runner-notice,[data-id=clone_resolution_options_notice],[data-id=temporary_duplicate_notice]),
                 #wpbody-content > .wrap > div:not(#loco-notices,#loco-content) > .notice-success,
                 #wpbody-content > .wrap > div:not(#loco-notices,#loco-content) > .notice-updated,
                 #wpbody-content > .wrap > div:not(#loco-notices,#loco-content) > .updated,
@@ -274,7 +274,7 @@ class Hide_Admin_Notices {
                 #wpbody-content > .bwfan_header > .notice-updated,
                 #wpbody-content > .bwfan_header > .updated:not(.inline),
                 #wpbody-content > .bwfan_header > .update-nag,
-                #wpbody-content > .notice:not(.otgs-notice,.wcml-notice,#asenha-smtp-password-notice,#asenha-wpml-stale-job-notice,#asenha-view-admin-as-role-recovery-notice,#asenha-leftover-db-runner-notice,[data-id=clone_resolution_options_notice],[data-id=temporary_duplicate_notice]),
+                #wpbody-content > .notice:not(.otgs-notice,.wcml-notice,#asenha-smtp-password-notice,#asenha-smtp-connection-notice,#asenha-wpml-stale-job-notice,#asenha-view-admin-as-role-recovery-notice,#asenha-leftover-db-runner-notice,[data-id=clone_resolution_options_notice],[data-id=temporary_duplicate_notice]),
                 #wpbody-content > .error,
                 #wpbody-content > .updated:not(.inline),
                 #wpbody-content > .update-nag,
@@ -354,6 +354,13 @@ class Hide_Admin_Notices {
                 /* Keep Freemius clone/migration safe mode notices visible. */
                 #wpbody #wpbody-content .fs-notice[data-id="clone_resolution_options_notice"],
                 #wpbody #wpbody-content .fs-notice[data-id="temporary_duplicate_notice"] {
+                    display: block !important;
+                    position: static !important;
+                    visibility: visible !important;
+                }
+
+                /* Keep the UpdraftPlus pre-update backup choice visible so its checkboxes stay effective. */
+                #wpbody #wpbody-content .updraft-ad-container {
                     display: block !important;
                     position: static !important;
                     visibility: visible !important;

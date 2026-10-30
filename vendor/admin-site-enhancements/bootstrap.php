@@ -1144,6 +1144,22 @@ class Admin_Site_Enhancements {
                 );
             }
         }
+        // Clean Media Filenames
+        if ( array_key_exists( 'clean_media_filenames', $options ) && $options['clean_media_filenames'] ) {
+            $clean_media_filenames = new ASENHA\Classes\Clean_Media_Filenames();
+            add_filter(
+                'wp_handle_upload_prefilter',
+                [$clean_media_filenames, 'filter_upload_prefilter'],
+                5,
+                1
+            );
+            add_filter(
+                'wp_handle_sideload_prefilter',
+                [$clean_media_filenames, 'filter_upload_prefilter'],
+                5,
+                1
+            );
+        }
         // Revisions Control
         if ( array_key_exists( 'enable_revisions_control', $options ) && $options['enable_revisions_control'] ) {
             $revisions_control = new ASENHA\Classes\Revisions_Control();

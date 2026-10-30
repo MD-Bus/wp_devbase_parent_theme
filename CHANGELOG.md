@@ -10,6 +10,17 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.6.1] — 2026-10-29
+
+### Fixed
+
+- **1.6.0 shipped older plugins than sites already run, so installing it downgraded them.** A theme update
+  replaces the whole theme folder, `vendor/` included, and 1.6.0 carried Secure Custom Fields 6.9.5, Admin Site
+  Enhancements 9.2.1 and MCP Adapter 0.7.0, while each site's daily dependency check had already moved them to
+  6.9.7, 9.3.0 and 0.7.1. Installing 1.6.0 moved them back until the next daily check (a newer plugin's
+  database changes running under an older one). This release ships the current versions: SCF 6.9.7, ASE 9.3.0,
+  MCP Adapter 0.7.1. Full suite passing; checked on the OCWOF site.
+
 ## [1.6.0] — 2026-10-29
 
 ### Added

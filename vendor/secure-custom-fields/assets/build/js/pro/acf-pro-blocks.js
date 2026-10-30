@@ -2285,6 +2285,20 @@ const useBlockEditorInspectorSidebarOpen = () => {
 };
 
 /**
+ * Whether the editor should skip rendering the block's template as a preview.
+ *
+ * Blocks opt out with `"renderPreview": false`. Blocks that only offered edit
+ * mode (`"mode": "edit"` with `"supports": { "mode": false }`) also skip the
+ * preview unless they set `"renderPreview": true`.
+ *
+ * @param {Object} blockType The block type configuration.
+ * @return {boolean} True when the preview should be skipped.
+ */
+function shouldSkipBlockPreview(blockType) {
+  return blockType.render_preview !== true && (blockType.render_preview === false || blockType.mode === 'edit' && blockType.supports?.mode === false);
+}
+
+/**
  * Converts serialized Google Map field values from JSON strings back into
  * objects so they aren't double-encoded when the block's data is stored as
  * a JSON block attribute. Google Map fields keep their value as a JSON
@@ -2368,6 +2382,9 @@ const BlockEdit = props => {
   const [theSerializedAcfData, setTheSerializedAcfData] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)(null);
   const [blockFormHtml, setBlockFormHtml] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)(() => preloadedData?.form ?? '');
   const [blockPreviewHtml, setBlockPreviewHtml] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)(() => {
+    if (shouldSkipBlockPreview(blockType)) {
+      return 'acf-block-preview-no-html';
+    }
     if (preloadedData?.html) {
       return acf.applyFilters('blocks/preview/render', preloadedData.html, true);
     }
@@ -2393,6 +2410,7 @@ const BlockEdit = props => {
   const [acfDynamicStylesElement, setAcfDynamicStylesElement] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)(null);
   const [freezeInlineToolbarDuringReRender, setFreezeInlineToolbarDuringReRender] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)('');
   const blockEditorInspectorSidebarOpen = useBlockEditorInspectorSidebarOpen();
+  const [mountPortal, setMountPortal] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)(false);
   const acfFormRef = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useRef)(null);
   const previewRef = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useRef)(null);
   const debounceRef = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useRef)(null);
@@ -2453,6 +2471,9 @@ const BlockEdit = props => {
       form: true,
       validate: true
     };
+    if (shouldSkipBlockPreview(blockType)) {
+      delete queryOptions.preview;
+    }
     if (!blockFormHtml) {
       queryOptions.validate = false;
     }
@@ -2600,7 +2621,7 @@ const BlockEdit = props => {
     if (data.form) {
       setBlockFormHtml(data.form);
     }
-    if (data.html) {
+    if (data.html && !shouldSkipBlockPreview(blockType)) {
       setBlockPreviewHtml(acf.applyFilters('blocks/preview/render', data.html, true));
     } else {
       setBlockPreviewHtml(acf.applyFilters('blocks/preview/render', 'acf-block-preview-no-html', true));
@@ -2778,7 +2799,9 @@ const BlockEdit = props => {
     setAcfDynamicStylesElement: setAcfDynamicStylesElement,
     blockEditorInspectorSidebarOpen: blockEditorInspectorSidebarOpen,
     freezeInlineToolbarDuringReRender: freezeInlineToolbarDuringReRender,
-    isFetchingBlock: isFetchingBlock
+    isFetchingBlock: isFetchingBlock,
+    mountPortal: mountPortal,
+    setMountPortal: setMountPortal
   }));
 };
 
@@ -2823,7 +2846,9 @@ function BlockEditInner(props) {
     setAcfDynamicStylesElement,
     blockEditorInspectorSidebarOpen,
     freezeInlineToolbarDuringReRender,
-    isFetchingBlock
+    isFetchingBlock,
+    mountPortal,
+    setMountPortal
   } = props;
   const {
     clientId
@@ -2832,7 +2857,6 @@ function BlockEditInner(props) {
   const [blockFormModalOpen, setBlockFormModalOpen] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)(false);
   const modalFormContainerRef = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useRef)();
   const [currentFormContainer, setCurrentFormContainer] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)();
-  const [canRenderForm, setCanRenderForm] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)(false);
   const [shouldShowModalDoneFallback, setShouldShowModalDoneFallback] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)(false);
   const [invisibleBlockFormContainer, setInvisibleBlockFormContainer] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)();
   const closeBlockFormModal = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useCallback)(() => {
@@ -2930,10 +2954,10 @@ function BlockEditInner(props) {
   }, [blockEditorInspectorSidebarOpen, invisibleBlockFormContainer, blockFormModalOpen]);
   (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useEffect)(() => {
     if (isSelected && inspectorControlsRef?.current) {
-      setCanRenderForm(true);
+      setMountPortal(true);
     } else if (isSelected && !inspectorControlsRef?.current) {
       setTimeout(() => {
-        setCanRenderForm(true);
+        setMountPortal(true);
       }, 1);
     }
   }, [isSelected, inspectorControlsRef, inspectorControlsRef.current]);
@@ -3042,6 +3066,9 @@ function BlockEditInner(props) {
 
   // Callback when a new inline editing element is selected
   const handleNewInlineEditingElementSelected = uid => {
+    // Mount the block form now, so the first click on an inline editable
+    // element opens its fields instead of waiting for the block selection.
+    setMountPortal(true);
     setTimeout(() => {
       setCurrentInlineEditingElementUid(uid);
       const element = previewRef?.current.querySelector(`[data-acf-inline-fields-uid="${uid}"]`);
@@ -3105,7 +3132,7 @@ function BlockEditInner(props) {
   }, blockType?.expanded_editor_button_text || acf.__('Open Expanded Editor'))), /*#__PURE__*/React.createElement(InspectorBlockFormContainer, {
     inspectorBlockFormRef: inspectorControlsRef,
     setCurrentBlockFormContainer: setCurrentFormContainer
-  })), portalTarget && canRenderForm && (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.createPortal)(/*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(_block_form__WEBPACK_IMPORTED_MODULE_5__.BlockForm, {
+  })), portalTarget && mountPortal && (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.createPortal)(/*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(_block_form__WEBPACK_IMPORTED_MODULE_5__.BlockForm, {
     $: $,
     clientId: clientId,
     blockFormHtml: blockFormHtml,

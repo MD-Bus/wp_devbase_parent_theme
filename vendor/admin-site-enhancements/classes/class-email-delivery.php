@@ -100,6 +100,48 @@ class Email_Delivery {
     private $pending_smtp_password_log_error = '';
 
     /**
+     * Send mode applied to the fallback-capable mailer for the next wp_mail() call.
+     *
+     * auto sends through the primary connection and retries the fallback once.
+     * primary_only and fallback_only are used by the test-email tool.
+     *
+     * @since 9.2.3
+     *
+     * @var string
+     */
+    private $smtp_mailer_mode = 'auto';
+
+    /**
+     * Whether the current message already attempted the fallback connection.
+     *
+     * @since 9.2.3
+     *
+     * @var bool
+     */
+    private $smtp_fallback_was_attempted = false;
+
+    /**
+     * Which SMTP connection the current message is using.
+     *
+     * `primary` or `fallback`. A message that tried both is reported separately
+     * from `$smtp_fallback_was_attempted`.
+     *
+     * @since 9.2.3
+     *
+     * @var string
+     */
+    private $smtp_active_connection = 'primary';
+
+    /**
+     * Connection monitor, when the Pro feature is loaded.
+     *
+     * @since 9.2.3
+     *
+     * @var object|null
+     */
+    private $smtp_monitor = null;
+
+    /**
      * Transient lifetime for surfacing SMTP password failures to administrators.
      *
      * @since 8.8.5
@@ -507,7 +549,8 @@ class Email_Delivery {
      *
      * @since 8.8.7
      *
-     * @param array|null $options ASE options array.
+     * @param array|null $options    ASE options array.
+     * @param string     $option_key Password option key. `smtp_password` or `smtp_fallback_password`.
      * @return array {
      *     @type string $status                 Storage status constant value.
      *     @type string $label                  Human-readable status label.
@@ -517,7 +560,7 @@ class Email_Delivery {
      *     @type bool   $authentication_enabled Whether SMTP auth is enabled.
      * }
      */
-    public function get_smtp_password_ui_state( $options = null ) {
+    public function get_smtp_password_ui_state( $options = null, $option_key = 'smtp_password' ) {
         if ( null === $options ) {
             if ( function_exists( '\\asenha_get_option_array' ) ) {
                 $options = \asenha_get_option_array( ASENHA_SLUG_U, true );
@@ -528,11 +571,20 @@ class Email_Delivery {
         if ( !is_array( $options ) ) {
             $options = array();
         }
-        $authentication_enabled = !isset( $options['smtp_authentication'] ) || 'enable' === $options['smtp_authentication'];
-        $stored_password = ( isset( $options['smtp_password'] ) ? $options['smtp_password'] : '' );
+        if ( 'smtp_fallback_password' !== $option_key ) {
+            $option_key = 'smtp_password';
+        }
+        $is_fallback_password = 'smtp_fallback_password' === $option_key;
+        $authentication_key = ( $is_fallback_password ? 'smtp_fallback_authentication' : 'smtp_authentication' );
+        $authentication_enabled = !isset( $options[$authentication_key] ) || 'enable' === $options[$authentication_key];
+        $stored_password = ( isset( $options[$option_key] ) ? $options[$option_key] : '' );
         $status = $this->get_smtp_password_status( $stored_password );
         $label = ( $authentication_enabled ? $this->get_smtp_password_status_label( $stored_password ) : '' );
-        $description = __( 'Leave blank to keep the current password.', 'admin-site-enhancements' );
+        if ( $is_fallback_password ) {
+            $description = __( 'Leave blank to keep the current fallback SMTP password.', 'admin-site-enhancements' );
+        } else {
+            $description = __( 'Leave blank to keep the current password.', 'admin-site-enhancements' );
+        }
         if ( $authentication_enabled && '' !== $label ) {
             $description .= ' ' . sprintf( 
                 /* translators: %s: password storage status label */
@@ -543,7 +595,11 @@ class Email_Delivery {
         $show_warning = false;
         $warning_message = '';
         if ( $authentication_enabled && self::SMTP_PASSWORD_STATUS_ENCRYPTED_INVALID === $status ) {
-            $description = __( 'Enter and save a new password to restore SMTP authentication.', 'admin-site-enhancements' );
+            if ( $is_fallback_password ) {
+                $description = __( 'Enter and save a new fallback SMTP password to restore authentication.', 'admin-site-enhancements' );
+            } else {
+                $description = __( 'Enter and save a new password to restore SMTP authentication.', 'admin-site-enhancements' );
+            }
             if ( '' !== $label ) {
                 $description .= ' ' . sprintf( 
                     /* translators: %s: password storage status label */
@@ -552,7 +608,11 @@ class Email_Delivery {
                  );
             }
             $show_warning = true;
-            $warning_message = __( 'The stored SMTP password can no longer be decrypted. Please enter it again above and save changes.', 'admin-site-enhancements' );
+            if ( $is_fallback_password ) {
+                $warning_message = __( 'The stored fallback SMTP password can no longer be decrypted. Please enter it again above and save changes.', 'admin-site-enhancements' );
+            } else {
+                $warning_message = __( 'The stored SMTP password can no longer be decrypted. Please enter it again above and save changes.', 'admin-site-enhancements' );
+            }
         }
         return array(
             'status'                 => $status,
@@ -569,12 +629,17 @@ class Email_Delivery {
      *
      * @since 8.8.7
      *
-     * @param array|null $options ASE options array.
+     * @param array|null $options    ASE options array.
+     * @param string     $option_key Password option key. `smtp_password` or `smtp_fallback_password`.
      * @return array
      */
-    public function get_smtp_password_ajax_ui_fields( $options = null ) {
-        $ui_state = $this->get_smtp_password_ui_state( $options );
+    public function get_smtp_password_ajax_ui_fields( $options = null, $option_key = 'smtp_password' ) {
+        if ( 'smtp_fallback_password' !== $option_key ) {
+            $option_key = 'smtp_password';
+        }
+        $ui_state = $this->get_smtp_password_ui_state( $options, $option_key );
         return array(
+            'smtp_password_field'        => $option_key,
             'smtp_password_status'       => $ui_state['status'],
             'smtp_password_status_label' => $ui_state['label'],
             'smtp_password_description'  => $ui_state['description'],
@@ -817,10 +882,12 @@ class Email_Delivery {
      *
      * @since 8.4.3
      *
-     * @param string|null $stored_password Stored option value.
+     * @param string|null $stored_password   Stored option value.
+     * @param bool        $flag_unavailable Whether a decrypt failure should raise the admin notice flag.
+     *                                      Fallback credentials pass false so they do not flag the primary password.
      * @return string
      */
-    public function get_smtp_password_for_runtime( $stored_password = null ) {
+    public function get_smtp_password_for_runtime( $stored_password = null, $flag_unavailable = true ) {
         if ( null === $stored_password ) {
             $options = get_option( ASENHA_SLUG_U, array() );
             $stored_password = ( isset( $options['smtp_password'] ) ? $options['smtp_password'] : '' );
@@ -829,13 +896,17 @@ class Email_Delivery {
             case self::SMTP_PASSWORD_STATUS_ENCRYPTED_VALID:
                 $plaintext_password = $this->unwrap_smtp_password_to_plaintext( $stored_password );
                 if ( false === $plaintext_password || $this->is_probable_smtp_ciphertext( $plaintext_password ) ) {
-                    $this->set_smtp_password_unavailable_flag();
+                    if ( $flag_unavailable ) {
+                        $this->set_smtp_password_unavailable_flag();
+                    }
                     return '';
                 }
                 return $plaintext_password;
             case self::SMTP_PASSWORD_STATUS_LEGACY_PLAINTEXT:
                 if ( $this->is_probable_smtp_ciphertext( $stored_password ) ) {
-                    $this->set_smtp_password_unavailable_flag();
+                    if ( $flag_unavailable ) {
+                        $this->set_smtp_password_unavailable_flag();
+                    }
                     return '';
                 }
                 return (string) $stored_password;
@@ -856,23 +927,163 @@ class Email_Delivery {
     }
 
     /**
+     * Build the primary SMTP connection settings.
+     *
+     * @since 9.2.3
+     *
+     * @param array|null $options ASE options array.
+     * @return array<string,mixed>
+     */
+    private function get_primary_smtp_connection( $options = null ) {
+        return $this->get_smtp_connection_settings(
+            $options,
+            'smtp_',
+            'primary',
+            true,
+            false
+        );
+    }
+
+    /**
+     * Normalize one SMTP connection from stored options.
+     *
+     * @since 9.2.3
+     *
+     * @param array|null $options                   ASE options array.
+     * @param string     $prefix                    Option key prefix, including the trailing underscore.
+     * @param string     $id                        Connection id, `primary` or `fallback`.
+     * @param bool       $flag_password_unavailable Whether a decrypt failure flags the primary password notice.
+     * @param bool       $reset_transport_overrides Whether to clear SSL and auth leftovers from the other connection.
+     * @return array<string,mixed>
+     */
+    private function get_smtp_connection_settings(
+        $options,
+        $prefix,
+        $id,
+        $flag_password_unavailable,
+        $reset_transport_overrides
+    ) {
+        if ( null === $options ) {
+            $options = get_option( ASENHA_SLUG_U, array() );
+        }
+        if ( !is_array( $options ) ) {
+            $options = array();
+        }
+        $host = ( isset( $options[$prefix . 'host'] ) ? $options[$prefix . 'host'] : '' );
+        $port = ( isset( $options[$prefix . 'port'] ) ? $options[$prefix . 'port'] : '' );
+        $security = ( isset( $options[$prefix . 'security'] ) ? $options[$prefix . 'security'] : '' );
+        $authentication = ( isset( $options[$prefix . 'authentication'] ) ? $options[$prefix . 'authentication'] : 'enable' );
+        $username = ( isset( $options[$prefix . 'username'] ) ? $options[$prefix . 'username'] : '' );
+        $stored_password = ( isset( $options[$prefix . 'password'] ) ? $options[$prefix . 'password'] : '' );
+        $password = $this->get_smtp_password_for_runtime( $stored_password, $flag_password_unavailable );
+        $configured = '' !== trim( (string) $host ) && '' !== trim( (string) $port ) && '' !== trim( (string) $security );
+        return array(
+            'id'                        => $id,
+            'host'                      => $host,
+            'port'                      => $port,
+            'security'                  => $security,
+            'authentication'            => $authentication,
+            'username'                  => $username,
+            'password'                  => $password,
+            'bypass_ssl'                => !empty( $options[$prefix . 'bypass_ssl_verification'] ),
+            'debug'                     => !empty( $options['smtp_debug'] ),
+            'configured'                => $configured,
+            'password_blocked'          => 'enable' === $authentication && $configured && '' === trim( (string) $password ),
+            'reset_transport_overrides' => $reset_transport_overrides,
+        );
+    }
+
+    /**
+     * Apply host, port, security, auth, SSL bypass, and debug settings to PHPMailer.
+     *
+     * When the connection is incomplete, PHP mail() remains in place, matching the
+     * previous single-connection behavior.
+     *
+     * @since 9.2.3
+     *
+     * @param object              $phpmailer  PHPMailer instance.
+     * @param array<string,mixed> $connection Connection settings from get_smtp_connection_settings().
+     * @return void
+     */
+    private function apply_smtp_connection( $phpmailer, $connection ) {
+        if ( !empty( $connection['configured'] ) ) {
+            // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+            $phpmailer->isSMTP();
+            if ( 'enable' == $connection['authentication'] ) {
+                $phpmailer->SMTPAuth = true;
+                // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+            } else {
+                $phpmailer->SMTPAuth = false;
+                // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+            }
+            // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+            $phpmailer->XMailer = 'Admin and Site Enhancements v' . ASENHA_VERSION . ' - a WordPress plugin';
+            $phpmailer->Host = $connection['host'];
+            // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+            $phpmailer->Port = $connection['port'];
+            // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+            $phpmailer->SMTPSecure = $connection['security'];
+            // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+            if ( 'enable' == $connection['authentication'] ) {
+                $phpmailer->Username = trim( (string) $connection['username'] );
+                // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+                $phpmailer->Password = trim( (string) $connection['password'] );
+                // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+            } elseif ( !empty( $connection['reset_transport_overrides'] ) ) {
+                $phpmailer->Username = '';
+                // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+                $phpmailer->Password = '';
+                // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+            }
+        }
+        // If verification of SSL certificate is bypassed.
+        // Reference: https://www.php.net/manual/en/context.ssl.php & https://stackoverflow.com/a/30803024
+        if ( !empty( $connection['bypass_ssl'] ) ) {
+            $phpmailer->SMTPOptions = array(
+                'ssl' => array(
+                    'verify_peer'       => false,
+                    'verify_peer_name'  => false,
+                    'allow_self_signed' => true,
+                ),
+            );
+        } elseif ( !empty( $connection['reset_transport_overrides'] ) ) {
+            $phpmailer->SMTPOptions = array();
+            // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+        }
+        // If debug mode is enabled, send debug info (SMTP::DEBUG_CONNECTION) to WordPress debug.log file set in wp-config.php.
+        // Reference: https://github.com/PHPMailer/PHPMailer/wiki/SMTP-Debugging
+        if ( !empty( $connection['debug'] ) ) {
+            // Level 3 (full command/response transcript + connection status) is enough to
+            // diagnose delivery issues. Level 4 (LOWLEVEL) would also log raw AUTH data
+            // (base64 credentials as bare lines) and full email bodies.
+            // At level 3 PHPMailer's client_send() already prints "[credentials hidden]"
+            // for username/password lines (SMTP.php); the callback below is defense in depth.
+            $phpmailer->SMTPDebug = \PHPMailer\PHPMailer\SMTP::DEBUG_CONNECTION;
+            // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+            $phpmailer->Debugoutput = function ( $str, $level ) {
+                // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+                unset($level);
+                // Defense in depth: never let AUTH/PASS lines reach the log, even if
+                // the debug level is raised later.
+                $str = preg_replace( '/(AUTH|PASS)[^\\r\\n]*/i', '$1 [redacted]', $str );
+                // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+                error_log( $str );
+            };
+        }
+    }
+
+    /**
      * Send emails using external SMTP service
      *
      * @since 4.6.0
      */
     public function deliver_email_via_smtp( $phpmailer ) {
+        $this->smtp_fallback_was_attempted = false;
+        $this->smtp_active_connection = 'primary';
         $options = get_option( ASENHA_SLUG_U, array() );
-        $smtp_host = $options['smtp_host'];
-        $smtp_port = $options['smtp_port'];
-        $smtp_security = $options['smtp_security'];
-        $smtp_authentication = ( isset( $options['smtp_authentication'] ) ? $options['smtp_authentication'] : 'enable' );
-        $smtp_username = $options['smtp_username'];
-        $smtp_password = ( isset( $options['smtp_password'] ) ? $options['smtp_password'] : '' );
         $smtp_default_from_name = $options['smtp_default_from_name'];
         $smtp_default_from_email = $options['smtp_default_from_email'];
         $smtp_force_from = $options['smtp_force_from'];
-        $smtp_bypass_ssl_verification = $options['smtp_bypass_ssl_verification'];
-        $smtp_debug = $options['smtp_debug'];
         // Do nothing if host or password is empty
         // if ( empty( $smtp_host ) || empty( $smtp_password ) ) {
         //  return;
@@ -902,69 +1113,13 @@ class Email_Delivery {
                 $phpmailer->Sender = $smtp_default_from_email;
             }
         }
-        $smtp_password = $this->get_smtp_password_for_runtime( $smtp_password );
-        if ( 'enable' === $smtp_authentication && !empty( $smtp_host ) && !empty( $smtp_port ) && !empty( $smtp_security ) && '' === trim( $smtp_password ) ) {
+        $connection = $this->get_primary_smtp_connection( $options );
+        if ( 'primary' === $connection['id'] && !empty( $connection['password_blocked'] ) ) {
             $this->set_smtp_password_unavailable_flag();
             $this->pending_smtp_password_log_error = __( 'SMTP password unavailable (decryption failed or not configured).', 'admin-site-enhancements' );
         }
-        // Only attempt to send via SMTP if all the required info is present. Otherwise, use default PHP Mailer settings as set by wp_mail()
-        if ( !empty( $smtp_host ) && !empty( $smtp_port ) && !empty( $smtp_security ) ) {
-            // Send using SMTP
-            $phpmailer->isSMTP();
-            // phpcs:ignore
-            if ( 'enable' == $smtp_authentication ) {
-                $phpmailer->SMTPAuth = true;
-                // phpcs:ignore
-            } else {
-                $phpmailer->SMTPAuth = false;
-                // phpcs:ignore
-            }
-            // Set some other defaults
-            // $phpmailer->CharSet  = 'utf-8'; // phpcs:ignore
-            $phpmailer->XMailer = 'Admin and Site Enhancements v' . ASENHA_VERSION . ' - a WordPress plugin';
-            // phpcs:ignore
-            $phpmailer->Host = $smtp_host;
-            // phpcs:ignore
-            $phpmailer->Port = $smtp_port;
-            // phpcs:ignore
-            $phpmailer->SMTPSecure = $smtp_security;
-            // phpcs:ignore
-            if ( 'enable' == $smtp_authentication ) {
-                $phpmailer->Username = trim( $smtp_username );
-                // phpcs:ignore
-                $phpmailer->Password = trim( $smtp_password );
-                // phpcs:ignore
-            }
-        }
-        // If verification of SSL certificate is bypassed
-        // Reference: https://www.php.net/manual/en/context.ssl.php & https://stackoverflow.com/a/30803024
-        if ( $smtp_bypass_ssl_verification ) {
-            $phpmailer->SMTPOptions = [
-                'ssl' => [
-                    'verify_peer'       => false,
-                    'verify_peer_name'  => false,
-                    'allow_self_signed' => true,
-                ],
-            ];
-        }
-        // If debug mode is enabled, send debug info (SMTP::DEBUG_CONNECTION) to WordPress debug.log file set in wp-config.php
-        // Reference: https://github.com/PHPMailer/PHPMailer/wiki/SMTP-Debugging
-        if ( $smtp_debug ) {
-            // Level 3 (full command/response transcript + connection status) is enough to
-            // diagnose delivery issues. Level 4 (LOWLEVEL) would also log raw AUTH data
-            // (base64 credentials as bare lines) and full email bodies.
-            // At level 3 PHPMailer's client_send() already prints "[credentials hidden]"
-            // for username/password lines (SMTP.php); the callback below is defense in depth.
-            $phpmailer->SMTPDebug = \PHPMailer\PHPMailer\SMTP::DEBUG_CONNECTION;
-            //phpcs:ignore
-            $phpmailer->Debugoutput = function ( $str, $level ) {
-                //phpcs:ignore
-                // Defense in depth: never let AUTH/PASS lines reach the log, even if
-                // the debug level is raised later.
-                $str = preg_replace( '/(AUTH|PASS)[^\\r\\n]*/i', '$1 [redacted]', $str );
-                error_log( $str );
-            };
-        }
+        $this->smtp_active_connection = ( isset( $connection['id'] ) ? (string) $connection['id'] : 'primary' );
+        $this->apply_smtp_connection( $phpmailer, $connection );
     }
 
     /**
@@ -976,19 +1131,22 @@ class Email_Delivery {
         if ( isset( $_REQUEST['email_to'] ) && isset( $_REQUEST['nonce'] ) && current_user_can( 'manage_options' ) ) {
             if ( wp_verify_nonce( sanitize_text_field( $_REQUEST['nonce'] ), 'send-test-email-nonce_' . get_current_user_id() ) ) {
                 $options = get_option( ASENHA_SLUG_U, array() );
+                $test_connection = 'primary';
+                $password_option_key = 'smtp_password';
                 $smtp_host = ( isset( $options['smtp_host'] ) ? $options['smtp_host'] : '' );
                 $smtp_port = ( isset( $options['smtp_port'] ) ? $options['smtp_port'] : '' );
                 $smtp_security = ( isset( $options['smtp_security'] ) ? $options['smtp_security'] : '' );
                 $smtp_authentication = ( isset( $options['smtp_authentication'] ) ? $options['smtp_authentication'] : 'enable' );
                 $smtp_password = ( isset( $options['smtp_password'] ) ? $options['smtp_password'] : '' );
+                $password_failure_message = $this->get_smtp_password_reentry_message();
                 $smtp_password_status = $this->get_smtp_password_status( $smtp_password );
                 $smtp_is_configured = !empty( $smtp_host ) && !empty( $smtp_port ) && !empty( $smtp_security );
-                $runtime_smtp_password = $this->get_smtp_password_for_runtime( $smtp_password );
+                $runtime_smtp_password = $this->get_smtp_password_for_runtime( $smtp_password, 'smtp_password' === $password_option_key );
                 if ( $smtp_is_configured && 'enable' === $smtp_authentication && (self::SMTP_PASSWORD_STATUS_ENCRYPTED_INVALID === $smtp_password_status || '' === $runtime_smtp_password || $this->is_probable_smtp_ciphertext( $runtime_smtp_password )) ) {
                     wp_send_json( array_merge( array(
                         'status'  => 'failed',
-                        'message' => $this->get_smtp_password_reentry_message(),
-                    ), $this->get_smtp_password_ajax_ui_fields( $options ) ) );
+                        'message' => $password_failure_message,
+                    ), $this->get_smtp_password_ajax_ui_fields( $options, $password_option_key ) ) );
                 }
                 $content = array(
                     array(
@@ -1037,13 +1195,16 @@ class Email_Delivery {
                 $title = $content[$random_number]['title'];
                 $body = $content[$random_number]['body'] . '<p>This message was sent from <a href="' . get_bloginfo( 'url' ) . '">' . get_bloginfo( 'url' ) . '</a> on ' . wp_date( 'F j, Y' ) . ' at ' . wp_date( 'H:i:s' ) . ' via ASE.</p>';
                 $headers = array('Content-Type: text/html; charset=UTF-8');
-                $success = wp_mail(
-                    $to,
-                    $title,
-                    $body,
-                    $headers
-                );
-                $ui_fields = $this->get_smtp_password_ajax_ui_fields( $options );
+                try {
+                    $success = wp_mail(
+                        $to,
+                        $title,
+                        $body,
+                        $headers
+                    );
+                } finally {
+                }
+                $ui_fields = $this->get_smtp_password_ajax_ui_fields( $options, $password_option_key );
                 if ( $success ) {
                     $response = array_merge( array(
                         'status' => 'success',

@@ -92,6 +92,7 @@ class ASENHA_Rollback_Admin {
         );
         add_action( 'admin_post_asenha_run_rollback', array($this, 'handle_run_rollback') );
         add_action( 'admin_post_asenha_update_rollback_log_note', array($this, 'handle_update_rollback_log_note') );
+        add_action( 'wp_ajax_asenha_rollback_load_versions', array($this, 'ajax_load_versions') );
         add_action( 'admin_enqueue_scripts', array($this, 'enqueue_theme_browser_assets') );
     }
 
@@ -182,6 +183,48 @@ class ASENHA_Rollback_Admin {
             ),
         );
         wp_localize_script( 'asenha-rollback-admin', 'asenhaRollback', $script_data );
+    }
+
+    /**
+     * Load latest versions, or one asset's rollback options, without blocking the page render.
+     *
+     * @since 9.2.1
+     *
+     * @return void
+     */
+    public function ajax_load_versions() {
+        if ( !current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array(
+                'message' => __( 'Sorry, you are not allowed to perform this action.', 'admin-site-enhancements' ),
+            ), 403 );
+        }
+        check_ajax_referer( 'asenha_rollback_load_versions', 'nonce' );
+        $asset_type = ( isset( $_POST['asset_type'] ) ? sanitize_key( wp_unslash( $_POST['asset_type'] ) ) : '' );
+        if ( !in_array( $asset_type, array('plugin', 'theme'), true ) ) {
+            wp_send_json_error( array(
+                'message' => __( 'The selected plugin or theme could not be found.', 'admin-site-enhancements' ),
+            ), 400 );
+        }
+        $asset_keys = array();
+        if ( isset( $_POST['asset_keys'] ) && is_array( $_POST['asset_keys'] ) ) {
+            foreach ( $_POST['asset_keys'] as $asset_key ) {
+                $asset_key = sanitize_text_field( wp_unslash( $asset_key ) );
+                if ( '' !== $asset_key ) {
+                    $asset_keys[] = $asset_key;
+                }
+            }
+        }
+        $asset_keys = array_slice( $asset_keys, 0, 5 );
+        if ( empty( $asset_keys ) ) {
+            wp_send_json_error( array(
+                'message' => __( 'The selected plugin or theme could not be found.', 'admin-site-enhancements' ),
+            ), 400 );
+        }
+        $include_versions = isset( $_POST['include_versions'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['include_versions'] ) );
+        $assets = $this->versions->load_versions_batch( $asset_type, $asset_keys, $include_versions );
+        wp_send_json_success( array(
+            'assets' => $assets,
+        ) );
     }
 
     /**

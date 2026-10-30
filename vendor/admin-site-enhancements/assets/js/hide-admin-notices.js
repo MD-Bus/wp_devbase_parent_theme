@@ -209,7 +209,7 @@
 			+ '#wpbody-content > .bwfan_header > .notice-updated,'
 			+ '#wpbody-content > .bwfan_header > .updated:not(.inline),'
 			+ '#wpbody-content > .bwfan_header > .update-nag,'
-			+ '#wpbody-content > .notice:not(.otgs-notice,.wcml-notice,#asenha-smtp-password-notice,#asenha-wpml-stale-job-notice,#asenha-leftover-db-runner-notice),' // LearnDash, WPML WooCommerce Multilingual
+			+ '#wpbody-content > .notice:not(.otgs-notice,.wcml-notice,#asenha-smtp-password-notice,#asenha-smtp-connection-notice,#asenha-wpml-stale-job-notice,#asenha-leftover-db-runner-notice),' // LearnDash, WPML WooCommerce Multilingual
 			+ '#wpbody-content > .update-nag,' // LearnDash
 			+ '#wpbody-content > .jp-connection-banner,' // Jetpack
 			+ '#wpbody-content > .jitm-banner,' // Jetpack
@@ -274,6 +274,9 @@
 
 			// Keep Freemius clone/migration safe mode notices visible in place.
 			noticesToMove = noticesToMove.not('[data-id="clone_resolution_options_notice"], [data-id="temporary_duplicate_notice"]');
+
+			// Keep the UpdraftPlus pre-update backup choice on the page so its checkboxes stay effective.
+			noticesToMove = noticesToMove.not('.updraft-ad-container');
 
 			
 

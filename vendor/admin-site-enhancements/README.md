@@ -4,8 +4,8 @@ Contributors: qriouslad
 Donate link: https://bowo.io/asenha-sp-rdm  
 Tags: enhancements, tweaks, optimizations, tools  
 Requires at least: 4.6  
-Tested up to: 7.1.2  
-Stable tag: 9.2.1  
+Tested up to: 7.1.3  
+Stable tag: 9.3.0  
 Requires PHP: 5.6  
 License: GPLv2 or later  
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -42,8 +42,8 @@ _"ASE is an amazing plugin! **Time and money saver**. Thank you!"_ ~[Iulian Baci
 
 ### FEATURES & MODULES
 
-**79 modules** in total:  
-**61 free modules** (33 has Pro features) | **18 Pro modules**
+**80 modules** in total:  
+**62 free modules** (33 has Pro features) | **18 Pro modules**
 
 [**See all features >>**](https://www.wpase.com/features/)
 
@@ -134,6 +134,7 @@ _"ASE is an amazing plugin! **Time and money saver**. Thank you!"_ ~[Iulian Baci
 ### Optimizations
 
 * **Image Upload Control**. Resize newly uploaded, large images to a smaller dimension and delete originally uploaded files. BMPs and non-transparent PNGs will be converted to JPGs and resized. [ASE Pro](https://www.wpase.com/rdme-to-web) enables setting custom JPG conversion quality and adds an option for conversion to WebP with custom conversion quality. You can also disable generation of some or all intermediate sizes.
+* **Clean Media Filenames**. On upload, convert filenames to a safe, consistent form: remove accents, strip problematic characters, use lowercase, and replace spaces, dots, pluses and punctuation in the name with hyphens. Applies to all file types, including media library and sideloaded uploads.
 * **Revisions Control**. Limit the number of revisions to keep for some or all post types. [ASE Pro](https://www.wpase.com/rdme-to-web) enables revisions control "only for", "except for" or "for all" post types.
 * **Heartbeat Control**. Modify the interval of the WordPress heartbeat API or disable it on admin pages, post creation/edit screens and/or the frontend.
 
@@ -209,45 +210,36 @@ ASE does not officially support multisite. Please use at your own risk. That sai
 
 ## Changelog
 
-**Admin and Site Enhancements (ASE) v1.0.0** was released on October 17, 2022. Since then, there have been **92 _major_ releases** (e.g. 1.1.0 ) and **211 _minor_ releases** (e.g. 4.9.1), for a **total of 303 releases**.
+**Admin and Site Enhancements (ASE) v1.0.0** was released on October 17, 2022. Since then, there have been **93 _major_ releases** (e.g. 1.1.0 ) and **212 _minor_ releases** (e.g. 4.9.1), for a **total of 305 releases**.
 
 Each **_major release_** usually corresponds with the addition of one new module/feature. Each module/feature usually is the equivalent of one (or more) single-purpose plugin. Each **_minor release_** usually contain one or more bugfix or improvements to existing modules/features.
 
 [**Upgrade to ASE Pro**](https://www.wpase.com/chnlg-to-web). **Currently on YEAR END SALE, 20% discount on new license and license upgrade**. Lifetime Deal (LTD) available.
 
-### 9.2.1 (2026.10.12) - ASE Free and Pro
+### 9.3.0.1 (2026.10.26) - ASE Pro
 
-* **[IMPROVED in Free and Pro] Utilities >> View Admin as Role**: 
-  * The secret recovery URL is automatically copied to clipboard when switching to a non-administrator role, and an admin notice about it is shown. Props to Stéphane N. for prompting this improvement.
-  * The floating "Switch back to Administrator" floating button on the bottom-right corner is now visible on the frontend as well. This is useful for cases where the admin bar is hidden for the non-administrator user role.
-  * Added a mechanism to restore the administrator role when logging out or being logged out while switching to non-administrator role.
+* **[FIXED in Pro] Utilities >> Password Protection >> Translation**: Fixed Czech translation string that causes fatal error after changes made in v9.3.0. Props to Aleš S. for reporting the issue complete with the error stack trace.
 
-* **[IMPROVED in Free and Pro] Utilities >> Plugins and Themes Rollback**:
-  * ASE Free and Pro: Added "Installed Version" and "Latest Version" columns in the rollback screen.
-  * ASE Pro: added a "Skip update remoinders" option so new / newer version update count and notices do not show up in the admin bar "Updates" item, "Dashboard >> Updates" admin menu and plugin list screen.
-  * ASE Pro: for plugins and themes marked for "Skip update reminders", if a new / newer version is available, in the plugins list or theme details modal, there will be a "Rollback or update | Latest version: x.y.z" action link + info.
-  * Props to Joe S. for prompting these improvements.
+### 9.3.0 (2026.10.26) - ASE Free and Pro
 
-* **[FIXED in Free and Pro] Admin Interface >> Admin Menu Organizer**: 
-  * ASE Free and Pro: Fixed a PHP warning related to custom menu title. Props to Jens for reporting the issue.
-  * ASE Pro: Fixed Customizer submenu not being (always) hidden properly, and direct URL access not being blocked. Also fixed an issue where admin page that contains URL-encoded characters not being blocked when the menu item is marked as "always hide". Props to Denis G.F. for reporting the issue in detail.
+* **[ADDED in Free and Pro] Optimizations >> Clean Media Filenames**: new module that on media file upload / sideload, convert filenames to a safe, consistent form: remove accents, strip problematic characters, use lowercase, and replace spaces, dots, pluses and punctuation in the name with hyphens. Props to Olivier M. and Yasin for prompting this addition.
 
-* **[IMPROVED and FIXED in Pro] Admin Interface >> Show Custom Taxonomy Filters**: 
-  * Fixed an issue with custom taxonomies that doesn't have query var enabled were causing the taxonomy filter to not work as intended. Props to Stijn V. for prompting this fix.
-  * It's now possible to enable filters only for selected taxonomies, hierarchical or non-hierarchical.
+* **[IMPROVED in Pro] Utilities >> Email Delivery**: 
+  * Added the ability to set a fallback SMTP connection, for when delivery via the primary one fails. Props to Torsten W. for prompting this improvement.
+  * Added connection monitoring for both primary and fallback SMTP connections with email and webhook alerts in case of connection or delivery failure. An admin notice will also be shown when either or both connections fail. Props to Upekkha, Fahd M., Mark v.E., Alexander S. and Torsten W. for prompting this improvement.
 
-* **[IMPROVED in Pro] Content Management >> Content Duplication**:
-  * Added new options to also duplicate the post date and status.
-  * When on the list view, and post-duplication redirect is set to list view, after duplication, the filters in use before the duplication, e.g. taxonomy, search, date, status, pagination, etc., will be preserved on reload, so the page shows the same list of posts and the new duplicate post. Props to Stijn V. for prompting this improvement.
+* **[IMPROVED and FIXED in Pro] Content Management >> Custom Content Types >> Custom Field Groups**: 
+  * Added the option to show tab fields as vertical tabs in the post edit screen's custom field group meta box.
+  * Fixed repeater sub-fields not appearing for selection in atomic elements when inside a loop item. Props to Sonia M. for reporting the issue in detail and facilitating the troubleshooting process.
 
-* **[IMPROVED in Pro] Utilities >> Form Builder >> File upload**: Added an option to append random string at the end of an uploaded file. Props to Dave P. for prompting this improvement.
+* **[IMPROVED in Pro] Utilities >> Site Backup and Migration**: SFTP backup location now detects the real root folder and allows it's use, no longer forcing the use of `/home/sftp_username/` subfolder as the root folder. Props to Uli L. for prompting this improvement.
 
-* **[IMPROVED in Pro] Content Management >> Custom Content Types >> WPML Integration**: The WPML integration now translates custom post type and taxonomy labels with far fewer database queries, so pages load much faster on sites that use WPML. Props to Stijn V. for reporting the issue in great detail and facilitating the troubleshooting process.
+* **[IMPROVED in Pro] Custom Code >> Code Snippets Manager**: Fixed PHP warning and deprecation errors in PHP 8.5. Props to Joe S. for reporting the issue in detail.
 
-* **[TRANSLATION in Free and Pro]** ASE is now being translated into [38 languages](https://translate.wpase.com/):
+* **[TRANSLATION in Free and Pro]** ASE is now being translated into [41 languages](https://translate.wpase.com/):
   * **Added new/improved translation** for:
-    * ASE Free: Updated Spanish (Spain), Slovak, Serbian, Portuguese (Brazil), Polish, Norwegian, Italian, French, Dutch (Belgian), Dutch (Netherlands).
-    * ASE Pro: Updated Portuguese (Brazil), Italian, Norwegian.
+    * ASE Free: Updated Czech, Turkish, Spanish, Serbian, Portuguese (Brazil), Polish, Norwegian, Galician.
+    * ASE Pro: Completed Czech, props to Jan S.! Updated Portuguese (Brazil).
   * **More strings have been internationalized**. @Translators, please visit the respective project pages for the Free and Pro versions to translate the new strings, if you havent' done so already.
   * **Interested to help translate or improve the translation?** Please go to [https://translate.wpase.com](https://translate.wpase.com) for more info.
   * **[Chinese (China)](https://translate.wordpress.org/locale/zh-cn/default/wp-plugins/admin-site-enhancements/)**: ASE Free and Pro (completed). Props to [@bricksvip](https://profiles.wordpress.org/bricksvip/) et al. Current status: [39 strings untranslated](https://translate.wordpress.org/projects/wp-plugins/admin-site-enhancements/stable/zh-cn/default/?filters%5Bstatus%5D=untranslated).
@@ -290,5 +282,6 @@ Each **_major release_** usually corresponds with the addition of one new module
   * **[Azerbaijani](https://translate.wordpress.org/locale/az/default/wp-plugins/admin-site-enhancements/)**: ASE Free (completed). Props to [Saeid BGrn](https://profiles.wordpress.org/saeead/). Current status, [1 strings untranslated](https://translate.wordpress.org/projects/wp-plugins/admin-site-enhancements/stable/az/default/?filters%5Bstatus%5D=untranslated).
   * **[Estonian](https://translate.wordpress.org/locale/et/default/wp-plugins/admin-site-enhancements/)**: ASE Free (completed) and Pro (completed). Props to [Aleksander K.](https://profiles.wordpress.org/itagentuur/). Current status, [0 strings untranslated](https://translate.wordpress.org/projects/wp-plugins/admin-site-enhancements/stable/et/default/?filters%5Bstatus%5D=untranslated).
   * **[Hebrew](https://translate.wordpress.org/locale/he/default/wp-plugins/admin-site-enhancements/)**: ASE Free (completed). Props to [@sufti](https://profiles.wordpress.org/sufti/). Current status, [1 strings untranslated](https://translate.wordpress.org/projects/wp-plugins/admin-site-enhancements/stable/he/default/?filters%5Bstatus%5D=untranslated).
+  * **[Galician](https://translate.wordpress.org/locale/gl/default/wp-plugins/admin-site-enhancements/)**: ASE Free (completed). Props to [Jesús A.](https://profiles.wordpress.org/amieiro/). Current status: [0 strings untranslated](https://translate.wordpress.org/projects/wp-plugins/admin-site-enhancements/stable/gl/default/?filters%5Bstatus%5D=untranslated).
   
 [**See the full changelog >>**](https://www.wpase.com/documentation/changelog/)

@@ -761,6 +761,11 @@ class Settings_Sanitization {
             $options['image_max_height'] = 1920;
         }
         $options['image_max_height'] = ( !empty( $options['image_max_height'] ) ? sanitize_text_field( $options['image_max_height'] ) : 1920 );
+        // Clean Media Filenames
+        if ( !isset( $options['clean_media_filenames'] ) ) {
+            $options['clean_media_filenames'] = false;
+        }
+        $options['clean_media_filenames'] = ( 'on' == $options['clean_media_filenames'] ? true : false );
         // Enable Revisions Control
         if ( !isset( $options['enable_revisions_control'] ) ) {
             $options['enable_revisions_control'] = false;
@@ -831,24 +836,12 @@ class Settings_Sanitization {
             $options['smtp_username'] = '';
         }
         $options['smtp_username'] = ( !empty( $options['smtp_username'] ) ? sanitize_text_field( $options['smtp_username'] ) : '' );
-        $existing_smtp_password = ( isset( $existing_options['smtp_password'] ) ? $existing_options['smtp_password'] : '' );
-        $submitted_smtp_password = ( isset( $options['smtp_password'] ) ? (string) $options['smtp_password'] : '' );
-        $reject_submitted_ciphertext = !empty( $submitted_smtp_password ) && method_exists( $email_delivery, 'is_probable_smtp_ciphertext' ) && $email_delivery->is_probable_smtp_ciphertext( $submitted_smtp_password );
-        if ( !empty( $submitted_smtp_password ) && !$reject_submitted_ciphertext ) {
-            $encrypted_smtp_password = \asenha_encrypt_smtp_password_compat( $email_delivery, $submitted_smtp_password );
-            $options['smtp_password'] = ( !empty( $encrypted_smtp_password ) ? $encrypted_smtp_password : $existing_smtp_password );
-        } elseif ( $reject_submitted_ciphertext ) {
-            $options['smtp_password'] = $existing_smtp_password;
-        } else {
-            $existing_smtp_password_status = \asenha_get_smtp_password_status_compat( $existing_smtp_password );
-            $existing_is_probable_ciphertext = method_exists( $email_delivery, 'is_probable_smtp_ciphertext' ) && $email_delivery->is_probable_smtp_ciphertext( $existing_smtp_password );
-            if ( 'legacy_plaintext' === $existing_smtp_password_status && !$existing_is_probable_ciphertext ) {
-                $encrypted_smtp_password = \asenha_encrypt_smtp_password_compat( $email_delivery, $existing_smtp_password );
-                $options['smtp_password'] = ( !empty( $encrypted_smtp_password ) ? $encrypted_smtp_password : $existing_smtp_password );
-            } else {
-                $options['smtp_password'] = $existing_smtp_password;
-            }
-        }
+        $options['smtp_password'] = $this->sanitize_smtp_password_value(
+            'smtp_password',
+            $options,
+            $existing_options,
+            $email_delivery
+        );
         $saved_smtp_password_status = \asenha_get_smtp_password_status_compat( $options['smtp_password'] );
         if ( 'encrypted_valid' === $saved_smtp_password_status ) {
             $email_delivery->clear_smtp_password_unavailable_flag();
@@ -1078,6 +1071,46 @@ class Settings_Sanitization {
     function asenha_sanitize_checkbox_field( $value ) {
         // A checked checkbox field will originally be saved as an 'on' value in the option. We transform that into true (shown as 1) or false (shown as empty value)
         return ( 'on' === $value ? true : false );
+    }
+
+    /**
+     * Resolve the SMTP password value to store for one option key.
+     *
+     * A blank submission keeps the stored password. A new plaintext value is
+     * encrypted. Submitted ciphertext is rejected so a saved payload cannot be
+     * stored again as if it were a password.
+     *
+     * @since 9.2.3
+     *
+     * @param string         $option_key       Option key, such as smtp_password.
+     * @param array          $options          Submitted options.
+     * @param array          $existing_options Stored options.
+     * @param Email_Delivery $email_delivery   Email delivery instance.
+     * @return string
+     */
+    private function sanitize_smtp_password_value(
+        $option_key,
+        $options,
+        $existing_options,
+        $email_delivery
+    ) {
+        $existing_smtp_password = ( isset( $existing_options[$option_key] ) ? $existing_options[$option_key] : '' );
+        $submitted_smtp_password = ( isset( $options[$option_key] ) ? (string) $options[$option_key] : '' );
+        $reject_submitted_ciphertext = !empty( $submitted_smtp_password ) && method_exists( $email_delivery, 'is_probable_smtp_ciphertext' ) && $email_delivery->is_probable_smtp_ciphertext( $submitted_smtp_password );
+        if ( !empty( $submitted_smtp_password ) && !$reject_submitted_ciphertext ) {
+            $encrypted_smtp_password = \asenha_encrypt_smtp_password_compat( $email_delivery, $submitted_smtp_password );
+            return ( !empty( $encrypted_smtp_password ) ? $encrypted_smtp_password : $existing_smtp_password );
+        }
+        if ( $reject_submitted_ciphertext ) {
+            return $existing_smtp_password;
+        }
+        $existing_smtp_password_status = \asenha_get_smtp_password_status_compat( $existing_smtp_password );
+        $existing_is_probable_ciphertext = method_exists( $email_delivery, 'is_probable_smtp_ciphertext' ) && $email_delivery->is_probable_smtp_ciphertext( $existing_smtp_password );
+        if ( 'legacy_plaintext' === $existing_smtp_password_status && !$existing_is_probable_ciphertext ) {
+            $encrypted_smtp_password = \asenha_encrypt_smtp_password_compat( $email_delivery, $existing_smtp_password );
+            return ( !empty( $encrypted_smtp_password ) ? $encrypted_smtp_password : $existing_smtp_password );
+        }
+        return $existing_smtp_password;
     }
 
 }

@@ -25,18 +25,169 @@ jQuery( function( $ ) {
 			return;
 		}
 
+		var modalRequestId = 0;
+
+		function versionStrings() {
+			return ( window.asenhaRollback && asenhaRollback.strings ) ? asenhaRollback.strings : {};
+		}
+
+		function selectVersionLabel() {
+			return versionStrings().selectVersion || 'Select version';
+		}
+
 		function updateRollbackSubmitState() {
 			var $selectedOption = $( '#asenha-rollback-target-version option:selected' );
-			var source = $selectedOption.data( 'source' );
+			var source = $selectedOption.attr( 'data-source' );
 
 			$( '.asenha-submit-rollback' ).prop( 'disabled', ! source );
 		}
 
-		function populateRollbackModal( $row, preferredVersion ) {
-			var assetType = $row.data( 'asset-type' );
-			var assetKey = $row.data( 'asset-key' );
-			var assetName = $row.data( 'asset-name' );
-			var currentVersion = $row.data( 'current-version' );
+		function setModalLoading( isLoading, message ) {
+			var $loading = $( '.asenha-rollback-versions-loading' );
+			var $select = $( '#asenha-rollback-target-version' );
+			var settings = window.asenhaRollback && asenhaRollback.loadVersions ? asenhaRollback.loadVersions : {};
+
+			if ( isLoading ) {
+				$loading.text( message || settings.loading || 'Loading versions…' );
+				$loading.removeAttr( 'hidden' );
+				$select.prop( 'disabled', true ).attr( 'aria-busy', 'true' );
+				$( '.asenha-submit-rollback' ).prop( 'disabled', true );
+				return;
+			}
+
+			$loading.attr( 'hidden', 'hidden' );
+			$select.prop( 'disabled', false ).removeAttr( 'aria-busy' );
+		}
+
+		function showModalLoadError() {
+			var settings = window.asenhaRollback && asenhaRollback.loadVersions ? asenhaRollback.loadVersions : {};
+			var $loading = $( '.asenha-rollback-versions-loading' );
+
+			$loading.text( settings.error || 'Versions could not be loaded. Please try again.' );
+			$loading.removeAttr( 'hidden' );
+			$( '#asenha-rollback-target-version' ).prop( 'disabled', false ).removeAttr( 'aria-busy' );
+			$( '.asenha-submit-rollback' ).prop( 'disabled', true );
+		}
+
+		function applyLatestVersion( $row, latestVersion, latestIsNewer ) {
+			var $cell = $row.find( '.asenha-rollback-latest-version' );
+			var unavailableLabel = 'Not available';
+
+			$cell.removeClass( 'asenha-rollback-version-newer' );
+			$cell.empty();
+
+			if ( ! latestVersion ) {
+				$cell.append(
+					$( '<span />', {
+						'class': 'asenha-rollback-latest-unavailable',
+						'aria-label': unavailableLabel,
+						text: '—'
+					} )
+				);
+				return;
+			}
+
+			$cell.text( latestVersion );
+
+			if ( latestIsNewer ) {
+				$cell.addClass( 'asenha-rollback-version-newer' );
+			}
+		}
+
+		function ensureRowVersionSelect( $row ) {
+			var $holder = $row.find( '.asenha-rollback-versions-data' );
+
+			if ( ! $holder.length ) {
+				$holder = $( '<span />', {
+					'class': 'asenha-rollback-versions-data',
+					'aria-hidden': 'true'
+				} );
+				$row.find( '.asenha-rollback-inline-actions' ).prepend( $holder );
+			}
+
+			var $select = $holder.find( '.asenha-rollback-select' );
+
+			if ( ! $select.length ) {
+				$select = $( '<select />', {
+					'class': 'asenha-rollback-select',
+					tabindex: '-1'
+				} );
+				$holder.append( $select );
+			}
+
+			return $select;
+		}
+
+		function storeVersionsOnRow( $row, versions ) {
+			var $select = ensureRowVersionSelect( $row );
+			var notice = versionStrings().noVersions || 'No rollback versions are currently available for this item.';
+			var $button = $row.find( '.asenha-open-rollback-modal' );
+
+			$select.empty();
+			$select.append(
+				$( '<option />', {
+					value: '',
+					text: selectVersionLabel()
+				} )
+			);
+
+			$.each( versions || [], function( _, option ) {
+				if ( ! option || ! option.version ) {
+					return;
+				}
+
+				$select.append(
+					$( '<option />', {
+						value: option.version,
+						text: option.label || option.version
+					} ).attr( 'data-source', option.source || '' )
+				);
+			} );
+
+			$row.attr( 'data-versions-deferred', '0' );
+
+			if ( ! versions || ! versions.length ) {
+				$button.prop( 'disabled', true ).attr( {
+					'aria-label': notice,
+					title: notice
+				} );
+			}
+		}
+
+		function requestVersions( assetType, assetKeys, includeVersions ) {
+			var settings = window.asenhaRollback && asenhaRollback.loadVersions ? asenhaRollback.loadVersions : null;
+
+			if ( ! settings || ! settings.ajaxUrl ) {
+				return $.Deferred().reject().promise();
+			}
+
+			return $.post( settings.ajaxUrl, {
+				action: 'asenha_rollback_load_versions',
+				nonce: settings.nonce,
+				asset_type: assetType,
+				asset_keys: assetKeys,
+				include_versions: includeVersions ? '1' : '0'
+			} );
+		}
+
+		function findLoadedAsset( assets, assetKey ) {
+			var match = null;
+
+			$.each( assets || [], function( _, asset ) {
+				if ( asset && String( asset.asset_key ) === String( assetKey ) ) {
+					match = asset;
+					return false;
+				}
+			} );
+
+			return match;
+		}
+
+		function fillModalFromRow( $row, preferredVersion ) {
+			var assetType = $row.attr( 'data-asset-type' );
+			var assetKey = $row.attr( 'data-asset-key' );
+			var assetName = $row.attr( 'data-asset-name' );
+			var currentVersion = $row.attr( 'data-current-version' );
 			var $rowSelect = $row.find( '.asenha-rollback-select' );
 			var $modalSelect = $( '#asenha-rollback-target-version' );
 
@@ -44,7 +195,7 @@ jQuery( function( $ ) {
 			$modalSelect.append(
 				$( '<option />', {
 					value: '',
-					text: ( window.asenhaRollback && asenhaRollback.strings && asenhaRollback.strings.selectVersion ) ? asenhaRollback.strings.selectVersion : 'Select version'
+					text: selectVersionLabel()
 				} )
 			);
 
@@ -58,13 +209,14 @@ jQuery( function( $ ) {
 				$modalSelect.append(
 					$( '<option />', {
 						value: value,
-						text: $( this ).text(),
-						'data-source': $( this ).data( 'source' )
-					} )
+						text: $( this ).text()
+					} ).attr( 'data-source', $( this ).attr( 'data-source' ) || '' )
 				);
 			} );
 
-			if ( preferredVersion && $modalSelect.find( 'option[value="' + preferredVersion + '"]' ).length ) {
+			if ( preferredVersion && $modalSelect.find( 'option' ).filter( function() {
+				return $( this ).attr( 'value' ) === String( preferredVersion );
+			} ).length ) {
 				$modalSelect.val( preferredVersion );
 			} else if ( $rowSelect.val() ) {
 				$modalSelect.val( $rowSelect.val() );
@@ -73,15 +225,151 @@ jQuery( function( $ ) {
 			$( '#asenha-rollback-asset-type' ).val( assetType );
 			$( '#asenha-rollback-asset-key' ).val( assetKey );
 			$( '.asenha-rollback-asset-name' ).text( assetName );
-			$( '.asenha-rollback-current-version-label' ).text( ( asenhaRollback.strings && asenhaRollback.strings.currentVersion ? asenhaRollback.strings.currentVersion : 'Installed version:' ) + ' ' + currentVersion );
+			$( '.asenha-rollback-current-version-label' ).text( ( versionStrings().currentVersion || 'Installed version:' ) + ' ' + currentVersion );
+			
+			updateRollbackSubmitState();
+		}
+
+		function prepareModalIdentity( $row ) {
+			$( '#asenha-rollback-asset-type' ).val( $row.attr( 'data-asset-type' ) );
+			$( '#asenha-rollback-asset-key' ).val( $row.attr( 'data-asset-key' ) );
+			$( '.asenha-rollback-asset-name' ).text( $row.attr( 'data-asset-name' ) );
+			$( '.asenha-rollback-current-version-label' ).text( ( versionStrings().currentVersion || 'Installed version:' ) + ' ' + ( $row.attr( 'data-current-version' ) || '' ) );
 			
 			setEditorContent( 'asenha_rollback_note', '' );
-			updateRollbackSubmitState();
+		}
+
+		function rowHasVersionOptions( $row ) {
+			return $row.find( '.asenha-rollback-select option' ).filter( function() {
+				return !! $( this ).attr( 'value' );
+			} ).length > 0;
+		}
+
+		function openRollbackForRow( $row, preferredVersion ) {
+			var requestId = ++modalRequestId;
+			var assetType = $row.attr( 'data-asset-type' );
+			var assetKey = $row.attr( 'data-asset-key' );
+			var deferred = String( $row.attr( 'data-versions-deferred' ) ) === '1' && ! rowHasVersionOptions( $row );
+
+			prepareModalIdentity( $row );
 			openModal( $rollbackOverlay );
+
+			if ( ! deferred ) {
+				setModalLoading( false );
+				fillModalFromRow( $row, preferredVersion );
+				return;
+			}
+
+			$( '#asenha-rollback-target-version' ).empty().append(
+				$( '<option />', {
+					value: '',
+					text: selectVersionLabel()
+				} )
+			);
+			setModalLoading( true );
+
+			requestVersions( assetType, [ assetKey ], true ).done( function( response ) {
+				if ( requestId !== modalRequestId ) {
+					return;
+				}
+
+				var assets = response && response.success && response.data ? response.data.assets : [];
+				var asset = findLoadedAsset( assets, assetKey );
+
+				if ( ! asset ) {
+					showModalLoadError();
+					return;
+				}
+
+				storeVersionsOnRow( $row, asset.versions || [] );
+				applyLatestVersion( $row, asset.latest_version || '', !! asset.latest_is_newer );
+				$row.attr( 'data-latest-pending', '0' );
+				setModalLoading( false );
+				fillModalFromRow( $row, preferredVersion );
+			} ).fail( function() {
+				if ( requestId !== modalRequestId ) {
+					return;
+				}
+
+				showModalLoadError();
+			} );
+		}
+
+		function prefetchLatestVersions() {
+			var queue = [];
+			var attempts = {};
+
+			$( '.asenha-rollback-row[data-latest-pending="1"]' ).each( function() {
+				queue.push( $( this ) );
+			} );
+
+			function runBatch() {
+				if ( ! queue.length ) {
+					return;
+				}
+
+				var batch = queue.splice( 0, 5 );
+				var assetType = batch[ 0 ].attr( 'data-asset-type' );
+				var keys = [];
+
+				$.each( batch, function( _, $row ) {
+					keys.push( $row.attr( 'data-asset-key' ) );
+				} );
+
+				requestVersions( assetType, keys, false ).done( function( response ) {
+					var assets = response && response.success && response.data ? response.data.assets : [];
+					var returnedAny = false;
+					var pendingRows = [];
+
+					$.each( batch, function( _, $row ) {
+						var key = $row.attr( 'data-asset-key' );
+						var asset = findLoadedAsset( assets, key );
+
+						if ( asset ) {
+							returnedAny = true;
+							applyLatestVersion( $row, asset.latest_version || '', !! asset.latest_is_newer );
+							$row.attr( 'data-latest-pending', '0' );
+							return;
+						}
+
+						pendingRows.push( $row );
+					} );
+
+					$.each( pendingRows, function( _, $row ) {
+						var key = $row.attr( 'data-asset-key' );
+
+						if ( ! returnedAny ) {
+							attempts[ key ] = ( attempts[ key ] || 0 ) + 1;
+
+							if ( attempts[ key ] >= 3 ) {
+								return;
+							}
+						}
+
+						queue.push( $row );
+					} );
+
+					runBatch();
+				} ).fail( function() {
+					$.each( batch, function( _, $row ) {
+						var key = $row.attr( 'data-asset-key' );
+
+						attempts[ key ] = ( attempts[ key ] || 0 ) + 1;
+
+						if ( attempts[ key ] < 3 ) {
+							queue.push( $row );
+						}
+					} );
+
+					runBatch();
+				} );
+			}
+
+			runBatch();
 		}
 
 		$( document ).on( 'click', '.asenha-open-rollback-modal', function() {
-			populateRollbackModal( $( this ).closest( '.asenha-rollback-row' ) );
+			openRollbackForRow( $( this ).closest( '.asenha-rollback-row' ), '' );
 		} );
 
 		$( document ).on( 'change', '#asenha-rollback-target-version', updateRollbackSubmitState );
@@ -122,11 +410,13 @@ jQuery( function( $ ) {
 					$row.data( 'asset-type' ) === asenhaRollback.autoOpen.assetType &&
 					String( $row.data( 'asset-key' ) ) === String( asenhaRollback.autoOpen.assetKey )
 				) {
-					populateRollbackModal( $row, asenhaRollback.autoOpen.targetVersion || '' );
+					openRollbackForRow( $row, asenhaRollback.autoOpen.targetVersion || '' );
 					return false;
 				}
 			} );
 		}
+
+		prefetchLatestVersions();
 	}
 
 	function bindThemeBrowserButtons() {

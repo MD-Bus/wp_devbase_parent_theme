@@ -1220,6 +1220,51 @@ input[type="search"]#module-search-input.has-text-input {
     align-items: flex-start;
 }
 
+.form-table .asenha-subfields tr.smtp-fallback-replyto-email,
+.form-table .asenha-subfields tr.smtp-fallback-from-email {
+    flex-wrap: nowrap;
+    align-items: flex-start;
+}
+
+.form-table .asenha-subfields tr.smtp-fallback-replyto-email > td:not(.datatable-td),
+.form-table .asenha-subfields tr.smtp-fallback-from-email > td:not(.datatable-td) {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.form-table .asenha-subfields tr.asenha-text.with-prefix-suffix.smtp-fallback-password {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    align-items: start;
+    column-gap: 0;
+}
+
+.form-table .asenha-subfields tr.smtp-fallback-password .asenha-subfield-password-wrapper {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.form-table .asenha-subfields tr.smtp-fallback-replyto-email > td:not(.datatable-td) > .asenha-subfield-checkbox-label,
+.form-table .asenha-subfields tr.smtp-fallback-from-email > td:not(.datatable-td) > .asenha-subfield-checkbox-label {
+    max-width: 100%;
+}
+
+.form-table .asenha-subfields tr.smtp-fallback-replyto-email > td:not(.datatable-td) > .asenha-subfield-checkbox-label,
+.form-table .asenha-subfields tr.smtp-fallback-from-email > td:not(.datatable-td) > .asenha-subfield-checkbox-label,
+.form-table .asenha-subfields tr.smtp-fallback-password .asenha-smtp-password-smtp_fallback_password-description {
+    display: block;
+    white-space: normal;
+    max-width: 100%;
+}
+
+.form-table .asenha-subfields tr.smtp-send-test-email-connection {
+    justify-content: flex-start;
+}
+
+.form-table .asenha-subfields tr.smtp-send-test-email-connection .asenha-subfield-radio-button-wrapper {
+    text-align: left;
+}
+
 .form-table .asenha-toggle .margin-bottom-4 {
     margin-bottom: 4px;
 }
@@ -1308,11 +1353,13 @@ input[type="search"]#module-search-input.has-text-input {
     align-items: flex-start;
 }
 
-.asenha-subfield-password-wrapper .asenha-smtp-password-description {
+.asenha-subfield-password-wrapper .asenha-smtp-password-description,
+.asenha-subfield-password-wrapper .asenha-smtp-password-smtp_fallback_password-description {
     margin-top: 4px;
 }
 
-.asenha-subfield-password-wrapper .asenha-smtp-password-warning {
+.asenha-subfield-password-wrapper .asenha-smtp-password-warning,
+.asenha-subfield-password-wrapper .asenha-smtp-password-smtp_fallback_password-warning {
     margin-top: 4px;
     width: 100%;
 }
@@ -1797,6 +1844,8 @@ input[type="search"]#module-search-input.has-text-input {
 .button.form-builder-send-test-email {
     margin-left: 8px;
 }
+
+
 
 .ajax-result-div {
 /*    width: 100%;

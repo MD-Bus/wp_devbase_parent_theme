@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d65adf43f66c6362099169cfc40c2e2f",
+    "content-hash": "de4f135de0615710a597ca16e7e378cb",
     "packages": [
         {
             "name": "composer/installers",
@@ -590,15 +590,15 @@
         },
         {
             "name": "wpackagist-plugin/admin-site-enhancements",
-            "version": "9.2.1",
+            "version": "9.3.0",
             "source": {
                 "type": "svn",
                 "url": "https://plugins.svn.wordpress.org/admin-site-enhancements/",
-                "reference": "tags/9.2.1"
+                "reference": "tags/9.3.0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/admin-site-enhancements.9.2.1.zip"
+                "url": "https://downloads.wordpress.org/plugin/admin-site-enhancements.9.3.0.zip"
             },
             "require": {
                 "composer/installers": "^1.0 || ^2.0"
@@ -608,15 +608,15 @@
         },
         {
             "name": "wpackagist-plugin/secure-custom-fields",
-            "version": "6.9.5",
+            "version": "6.9.7",
             "source": {
                 "type": "svn",
                 "url": "https://plugins.svn.wordpress.org/secure-custom-fields/",
-                "reference": "tags/6.9.5"
+                "reference": "tags/6.9.7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/secure-custom-fields.6.9.5.zip"
+                "url": "https://downloads.wordpress.org/plugin/secure-custom-fields.6.9.7.zip"
             },
             "require": {
                 "composer/installers": "^1.0 || ^2.0"

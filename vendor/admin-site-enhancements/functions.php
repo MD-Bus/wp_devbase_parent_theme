@@ -172,6 +172,11 @@ function get_kses_with_custom_html_ruleset() {
     $kses_defaults = wp_kses_allowed_html( 'post' );
     $span_attrs = ( isset( $kses_defaults['span'] ) ? $kses_defaults['span'] : array() );
     $span_attrs['hidden'] = true;
+    $span_attrs['id'] = true;
+    $div_attrs = ( isset( $kses_defaults['div'] ) ? $kses_defaults['div'] : array() );
+    $div_attrs['id'] = true;
+    $div_attrs['aria-live'] = true;
+    $div_attrs['role'] = true;
     $custom_html_args = array(
         'input'  => array(
             'type'  => true,
@@ -183,11 +188,14 @@ function get_kses_with_custom_html_ruleset() {
         ),
         'button' => array(
             'type'                => true,
+            'id'                  => true,
             'class'               => true,
             'aria-label'          => true,
+            'aria-disabled'       => true,
             'data-clipboard-text' => true,
             'title'               => true,
         ),
+        'div'    => $div_attrs,
         'span'   => $span_attrs,
         'svg'    => array(
             'class'           => true,

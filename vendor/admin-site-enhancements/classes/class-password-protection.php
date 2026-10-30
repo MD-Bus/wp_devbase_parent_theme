@@ -325,6 +325,15 @@ class Password_Protection {
         if ( is_user_logged_in() ) {
             return $result;
         }
+        // rest_cookie_check_errors() (priority 100) sets the current user to 0
+        // when a login cookie arrives without a REST nonce, as wp-api.js does
+        // for its schema fetch. A valid logged-in cookie still means this
+        // visitor is logged in, so the site password should not block them.
+        // Do not restore the current user: WordPress leaves them at 0 so a
+        // missing nonce cannot authorize writes.
+        if ( $this->has_valid_logged_in_cookie_for_rest() ) {
+            return $result;
+        }
         $application_password_error = $common_methods->get_application_password_authentication_error();
         if ( is_wp_error( $application_password_error ) ) {
             return $application_password_error;
@@ -335,6 +344,25 @@ class Password_Protection {
         return new WP_Error('asenha_password_protection_required', __( 'This site is password protected.', 'admin-site-enhancements' ), array(
             'status' => 401,
         ));
+    }
+
+    /**
+     * Whether this REST request carries a valid WordPress logged-in cookie.
+     *
+     * Used only by the REST gate. Does not call wp_set_current_user(), so
+     * permission callbacks still see an unauthenticated user when no nonce
+     * was sent.
+     *
+     * @since 9.2.2
+     * @return bool
+     */
+    private function has_valid_logged_in_cookie_for_rest() {
+        if ( !defined( 'LOGGED_IN_COOKIE' ) || empty( $_COOKIE[LOGGED_IN_COOKIE] ) ) {
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+            return false;
+        }
+        $user_id = wp_validate_auth_cookie( '', 'logged_in' );
+        return $user_id > 0;
     }
 
     /**
