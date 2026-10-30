@@ -15,6 +15,9 @@ AGENT.md
 # dev-only packages out of that vendor/ is what makes committing it safe.
 # ---------------------------------------------------------------------------
 tests/vendor/
+# No lock either: the tools resolve for whichever PHP runs them (CI tests 8.2
+# and 8.4; a lock made on a newer PHP can't install on an older one).
+tests/composer.lock
 .phpunit.result.cache
 
 # Machine-specific: contains a local database socket path.

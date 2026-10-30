@@ -10,6 +10,14 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.8.1] — 2026-10-29
+
+### Fixed
+
+- **CI failed on PHP 8.2**: the test tooling's `tests/composer.lock` had been resolved on PHP 8.4 and pinned
+  doctrine/instantiator 2.1.0, which requires PHP 8.4. The lock is removed (and ignored), so the test tools
+  resolve for whichever PHP runs them. Tooling only; no code change on sites.
+
 ## [1.8.0] — 2026-10-29
 
 ### Added

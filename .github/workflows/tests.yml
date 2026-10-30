@@ -81,7 +81,8 @@ jobs:
         run: |
           # The theme's own vendor/ from composer.lock (so a Dependabot PR is
           # tested with the versions it proposes; mcp-adapter/ isn't Composer-
-          # managed and stays as committed), then the test tooling.
+          # managed and stays as committed), then the test tooling, which has
+          # no lock: it resolves for this job's PHP version.
           composer install --no-dev --no-interaction --no-progress
           composer install --working-dir=tests --no-interaction --no-progress
 
