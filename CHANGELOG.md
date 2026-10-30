@@ -10,6 +10,16 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.12.0] — 2026-10-30
+
+### Removed
+
+- **Sign-in for AI Apps** (OAuth on the MCP endpoint, added in 1.11.0) and everything that came with it:
+  `inc/mcp-oauth/`, the `mcp_oauth_enabled` setting, Connected AI Apps on the user profile, and the
+  OAuth note in the MCP Adapter release issue. It could clash with other plugins; the MCP Adapter is
+  expected to ship its own sign-in. Application Passwords are unchanged. Sites that ran 1.11.0 keep
+  unused `devbase_mcp_oauth_*` data, which is harmless.
+
 ## [1.11.0] — 2026-10-30
 
 ### Added

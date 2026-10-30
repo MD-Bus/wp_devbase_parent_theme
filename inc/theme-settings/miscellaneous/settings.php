@@ -145,7 +145,7 @@ add_action( 'acf/init', function () {
 				'key'     => 'field_devbase_status_smtp',
 				'label'   => __( 'SMTP', 'devbase_parent_theme' ),
 				'name'    => '',
-				'type'     => 'message',
+				'type'    => 'message',
 				'message' => esc_html( devbase_smtp_last_test_message() ),
 			),
 			array(
@@ -164,7 +164,7 @@ add_action( 'acf/init', function () {
 				'key'     => 'field_devbase_status_retention',
 				'label'   => __( 'Retention Policy', 'devbase_parent_theme' ),
 				'name'    => '',
-				'type'     => 'message',
+				'type'    => 'message',
 				'message' => esc_html( devbase_forms_retention_last_run_message() ),
 			),
 			// The bundled dependency versions. They change only with a
@@ -235,25 +235,6 @@ add_action( 'acf/init', function () {
 				'rows'         => 14,
 				'new_lines'    => '',
 				'instructions' => __( 'What an AI assistant connected through MCP should know before it writes on this site: who the site is for, the tone to write in, and how pages are put together (which block starts a page, which ends it, what each block is for, how long the text should be). It reads this first. Plain text; it cannot change it.', 'devbase_parent_theme' ),
-			),
-			// Sign-in for Claude's and ChatGPT's "add a connector" (inc/mcp-oauth/).
-			// Off by default; the status line below it is filled in by admin.php.
-			array(
-				'key'           => 'field_devbase_mcp_oauth_enabled',
-				'label'         => __( 'Sign-in for AI Apps', 'devbase_parent_theme' ),
-				'name'          => 'mcp_oauth_enabled',
-				'type'          => 'true_false',
-				'ui'            => 1,
-				'default_value' => 0,
-				'instructions'  => __( 'Lets someone connect Claude or ChatGPT by entering this site\'s MCP address, then logging in here and clicking Allow, with no password to copy. Each person connects as their own account and can disconnect from their profile. Application Passwords keep working either way.', 'devbase_parent_theme' ),
-			),
-			array(
-				'key'      => 'field_devbase_mcp_oauth_status',
-				'label'    => __( 'Sign-in Status', 'devbase_parent_theme' ),
-				'name'     => '',
-				'type'     => 'message',
-				'message'  => '',
-				'esc_html' => 0,
 			),
 
 			// Tab: Credit. One setting; everything else is downloaded. See credit.php.
