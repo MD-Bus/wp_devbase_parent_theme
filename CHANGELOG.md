@@ -10,6 +10,20 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.13.0] — 2026-10-30
+
+### Added
+
+- **Sign-in for AI Apps is back** (removed in 1.12.0, first added in 1.11.0): OAuth for the MCP endpoint
+  so Claude's "Add custom connector" and ChatGPT can connect with just the site's address. Off by default
+  (Theme Settings → Miscellaneous → MCP Access). Same code and tests as 1.11.0, plus the fix below.
+
+### Fixed
+
+- Sign-in no longer steps aside when SEOPress is active. SEOPress registers its own MCP OAuth routes
+  (`/seopress/mcp/v1/oauth-*`); the check for "another sign-in in charge" counted them. Only the MCP
+  Adapter's own `/mcp/` namespace (or `devbase/mcp_oauth/other_provider`) counts now.
+
 ## [1.12.0] — 2026-10-30
 
 ### Removed

@@ -35,7 +35,7 @@ fix reaches every client site through a single release.
 | **Tracking** | GTM/GA4 IDs plus raw header/footer script fields. |
 | **Schema** | Organization, Website and Breadcrumb JSON-LD, each independently toggleable. |
 | **Archives** | Custom fields on a CPT archive (which ACF has no location rule for), an **SEO** tab on each archive that sets its search title and description, and CPT archives in the internal link picker. |
-| **MCP** | Content abilities over the WordPress MCP Adapter — list/get/create/update posts and options values, generic across every post type, behind an opt-in allow-list. Pages can be read and built as a list of the site's own blocks, and media uploaded (opt-in). |
+| **MCP** | Content abilities over the WordPress MCP Adapter — list/get/create/update posts and options values, generic across every post type, behind an opt-in allow-list. Pages can be read and built as a list of the site's own blocks, and media uploaded (opt-in). Claude and ChatGPT can connect by signing in (opt-in), beside Application Passwords. |
 | **Updates** | Both themes update themselves from [Warden](https://github.com/momardia54/Warden), a self-hosted licensing and release service. Bundled dependencies change only in a tested theme release; Dependabot and a release workflow say when one is due. |
 
 ## Installing
@@ -214,6 +214,33 @@ active child theme registers, without the parent knowing any of them:
   in the editor renders the same after a round trip (checked on every OCWOF
   page), though SCF may store a default it filled in, or drop a reference the
   editor left without a value.
+
+**Connecting Claude or ChatGPT (Sign-in for AI Apps).** Claude's "Add custom
+connector" (web, desktop, mobile) and ChatGPT's connectors take only an address,
+then sign in with OAuth; they can't use an Application Password. Switch on
+**Sign-in for AI Apps** in this tab, then in the app enter the address shown
+under **Sign-in Status** (`https://<site>/wp-json/mcp/mcp-adapter-default-server`)
+and leave the OAuth client ID and secret empty. The app sends the person to log in
+on the site and click **Allow**.
+
+- **Same endpoint, both ways.** Application Passwords (Claude Code, scripts) keep
+  working exactly as before. A request with `Authorization: Basic` is never
+  touched; `Bearer` is read only on the MCP route.
+- **As the person who allowed it.** Only accounts that can edit content can
+  connect. The app can do what that account and this tab allow, nothing more.
+  The token works on the MCP endpoint only, not the rest of the REST API.
+- **Disconnect** from **Users > Profile > Connected AI Apps**; it stops at once.
+  Access tokens last an hour; refresh tokens rotate on every use, and a reused one
+  ends the connection.
+- **Needs** HTTPS and pretty permalinks; the status line says what's missing.
+- **Steps aside by itself** when another sign-in for the MCP endpoint exists (the
+  MCP Adapter plans its own): the status line names it and this one turns off.
+  The daily adapter release issue says when a release mentions OAuth. A plugin
+  this can't detect can be named with the `devbase/mcp_oauth/other_provider`
+  filter.
+- Follows the MCP authorization spec (2026-07-28): protected resource and
+  server metadata under `/.well-known/`, PKCE S256, Client ID Metadata Documents
+  and dynamic registration, `resource` and `iss`.
 
 ### Credit
 
@@ -522,6 +549,8 @@ You are told when an update is due:
 - **The MCP Adapter** isn't on Packagist, so Dependabot can't see it. A daily
   workflow (`.github/workflows/mcp-adapter-release.yml`) opens an issue when
   a newer release exists; replace `vendor/mcp-adapter/` with it, test, release.
+  If the release notes mention OAuth, the title says so: check that Sign-in for
+  AI Apps stepped aside (see MCP access).
 - For security fixes without waiting for the daily run, switch on
   **Dependabot security updates** in the repository's Settings > Code security.
 

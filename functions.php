@@ -39,6 +39,13 @@ require_once __DIR__ . '/inc/abilities/blocks.php';
 require_once __DIR__ . '/inc/abilities/media.php';
 require_once __DIR__ . '/inc/abilities/site-guide.php';
 
+// Sign-in (OAuth) for MCP clients that only take an address: Claude's and
+// ChatGPT's "add a connector". Off until switched on in Theme Settings, and
+// steps aside if the MCP Adapter ships its own. See inc/mcp-oauth/oauth.php.
+require_once __DIR__ . '/inc/mcp-oauth/oauth.php';
+require_once __DIR__ . '/inc/mcp-oauth/authorize.php';
+require_once __DIR__ . '/inc/mcp-oauth/admin.php';
+
 // Hides Posts and Comments from the wp-admin menu while this theme is active.
 require_once __DIR__ . '/inc/hide-admin-menu-items.php';
 
