@@ -1,0 +1,47 @@
+# Dependabot: a pull request when a Composer dependency has a new version.
+#
+# Timber, Twig and their Symfony polyfills have no auto-update path on a site:
+# they only move when someone runs `composer update` here and cuts a release.
+# This turns "nothing reports a new version" into a pull request.
+#
+# A Dependabot PR edits composer.json/composer.lock only. vendor/ is committed
+# and is what a tag ships, so merging the PR alone changes nothing on sites,
+# and bin/check-vendor-drift.sh (run by bin/release.sh) refuses to release
+# until vendor/ matches the lock again. After merging:
+#     git pull && composer install && php tests/vendor/bin/phpunit
+#     git add vendor composer.lock && git commit
+#
+# The two wpackagist plugins (SCF, ASE) are ignored on purpose: sites update
+# them daily on their own, and their pins follow what that updater installed
+# (see bin/AGENT.md, the release runbook).
+#
+# .github/ is export-ignored, so none of this reaches a site.
+version: 2
+updates:
+  - package-ecosystem: "composer"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "wpackagist-plugin/*"
+    groups:
+      timber-twig:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "Dependencies"
+
+  # Test tooling (PHPUnit, wp-phpunit, polyfills). Never shipped; monthly.
+  - package-ecosystem: "composer"
+    directory: "/tests"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 2
+    groups:
+      test-tooling:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "Test tooling"

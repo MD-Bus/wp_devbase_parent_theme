@@ -10,6 +10,25 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.5.0] — 2026-10-29
+
+### Added
+
+- **Dependabot** (`.github/dependabot.yml`): a weekly pull request when Timber, Twig or their Symfony
+  dependencies have a new version (grouped into one), and a monthly one for the test tooling in `tests/`.
+  The two wpackagist plugins are ignored, since sites update those daily on their own. `.github/` is not in
+  the package.
+- `bin/check-vendor-drift.sh` now also checks the other direction: every package in `composer.lock` must be
+  in `vendor/` at the same version (read from Composer's `vendor/composer/installed.json`), and nothing extra.
+  A Dependabot pull request changes the lock but not the committed `vendor/`, which is what a tag ships, so
+  `bin/release.sh` and `bin/build-zip.sh` now refuse until `composer install` has been run and `vendor/`
+  committed with the lock.
+
+### Changed
+
+- When the tag already exists, `bin/release.sh` now suggests `minor` for anything added and `patch` for
+  fixes only, instead of always `patch`.
+
 ## [1.4.2] — 2026-10-29
 
 ### Added

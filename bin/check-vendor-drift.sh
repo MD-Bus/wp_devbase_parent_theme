@@ -48,4 +48,45 @@ done <<-DEPS
 	admin-site-enhancements|admin-site-enhancements.php
 DEPS
 
+# The other way round: composer.lock ahead of vendor/. A Dependabot pull
+# request (.github/dependabot.yml) bumps Timber/Twig in composer.lock but
+# cannot touch the committed vendor/, which is what a tag ships. Composer's
+# own record of what it installed into vendor/ (vendor/composer/installed.json)
+# must therefore list exactly the packages and versions the lock does. The
+# plugin headers above can't catch this: SCF/ASE are the only packages with a
+# header, and Timber/Twig are the ones Dependabot moves.
+if ! php -r '
+	$lock      = json_decode( file_get_contents( $argv[1] ), true );
+	$installed = json_decode( (string) @file_get_contents( $argv[2] ), true );
+	if ( ! is_array( $installed ) ) {
+		echo "    DRIFT: vendor/composer/installed.json is missing or unreadable\n";
+		exit( 1 );
+	}
+	$on_disk = array();
+	foreach ( $installed["packages"] ?? $installed as $p ) {
+		$on_disk[ $p["name"] ] = $p["version"];
+	}
+	$bad = 0;
+	foreach ( $lock["packages"] as $p ) {
+		$have = $on_disk[ $p["name"] ] ?? "(not installed)";
+		unset( $on_disk[ $p["name"] ] );
+		if ( $have !== $p["version"] ) {
+			echo "    DRIFT: ", $p["name"], " is ", $p["version"], " in composer.lock but ", $have, " in vendor/\n";
+			$bad = 1;
+		}
+	}
+	foreach ( $on_disk as $name => $version ) {
+		echo "    DRIFT: ", $name, " ", $version, " is in vendor/ but not in composer.lock\n";
+		$bad = 1;
+	}
+	if ( $bad ) {
+		echo "           -> composer install, run the suite, then commit vendor/ with composer.lock\n";
+	} else {
+		echo "    ok: vendor/ has every package at the composer.lock version (", count( $lock["packages"] ), ")\n";
+	}
+	exit( $bad );
+' "$THEME_DIR/composer.lock" "$THEME_DIR/vendor/composer/installed.json"; then
+	DRIFT=1
+fi
+
 exit "$DRIFT"

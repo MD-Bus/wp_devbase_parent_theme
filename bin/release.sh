@@ -125,7 +125,7 @@ if ! git fetch --quiet --tags "$REMOTE" "$BRANCH"; then
 fi
 
 if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
-	fail "tag $TAG already exists. Bump the version (./bin/bump-version.sh patch)."
+	fail "tag $TAG already exists. Bump the version: ./bin/bump-version.sh minor (anything Added) or patch (fixes only)."
 fi
 if git ls-remote --exit-code --tags "$REMOTE" "refs/tags/$TAG" >/dev/null 2>&1; then
 	fail "tag $TAG already exists on $REMOTE."

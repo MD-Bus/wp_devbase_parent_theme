@@ -39,11 +39,6 @@ goes with an upload ability (or documents the media REST route). It must follow
 the editor's block allow-list and the same admin-only check as the other
 abilities. A new minor version.
 
-**Automated dependency notifications.** Timber, Twig and their
-dependencies have no auto-update path: they move only when someone runs
-`composer update` and cuts a release, and nothing reports that a new
-version exists. Dependabot would turn that into a pull request.
-
 **A full suspend-and-restore round trip.** The update client has been
 verified against a locally generated keypair (signature verification, nonce
 replay rejection, every failure mode), and releases published through Warden

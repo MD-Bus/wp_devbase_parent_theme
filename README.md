@@ -407,6 +407,18 @@ Adapter) track their own upstreams on a daily WP-Cron event. That event
 fires on any request, including front-end traffic, specifically so a site
 whose owner never opens wp-admin still receives them.
 
+**Timber and Twig** have no update path on a site. Dependabot
+(`.github/dependabot.yml`) opens a weekly pull request when they have a new
+version. It edits only `composer.json` and `composer.lock`, while a release
+ships the committed `vendor/`, so after merging one:
+
+```bash
+git pull && composer install && php tests/vendor/bin/phpunit
+git add vendor composer.lock && git commit
+```
+
+Until that is done, `bin/release.sh` refuses to release.
+
 **The themes themselves** are delivered by [Warden](https://github.com/momardia54/Warden) — a self-hosted
 licensing and release service, and a separate project. Each theme has its
 own release track and its own licence key, so the parent and a client's
@@ -463,11 +475,14 @@ it to every site on the theme's track. Cut one only with:
 ./bin/release.sh               # checks, asks, then tags and pushes
 ```
 
+Pick the bump from the changelog: `minor` when anything is Added, `patch`
+for fixes only, `major` for breaking changes.
+
 It refuses unless the tree is clean and on `main`, `style.css` carries a
 version newer than every existing tag, `CHANGELOG.md` has a dated, non-empty
 section for it directly under an empty `[Unreleased]`, the branch is not
-behind `origin`, `vendor/` matches `composer.lock`, and the test suite
-passes. The branch and the annotated tag are then pushed in one atomic
+behind `origin`, `vendor/` matches `composer.lock` in both directions, and
+the test suite passes. The branch and the annotated tag are then pushed in one atomic
 push.
 
 ## Packaging a zip
