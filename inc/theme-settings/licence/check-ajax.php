@@ -4,12 +4,12 @@
 // Licence > Status (see settings.php for the button itself, check.js for
 // the click handling).
 //
-// Nothing on a client site needs this. Every check here already runs on
-// its own daily WP-Cron schedule, firing on any front-end request — see
-// ../../dependencies/AGENT.md's "The check cadence". This button exists
-// for US: to verify a Warden licence or a freshly-published release
-// immediately, instead of waiting up to 24 hours (or 12, for the Warden
-// cache) to find out whether it worked.
+// Nothing on a client site needs this. The Warden check already runs on
+// its own schedule. This button exists for US: to verify a Warden licence
+// or a freshly-published release immediately, instead of waiting up to 12
+// hours (the Warden cache) to find out whether it worked. (Until 1.7.0 it
+// also ran the daily dependency update checks; those are gone, see
+// inc/dependencies/bundled-versions.php.)
 //
 // Same framing as SMTP Settings' "Send Test Email" and the Retention
 // Policy's "Run Purge Now": it calls exactly the same functions the cron
@@ -35,16 +35,7 @@ add_action( 'wp_ajax_devbase_check_updates', function () {
 			: sprintf( esc_html__( 'Brand Relay: sync failed (%s).', 'devbase_parent_theme' ), $sync['error'] );
 	}
 
-	// 1. The two vendored-dependency checks. Identical calls to the cron
-	//    ones; each records its own last-run option, so the System Status
-	//    tab reflects this run too.
-	devbase_run_dependency_check();
-	$lines[] = esc_html__( 'Dependencies:', 'devbase_parent_theme' ) . ' ' . devbase_dependency_last_check_message();
-
-	devbase_run_mcp_update_check();
-	$lines[] = esc_html__( 'MCP Adapter:', 'devbase_parent_theme' ) . ' ' . devbase_mcp_last_check_message();
-
-	// 2. Warden, per theme track, FORCED past the 12-hour cache. A "check
+	// 1. Warden, per theme track, FORCED past the 12-hour cache. A "check
 	//    now" that hands back a cached answer would be worse than no
 	//    button at all — it would look like confirmation while telling you
 	//    nothing about the current state.
@@ -100,7 +91,7 @@ add_action( 'wp_ajax_devbase_check_updates', function () {
 		}
 	}
 
-	// 3. Make the result visible where WordPress itself shows it. Without
+	// 2. Make the result visible where WordPress itself shows it. Without
 	//    this, a newly-found update would sit in our own state but not
 	//    appear on Appearance > Themes or Dashboard > Updates until core's
 	//    own twice-daily check happened to run — which looks exactly like

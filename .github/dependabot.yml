@@ -1,8 +1,10 @@
 # Dependabot: a pull request when a Composer dependency has a new version.
 #
-# Timber, Twig and their Symfony polyfills have no auto-update path on a site:
-# they only move when someone runs `composer update` here and cuts a release.
-# This turns "nothing reports a new version" into a pull request.
+# Since 1.7.0 this is THE way the bundled dependencies change: sites no longer
+# update anything themselves, so SCF, ASE, Timber, Twig and the Symfony
+# polyfills move only through a pull request here, tested and released by the
+# developer. (The MCP Adapter isn't on Packagist; see
+# .github/workflows/mcp-adapter-release.yml.)
 #
 # A Dependabot PR edits composer.json/composer.lock only. vendor/ is committed
 # and is what a tag ships, so merging the PR alone changes nothing on sites,
@@ -11,9 +13,8 @@
 #     git pull && composer install && php tests/vendor/bin/phpunit
 #     git add vendor composer.lock && git commit
 #
-# The two wpackagist plugins (SCF, ASE) are ignored on purpose: sites update
-# them daily on their own, and their pins follow what that updater installed
-# (see bin/AGENT.md, the release runbook).
+# SCF and ASE are exact pins ("6.9.7"); Dependabot moves the pin, which is
+# the intent: a newer version is offered, never a range that drifts.
 #
 # .github/ is export-ignored, so none of this reaches a site.
 version: 2
@@ -21,13 +22,10 @@ updates:
   - package-ecosystem: "composer"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "daily"
     open-pull-requests-limit: 5
-    ignore:
-      - dependency-name: "wpackagist-plugin/*"
     groups:
-      timber-twig:
+      dependencies:
         patterns:
           - "*"
     commit-message:

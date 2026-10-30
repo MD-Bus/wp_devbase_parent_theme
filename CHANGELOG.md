@@ -10,6 +10,33 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.7.0] — 2026-10-29
+
+### Removed
+
+- **Sites no longer update Secure Custom Fields, Admin Site Enhancements or the MCP Adapter themselves.** The
+  daily checks (`inc/dependencies/dependency-updater.php`, `inc/dependencies/mcp-adapter/mcp-adapter-updater.php`)
+  are gone. A theme update replaces the whole theme folder, `vendor/` included, so whenever a release carried an
+  older copy than a site had fetched for itself, installing it downgraded that plugin (1.6.0 did), and a site
+  could run plugin versions never tested with the theme. The bundled dependencies now change only in a theme
+  release: every site runs exactly what the release shipped and the test suite passed with.
+- Their status lines on Theme Settings > Miscellaneous > System Status, and their part in **Check for Updates
+  Now** (which now checks Warden only).
+
+### Added
+
+- **System Status > Bundled Dependencies**: the versions this release ships (SCF, ASE, MCP Adapter, Timber),
+  read from `vendor/`.
+- A one-off cleanup on `init` that removes the two retired cron events and their stored status from sites that
+  ran an earlier version.
+- **Dependabot now covers SCF and ASE too**, alongside Timber, Twig and Symfony, and checks **daily** (was
+  weekly, with the two plugins ignored).
+- `.github/workflows/mcp-adapter-release.yml`: a daily GitHub workflow that opens an issue when the MCP Adapter
+  (not on Packagist, so invisible to Dependabot) has a newer release than the committed copy. One issue per
+  version, open or closed, so closing an issue skips that version. `.github/` is not in the package.
+- 5 tests (`tests/Test_Bundled_Versions.php`); the 21 tests of the removed updaters are removed with them.
+  Checked on the OCWOF site: one request on the new code cleared both retired events and their records.
+
 ## [1.6.1] — 2026-10-29
 
 ### Fixed

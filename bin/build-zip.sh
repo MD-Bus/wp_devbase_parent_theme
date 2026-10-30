@@ -23,29 +23,23 @@
 # its own build-zip.sh and its own Warden track — this script knows nothing
 # about it.
 #
-# ⚠ BEFORE CUTTING A RELEASE: refresh the vendor/ baseline.
-# This zip carries vendor/ (SCF, ASE, MCP Adapter, Timber), and a theme
-# update overwrites the whole theme directory — so whatever versions this
-# zip carries become what every updated site runs, REVERTING any newer copy
-# their own daily dependency check had already installed. The site
-# re-updates itself within a day, but for that day it runs whatever
-# shipped, which could be an older release with a known issue.
+# The zip carries vendor/ (SCF, ASE, MCP Adapter, Timber), and since 1.7.0
+# that is the ONLY way those reach a site: sites no longer update them
+# themselves. Dependabot / the MCP Adapter release workflow say when one is
+# due (see inc/dependencies/AGENT.md).
 #
-# HOW the zip gets its vendor/ differs per dependency, and this is the part
-# that bites. rsync excludes vendor/ entirely, then:
+# HOW the zip gets its vendor/ differs per dependency:
 #
 #   SCF / ASE / Timber / Twig  — come from `composer install` below, i.e.
-#       from composer.lock. Your WORKING COPY IS IRRELEVANT. Committing a
-#       newer copy that the live auto-updater put on disk does nothing;
-#       you have to bump the pin:
-#           composer require wpackagist-plugin/admin-site-enhancements:9.2.0
-#       The version-drift check below refuses to build until you do.
+#       from composer.lock, not from the working copy. The drift check
+#       (bin/check-vendor-drift.sh) refuses to build while the two differ.
 #
 #   MCP Adapter — copied straight from the working copy (it isn't in
-#       composer.json at all), so for this one, committing what the
-#       auto-updater installed IS the correct action.
+#       composer.json at all), so committing the new release in
+#       vendor/mcp-adapter/ is the correct action.
 #
-# See inc/dependencies/AGENT.md, "committed to git".
+# (Warden publishes GitHub's archive of a tag, not this zip, so the tag
+# ships the committed vendor/ as is; see bin/release.sh.)
 
 # Repository-only files are stripped: README, CHANGELOG, ROADMAP, SECURITY
 # and docs/ (which carries screenshots — ~1.9MB that has no business on a

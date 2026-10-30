@@ -41,13 +41,10 @@ require_once __DIR__ . '/inc/abilities/media.php';
 // Hides Posts and Comments from the wp-admin menu while this theme is active.
 require_once __DIR__ . '/inc/hide-admin-menu-items.php';
 
-// Keeps SCF/ASE up to date: downloads straight from WordPress.org, but only
-// versions we've approved ourselves via devbase-dependency-worker.
-require_once __DIR__ . '/inc/dependencies/dependency-updater.php';
-
-// Keeps the MCP Adapter up to date: always the latest GitHub release, no
-// approval gate — see mcp-adapter/mcp-adapter-updater.php for why.
-require_once __DIR__ . '/inc/dependencies/mcp-adapter/mcp-adapter-updater.php';
+// The vendored dependencies only change in a theme release (Dependabot and a
+// release workflow notify, a release ships). This reports the bundled
+// versions and clears the retired daily update checks from older sites.
+require_once __DIR__ . '/inc/dependencies/bundled-versions.php';
 
 // Delivers updates for this theme AND the active child theme from Warden,
 // through WordPress's own theme-update pipeline. warden.php is the signed

@@ -167,29 +167,16 @@ add_action( 'acf/init', function () {
 				'type'    => 'message',
 				'message' => esc_html( devbase_forms_retention_last_run_message() ),
 			),
-			// The two vendored-dependency update checks. These matter
-			// more than they look: SCF/ASE/MCP Adapter keep themselves
-			// current on a daily WP-Cron event, which only fires when
-			// the site gets a request. If that stops — no traffic, or a
-			// host with WP-Cron disabled and no system cron — the site
-			// silently stops receiving dependency updates, and there is
-			// no other signal anywhere that it happened. This is the
-			// only place that's visible.
+			// The bundled dependency versions. They change only with a
+			// theme release (see inc/dependencies/bundled-versions.php),
+			// so this is what the site runs, read from vendor/.
 			array(
 				'key'          => 'field_devbase_status_dependencies',
-				'label'        => __( 'Dependency Updates', 'devbase_parent_theme' ),
+				'label'        => __( 'Bundled Dependencies', 'devbase_parent_theme' ),
 				'name'         => '',
 				'type'         => 'message',
-				'message'      => esc_html( devbase_dependency_last_check_message() ),
-				'instructions' => __( 'Secure Custom Fields and Admin Site Enhancements, tracked against WordPress.org.', 'devbase_parent_theme' ),
-			),
-			array(
-				'key'          => 'field_devbase_status_mcp',
-				'label'        => __( 'MCP Adapter Updates', 'devbase_parent_theme' ),
-				'name'         => '',
-				'type'         => 'message',
-				'message'      => esc_html( devbase_mcp_last_check_message() ),
-				'instructions' => __( 'Tracked against GitHub Releases, separately from the two above.', 'devbase_parent_theme' ),
+				'message'      => esc_html( devbase_bundled_versions_message() ),
+				'instructions' => __( 'Shipped with the theme and updated only by a theme update.', 'devbase_parent_theme' ),
 			),
 
 			// Tab: MCP Access. Opt-in allow-list controlling exactly which

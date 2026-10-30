@@ -24,8 +24,10 @@ reasonable window to update.
 ## Supported versions
 
 The latest release receives security fixes. This project is distributed to
-client sites that auto-update, so fixes are expected to reach sites rather
-than being backported to older lines.
+client sites that update themselves to the latest release, so fixes are
+expected to reach sites rather than being backported to older lines. That
+includes the bundled dependencies: they change only in a release, so a fix in
+one of them reaches sites as a theme release.
 
 ## What this theme does with trust
 

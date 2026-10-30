@@ -36,7 +36,7 @@ fix reaches every client site through a single release.
 | **Schema** | Organization, Website and Breadcrumb JSON-LD, each independently toggleable. |
 | **Archives** | Custom fields on a CPT archive (which ACF has no location rule for), an **SEO** tab on each archive that sets its search title and description, and CPT archives in the internal link picker. |
 | **MCP** | Content abilities over the WordPress MCP Adapter — list/get/create/update posts and options values, generic across every post type, behind an opt-in allow-list. Pages can be read and built as a list of the site's own blocks, and media uploaded (opt-in). |
-| **Updates** | Vendored dependencies track upstream on a daily schedule; both themes update themselves from [Warden](https://github.com/momardia54/Warden), a self-hosted licensing and release service. |
+| **Updates** | Both themes update themselves from [Warden](https://github.com/momardia54/Warden), a self-hosted licensing and release service. Bundled dependencies change only in a tested theme release; Dependabot and a release workflow say when one is due. |
 
 ## Installing
 
@@ -78,8 +78,8 @@ away; see
 
 The Status tab answers "is this site actually receiving updates" — a
 question that otherwise has half a dozen indistinguishable failure modes.
-**Check for Updates Now** forces every check immediately rather than
-waiting out the daily schedule.
+**Check for Updates Now** forces the Warden check immediately rather than
+waiting for the cached answer to expire.
 
 ### SMTP
 
@@ -436,25 +436,55 @@ curl -X POST https://client-site.org/wp-json/devbase/v1/sync \
 
 ## Updates
 
-Both themes keep themselves current, and so do the vendored dependencies —
-on a client site nobody needs to do anything.
+Both themes keep themselves current — on a client site nobody needs to do
+anything.
 
-**Dependencies** (Secure Custom Fields, Admin Site Enhancements, MCP
-Adapter) track their own upstreams on a daily WP-Cron event. That event
-fires on any request, including front-end traffic, specifically so a site
-whose owner never opens wp-admin still receives them.
+**Bundled dependencies** (Secure Custom Fields, Admin Site Enhancements, MCP
+Adapter, Timber, Twig) change **only in a theme release**. A site never
+updates them itself, so it always runs exactly the versions the release
+shipped and the test suite passed with, and a theme update can never move a
+plugin backwards. (Until 1.7.0 sites also updated SCF, ASE and the MCP
+Adapter daily on their own; a release carrying an older copy then downgraded
+them on install. That check is gone, and 1.7.0 clears it from older sites.)
 
-**Timber and Twig** have no update path on a site. Dependabot
-(`.github/dependabot.yml`) opens a weekly pull request when they have a new
-version. It edits only `composer.json` and `composer.lock`, while a release
-ships the committed `vendor/`, so after merging one:
+You are told when an update is due:
 
-```bash
-git pull && composer install && php tests/vendor/bin/phpunit
-git add vendor composer.lock && git commit
-```
+- **Dependabot** (`.github/dependabot.yml`) opens a pull request, checked
+  daily, when SCF, ASE, Timber, Twig or their Symfony dependencies have a new
+  version (grouped into one). It edits only `composer.json` and
+  `composer.lock`, while a release ships the committed `vendor/`, so after
+  merging one:
 
-Until that is done, `bin/release.sh` refuses to release.
+  ```bash
+  git pull && composer install && php tests/vendor/bin/phpunit
+  git add vendor composer.lock && git commit
+  ```
+
+  Until that is done, `bin/release.sh` refuses to release.
+- **The MCP Adapter** isn't on Packagist, so Dependabot can't see it. A daily
+  workflow (`.github/workflows/mcp-adapter-release.yml`) opens an issue when
+  a newer release exists; replace `vendor/mcp-adapter/` with it, test, release.
+- For security fixes without waiting for the daily run, switch on
+  **Dependabot security updates** in the repository's Settings > Code security.
+
+**Skipping a version** you don't want to ship, until a newer one comes out:
+
+- SCF, ASE, Timber, Twig: add it to `ignore` in `.github/dependabot.yml`
+  (only that version; the next one is proposed as usual):
+
+  ```yaml
+      ignore:
+        - dependency-name: "wpackagist-plugin/secure-custom-fields"
+          versions: ["6.9.8"]
+  ```
+
+- MCP Adapter: close its issue. No new issue opens for that version, only for
+  a newer release.
+
+Neither repeats daily: an open Dependabot pull request is updated in place,
+not sent again, and an ignored version or closed issue never comes back.
+
+Theme Settings > Miscellaneous > System Status shows the bundled versions.
 
 **The themes themselves** are delivered by [Warden](https://github.com/momardia54/Warden) — a self-hosted
 licensing and release service, and a separate project. Each theme has its

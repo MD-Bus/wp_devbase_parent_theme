@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Version-drift guard, shared by bin/build-zip.sh and bin/release.sh.
 #
-# The daily dependency updater swaps vendor/ folders at the filesystem level
-# and never touches Composer's bookkeeping, so a long-running dev site's
-# working copy routinely gets ahead of composer.lock. That drift is fine day
-# to day (see inc/dependencies/AGENT.md) but it must never reach a release:
+# vendor/ and composer.lock can disagree two ways: a plugin folder replaced
+# by hand (or, until 1.7.0, by the sites' own daily updater, which swapped
+# folders without touching Composer's bookkeeping), or a lock bumped by
+# Dependabot without `composer install`. Either must never reach a release:
 # the zip rebuilds SCF/ASE from composer.lock, and a tag ships whatever vendor/
 # is committed while the lock says something else, so the next `composer
 # install` would quietly move every site backwards. Caught for real while

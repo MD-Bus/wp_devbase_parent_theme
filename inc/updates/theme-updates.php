@@ -3,13 +3,11 @@
 // Delivers updates for this theme — and for the active child theme — from
 // Warden, through WordPress's OWN theme-update pipeline.
 //
-// Why core's pipeline rather than this theme's existing swap code:
-// inc/dependencies/dependency-updater.php has a perfectly good staged
-// rename-based swap, but it is pointed at vendor/<slug>/ subfolders. Using
-// it for a THEME would mean renaming the directory of the theme that is
-// currently executing, and reimplementing maintenance mode, filesystem
-// credentials (hosts that need FTP), and failure rollback — all of which
-// Theme_Upgrader already does, with core's own rollback since WP 6.3. So
+// Why core's pipeline rather than a swap of our own: swapping the directory
+// of the theme that is currently executing would mean reimplementing
+// maintenance mode, filesystem credentials (hosts that need FTP), and
+// failure rollback — all of which Theme_Upgrader already does, with core's
+// own rollback since WP 6.3. So
 // this file does exactly one thing: tell WordPress an update exists and
 // where to get it. Core downloads, extracts, swaps and rolls back.
 //

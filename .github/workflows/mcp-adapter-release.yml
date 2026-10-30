@@ -1,0 +1,70 @@
+# Opens an issue when the WordPress MCP Adapter has a release newer than the
+# copy committed in vendor/mcp-adapter/.
+#
+# The MCP Adapter is not on Packagist, so Dependabot can't see it, and since
+# 1.7.0 sites no longer update it themselves: it moves only when the developer
+# replaces vendor/mcp-adapter/ with the new release, runs the suite and
+# releases. This workflow is the notification for that, the same way a
+# Dependabot pull request is for SCF, ASE, Timber and Twig. It never changes
+# code. One issue per version, ever: it looks at open AND closed issues, so
+# closing the issue skips that version (no new issue for it the next day), and
+# only a newer release opens another.
+#
+# .github/ is export-ignored, so none of this reaches a site.
+name: MCP Adapter release check
+
+on:
+  schedule:
+    - cron: "17 7 * * *"   # daily, 07:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compare the vendored version with the latest release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          bundled="$(grep -m1 -iE '^[[:space:]*]*Version:' vendor/mcp-adapter/mcp-adapter.php | sed -E 's/.*[Vv]ersion:[[:space:]]*//' | tr -d '\r')"
+          latest="$(gh api repos/WordPress/mcp-adapter/releases/latest --jq .tag_name | sed 's/^v//')"
+          echo "bundled: $bundled, latest: $latest"
+
+          if [ -z "$bundled" ] || [ -z "$latest" ]; then
+            echo "::error::could not read a version (bundled '$bundled', latest '$latest')"
+            exit 1
+          fi
+
+          newest="$(printf '%s\n%s\n' "$bundled" "$latest" | sort -V | tail -1)"
+          if [ "$newest" = "$bundled" ]; then
+            echo "Up to date."
+            exit 0
+          fi
+
+          title="MCP Adapter $latest is available (bundled: $bundled)"
+          # Open or closed: a closed issue means this version was skipped on purpose.
+          if gh issue list --state all --search "in:title \"MCP Adapter $latest is available\"" --json number --jq 'length' | grep -qv '^0$'; then
+            echo "An issue for $latest already exists (open, or closed to skip it)."
+            exit 0
+          fi
+
+          gh issue create --title "$title" --body "$(cat <<BODY
+          WordPress/mcp-adapter **$latest** is out: https://github.com/WordPress/mcp-adapter/releases/tag/v$latest
+
+          This theme ships **$bundled** in \`vendor/mcp-adapter/\`. Sites only get a new version through a theme release.
+
+          To update:
+          1. Download \`mcp-adapter.zip\` from the release and replace \`vendor/mcp-adapter/\` with its contents.
+          2. Run the suite: \`php tests/vendor/bin/phpunit\`.
+          3. Commit, add a CHANGELOG entry, bump the version, and \`./bin/release.sh\`.
+
+          To skip this version, close this issue: no new issue opens for $latest, only for a newer release.
+          BODY
+          )"
