@@ -14,14 +14,6 @@ pushed rather than at release time. A workflow cannot stop Warden
 publishing, since Warden acts on the push itself, so it warns and a release
 is withdrawn in Warden; the script stays the real gate.
 
-**A full suspend-and-restore round trip.** The update client has been
-verified against a locally generated keypair (signature verification, nonce
-replay rejection, every failure mode), and releases published through Warden
-tags have since been installed on a live site. What has not run end to end on
-a live site is a child theme's payment kill switch: setting a licence to
-Suspended in Warden, watching the site lock at its next check, and restoring it
-by setting it back to Active.
-
 ## Considered
 
 **A header and footer template pair.** The theme ships one placeholder
