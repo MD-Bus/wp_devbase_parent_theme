@@ -452,7 +452,25 @@ A release built without bumping it reaches nobody — every site reports the
 version being offered and correctly concludes there is nothing to do. The
 script refuses to move the version backwards for the same reason.
 
-## Packaging a release
+## Releasing
+
+A release is a pushed `vX.Y.Z` tag: Warden publishes GitHub's archive of
+it to every site on the theme's track. Cut one only with:
+
+```bash
+./bin/bump-version.sh patch    # then add the CHANGELOG section, commit
+./bin/release.sh --dry-run     # every check, nothing tagged
+./bin/release.sh               # checks, asks, then tags and pushes
+```
+
+It refuses unless the tree is clean and on `main`, `style.css` carries a
+version newer than every existing tag, `CHANGELOG.md` has a dated, non-empty
+section for it directly under an empty `[Unreleased]`, the branch is not
+behind `origin`, `vendor/` matches `composer.lock`, and the test suite
+passes. The branch and the annotated tag are then pushed in one atomic
+push.
+
+## Packaging a zip
 
 ```bash
 ./bin/build-zip.sh

@@ -10,6 +10,23 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.4.2] — 2026-10-29
+
+### Added
+
+- `bin/release.sh`, the gate before a release tag. It refuses unless the tree is clean and on `main`,
+  `style.css` has an X.Y.Z version newer than every existing tag (and not already tagged locally or on
+  `origin`), `CHANGELOG.md` has a dated, non-empty section for it directly under an empty `[Unreleased]`,
+  the branch is not behind `origin`, `vendor/` matches `composer.lock`, and the test suite passes. Then,
+  after a confirmation (`--yes` to skip, `--dry-run` to tag nothing), it creates the annotated tag and
+  pushes the branch and the tag in one atomic push; a failed push removes the local tag. Tooling only:
+  `bin/` is not in the package, so this release changes no code on a site.
+
+### Changed
+
+- The vendor drift check moved from `bin/build-zip.sh` into `bin/check-vendor-drift.sh`, shared by
+  both scripts. Same check, same output.
+
 ## [1.4.1] — 2026-10-29
 
 ### Changed

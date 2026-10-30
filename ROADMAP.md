@@ -6,19 +6,13 @@ items land when a project needs them.
 
 ## Next
 
-**Release checks before a tag.** A release is now just a pushed tag:
-Warden publishes GitHub's archive of it, so nothing runs `bin/build-zip.sh`
-and its gates (the test suite, the vendored-version drift check) before a
-site receives it. Nothing checks either that `style.css` and `CHANGELOG.md`
-carry the version being tagged, and a tag that is wrong cannot be fully
-recalled once sites have installed it. First a `bin/release.sh` that refuses
-unless the tree is clean, the suite passes, the version in `style.css` and
-the changelog matches the tag, and then creates the annotated tag and pushes
-it. After that, continuous integration: a workflow running the suite on every
-push and tag (it needs a MySQL service and a generated `wp-tests-config.php`).
-A workflow cannot stop Warden publishing, since Warden acts on the push
-itself, so it warns and a release is withdrawn in Warden; the script is the
-real gate.
+**Continuous integration.** `bin/release.sh` is now the gate before a tag
+(clean tree, version, changelog, drift, test suite). What remains is a
+workflow running the suite on every push and tag (it needs a MySQL service
+and a generated `wp-tests-config.php`), so a regression is seen when it is
+pushed rather than at release time. A workflow cannot stop Warden
+publishing, since Warden acts on the push itself, so it warns and a release
+is withdrawn in Warden; the script stays the real gate.
 
 **MCP: blocks.** MCP can write a page's content but cannot see the blocks
 that content is made of: no ability lists the registered blocks or describes

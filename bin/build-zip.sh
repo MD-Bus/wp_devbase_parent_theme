@@ -72,43 +72,11 @@ if [ ! -x "tests/vendor/bin/phpunit" ]; then
 	exit 1
 fi
 
-# Version-drift guard. The daily dependency updater swaps vendor/ folders at
-# the filesystem level and never touches Composer's bookkeeping, so a
-# long-running dev site's working copy routinely gets ahead of composer.lock.
-# That drift is fine day to day (see inc/dependencies/AGENT.md) but it must
-# never reach a release: `composer install` below would quietly rebuild the
-# OLDER locked version into the zip, and every site that updated would be
-# pushed backwards. Caught for real while documenting this: ASE had
-# auto-updated to 9.2.0 on disk while composer.lock still pinned 9.0.0.
-echo "==> Checking vendor/ versions against composer.lock"
+# Version-drift guard: vendor/ on disk must match composer.lock, or the zip
+# would rebuild the OLDER locked version. The check itself lives in
+# bin/check-vendor-drift.sh, shared with bin/release.sh.
 DRIFT=0
-while IFS='|' read -r SLUG MAIN_FILE; do
-	[ -z "$SLUG" ] && continue
-
-	PLUGIN_FILE="$THEME_DIR/vendor/$SLUG/$MAIN_FILE"
-	DISK_VERSION=""
-	if [ -f "$PLUGIN_FILE" ]; then
-		DISK_VERSION="$(grep -m1 -i '^[[:space:]*]*Version:' "$PLUGIN_FILE" | sed 's/.*[Vv]ersion:[[:space:]]*//' | tr -d '\r')"
-	fi
-
-	LOCK_VERSION="$(php -r '
-		$lock = json_decode( file_get_contents( $argv[1] ), true );
-		foreach ( $lock["packages"] as $p ) {
-			if ( "wpackagist-plugin/" . $argv[2] === $p["name"] ) { echo $p["version"]; return; }
-		}
-	' "$THEME_DIR/composer.lock" "$SLUG")"
-
-	if [ -n "$DISK_VERSION" ] && [ -n "$LOCK_VERSION" ] && [ "$DISK_VERSION" != "$LOCK_VERSION" ]; then
-		echo "    DRIFT: $SLUG is $DISK_VERSION on disk but $LOCK_VERSION in composer.lock"
-		echo "           -> composer require wpackagist-plugin/$SLUG:$DISK_VERSION"
-		DRIFT=1
-	else
-		echo "    ok: $SLUG $LOCK_VERSION"
-	fi
-done <<-DEPS
-	secure-custom-fields|secure-custom-fields.php
-	admin-site-enhancements|admin-site-enhancements.php
-DEPS
+"$THEME_DIR/bin/check-vendor-drift.sh" || DRIFT=1
 
 if [ "$DRIFT" -ne 0 ]; then
 	echo ""
