@@ -10,6 +10,16 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.14.0] — 2026-10-30
+
+### Removed
+
+- **Sign-in for AI Apps** (OAuth on the MCP endpoint) is removed again: `inc/mcp-oauth/`, the
+  `mcp_oauth_enabled` setting, Connected AI Apps on the user profile, and the OAuth note in the MCP Adapter
+  release issue. Restored in 1.13.0 but ChatGPT could not discover it on the live site. Application
+  Passwords are unchanged. Sites that ran 1.11.0 or 1.13.0 keep unused `devbase_mcp_oauth_*` data, which is
+  harmless.
+
 ## [1.13.0] — 2026-10-30
 
 ### Added

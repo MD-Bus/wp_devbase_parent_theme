@@ -10,10 +10,6 @@
 # closing the issue skips that version (no new issue for it the next day), and
 # only a newer release opens another.
 #
-# It also reads the release notes for OAuth. The adapter plans its own sign-in
-# (WordPress/mcp-adapter#394); when a release mentions it, the issue title says
-# so, because the theme's own sign-in (inc/mcp-oauth/) must then step aside.
-#
 # .github/ is export-ignored, so none of this reaches a site.
 name: MCP Adapter release check
 
@@ -53,11 +49,6 @@ jobs:
           fi
 
           title="MCP Adapter $latest is available (bundled: $bundled)"
-          oauth_note=""
-          if gh api repos/WordPress/mcp-adapter/releases/latest --jq .body | grep -qiE 'oauth|authori[sz]ation server|well-known|protected resource'; then
-            title="$title: mentions OAuth, check sign-in"
-            oauth_note="**The release notes mention OAuth.** The adapter may now have its own sign-in for Claude and ChatGPT. The theme's (\`inc/mcp-oauth/\`) should step aside by itself: after updating, on a test site with Sign-in for AI Apps on, Theme Settings > Miscellaneous > MCP Access > Sign-in Status must say it is handled by the MCP Adapter. If it doesn't, add the adapter's route to \`devbase_mcp_oauth_route_provider()\` before releasing. Then plan removing \`inc/mcp-oauth/\` (see its AGENT.md)."
-          fi
           # Open or closed: a closed issue means this version was skipped on purpose.
           if gh issue list --state all --search "in:title \"MCP Adapter $latest is available\"" --json number --jq 'length' | grep -qv '^0$'; then
             echo "An issue for $latest already exists (open, or closed to skip it)."
@@ -72,10 +63,7 @@ jobs:
           To update:
           1. Download \`mcp-adapter.zip\` from the release and replace \`vendor/mcp-adapter/\` with its contents.
           2. Run the suite: \`php tests/vendor/bin/phpunit\`.
-          3. If Sign-in for AI Apps is on anywhere, check Theme Settings > Miscellaneous > MCP Access > Sign-in Status still says On (or names the adapter, if it now signs in itself).
-          4. Commit, add a CHANGELOG entry, bump the version, and \`./bin/release.sh\`.
-
-          $oauth_note
+          3. Commit, add a CHANGELOG entry, bump the version, and \`./bin/release.sh\`.
 
           To skip this version, close this issue: no new issue opens for $latest, only for a newer release.
           BODY

@@ -243,7 +243,7 @@ function devbase_abilities_field_details( array $field ) {
  * @return string[]
  */
 function devbase_abilities_protected_option_fields() {
-	return array( 'mcp_allowed_post_types', 'mcp_allowed_options_pages', 'mcp_allow_media_upload', 'mcp_site_guide', 'mcp_oauth_enabled' );
+	return array( 'mcp_allowed_post_types', 'mcp_allowed_options_pages', 'mcp_allow_media_upload', 'mcp_site_guide' );
 }
 
 /**
