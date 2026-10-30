@@ -10,6 +10,27 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.11.0] — 2026-10-30
+
+### Added
+
+- **Sign-in for AI Apps** (Theme Settings → Miscellaneous → MCP Access, `mcp_oauth_enabled`, off by
+  default): OAuth for the MCP endpoint, so Claude's "Add custom connector" and ChatGPT can connect with
+  just the site's address. The person logs in on the site and clicks Allow. It follows the MCP authorization spec
+  (2026-07-28): `/.well-known/` metadata, a `WWW-Authenticate` 401, PKCE S256, Client ID Metadata Documents
+  and dynamic registration, `resource`-bound tokens, `iss`, refresh rotation with reuse detection.
+  `inc/mcp-oauth/`.
+  - Application Passwords keep working on the same endpoint. Bearer tokens are accepted on the MCP route
+    only.
+  - **Connected AI Apps** on the user profile lists connections, with Disconnect.
+  - A status line says whether it is on and, if not, why (HTTPS, permalinks, or another sign-in in
+    charge).
+  - **Steps aside** when another sign-in for the endpoint exists, such as the MCP Adapter's planned one,
+    or anything named through `devbase/mcp_oauth/other_provider`.
+  - Protected from MCP writes.
+  - Tests: `tests/Test_MCP_OAuth.php` (28).
+- The MCP Adapter release issue now flags releases whose notes mention OAuth.
+
 ## [1.10.0] — 2026-10-30
 
 ### Added
