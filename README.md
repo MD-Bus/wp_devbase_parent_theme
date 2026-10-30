@@ -576,6 +576,21 @@ cd tests && composer install && cd ..   # once
 php tests/vendor/bin/phpunit
 ```
 
+**On GitHub** (`.github/workflows/tests.yml`), on every push to `main`, every
+pull request and every release tag:
+
+- **Tests** installs what `composer.lock` says into a fresh, latest WordPress
+  with a MySQL service and runs the suite on PHP 8.2 (the minimum) and 8.4.
+  On a Dependabot pull request that means the *proposed* versions are tested:
+  green means the update works.
+- **Release-ready** runs the vendor drift check. It is red on a Dependabot pull
+  request until `composer install` has been run and `vendor/` committed, the
+  same thing `bin/release.sh` refuses without.
+
+CI only reports. Warden publishes a tag the moment it is pushed, so a red tag
+means withdrawing that release in Warden; `bin/release.sh` is the gate that
+blocks before the push.
+
 Runs against a real WordPress install and a **separate** database — the
 core test suite drops and recreates tables, so it must never point at a
 site's real database.

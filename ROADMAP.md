@@ -6,13 +6,9 @@ items land when a project needs them.
 
 ## Next
 
-**Continuous integration.** `bin/release.sh` is now the gate before a tag
-(clean tree, version, changelog, drift, test suite). What remains is a
-workflow running the suite on every push and tag (it needs a MySQL service
-and a generated `wp-tests-config.php`), so a regression is seen when it is
-pushed rather than at release time. A workflow cannot stop Warden
-publishing, since Warden acts on the push itself, so it warns and a release
-is withdrawn in Warden; the script stays the real gate.
+Nothing is planned right now: the release gate, CI, Dependabot, MCP blocks
+and the live suspend test are done. The next items come from "Considered"
+below when a project needs them.
 
 ## Considered
 

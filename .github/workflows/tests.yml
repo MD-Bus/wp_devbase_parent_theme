@@ -1,0 +1,127 @@
+# Runs the test suite on every push, pull request and release tag, so a
+# regression shows up when it is pushed rather than at release time.
+#
+# bin/release.sh stays the real gate: Warden publishes a tag the moment it is
+# pushed, so this workflow can only report (a red tag means withdraw the
+# release in Warden). What it adds is the signal everywhere else, above all on
+# Dependabot pull requests:
+#
+#   tests          installs exactly what composer.lock says (for a Dependabot
+#                  PR, the NEW versions) and runs the suite: does the update work?
+#   release-ready  bin/check-vendor-drift.sh: is the committed vendor/ what the
+#                  lock says? Red on a Dependabot PR until `composer install`
+#                  has been run and vendor/ committed, which is the step
+#                  release.sh would refuse without.
+#
+# The suite needs a real WordPress (ABSPATH is four levels above tests/, see
+# tests/wp-tests-config.php), so the theme is checked out inside a fresh
+# WordPress at wp-content/themes/wp_devbase_parent_theme, and a MySQL service
+# provides the separate test database.
+#
+# .github/ is export-ignored, so none of this reaches a site.
+name: Tests
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  THEME_DIR: wp/wp-content/themes/wp_devbase_parent_theme
+
+jobs:
+  tests:
+    name: Tests (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ["8.2", "8.4"]   # 8.2 is the theme's minimum (Timber 2.x)
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: devbase_parent_theme_tests
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping -proot"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+
+    steps:
+      - name: WordPress (latest)
+        run: |
+          mkdir -p wp
+          curl -sSL https://wordpress.org/latest.tar.gz | tar -xz --strip-components=1 -C wp
+          grep "wp_version =" wp/wp-includes/version.php
+
+      - uses: actions/checkout@v4
+        with:
+          path: ${{ env.THEME_DIR }}
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mysqli
+          tools: composer
+          coverage: none
+
+      - name: Install the locked dependencies
+        working-directory: ${{ env.THEME_DIR }}
+        run: |
+          # The theme's own vendor/ from composer.lock (so a Dependabot PR is
+          # tested with the versions it proposes; mcp-adapter/ isn't Composer-
+          # managed and stays as committed), then the test tooling.
+          composer install --no-dev --no-interaction --no-progress
+          composer install --working-dir=tests --no-interaction --no-progress
+
+      - name: Test configuration
+        working-directory: ${{ env.THEME_DIR }}
+        run: |
+          cat > tests/wp-tests-config.php <<'PHP'
+          <?php
+          define( 'DB_NAME', 'devbase_parent_theme_tests' );
+          define( 'DB_USER', 'root' );
+          define( 'DB_PASSWORD', 'root' );
+          define( 'DB_HOST', '127.0.0.1:3306' );
+          define( 'DB_CHARSET', 'utf8' );
+          define( 'DB_COLLATE', '' );
+          define( 'WP_TESTS_DOMAIN', 'devbase-parent-theme.test' );
+          define( 'WP_TESTS_EMAIL', 'admin@devbase-parent-theme.test' );
+          define( 'WP_TESTS_TITLE', 'Dev Base Parent Theme Tests' );
+          define( 'WP_PHP_BINARY', 'php' );
+          define( 'ABSPATH', dirname( __DIR__, 4 ) . '/' );
+          $table_prefix = 'wptests_';
+          PHP
+
+      - name: Test suite
+        working-directory: ${{ env.THEME_DIR }}
+        run: php tests/vendor/bin/phpunit --configuration phpunit.xml.dist
+
+  release-ready:
+    name: Release-ready (vendor/ matches composer.lock)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          coverage: none
+
+      - name: Vendor drift check
+        run: |
+          if ! ./bin/check-vendor-drift.sh; then
+            echo "::error::vendor/ does not match composer.lock. After merging a Dependabot PR: composer install, run the suite, commit vendor/ with composer.lock. bin/release.sh refuses until then."
+            exit 1
+          fi

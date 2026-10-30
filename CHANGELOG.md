@@ -10,6 +10,18 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.8.0] — 2026-10-29
+
+### Added
+
+- **Continuous integration** (`.github/workflows/tests.yml`), on every push to `main`, pull request and
+  release tag. **Tests**: a fresh, latest WordPress, a MySQL service, `composer install` from `composer.lock`
+  (so a Dependabot pull request is tested with the versions it proposes) and the suite on PHP 8.2 and 8.4.
+  **Release-ready**: `bin/check-vendor-drift.sh`, red on a Dependabot pull request until `vendor/` is
+  committed. CI only reports; `bin/release.sh` stays the gate, since Warden publishes a tag on the push.
+  Rehearsed locally in a fresh WordPress 7.1.4, including a real pending update (symfony/polyfill-mbstring
+  1.43.0 -> 1.43.3): drift reported, suite passing with the new version. Tooling only; no code change on sites.
+
 ## [1.7.0] — 2026-10-29
 
 ### Removed

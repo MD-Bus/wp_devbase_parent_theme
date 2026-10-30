@@ -10,8 +10,8 @@
 # installed it. This script is the gate: it refuses unless every check below
 # passes, and only then creates the annotated tag and pushes it.
 #
-# CI, when it exists, runs after the push and can only warn; Warden acts on
-# the push itself. This script is the gate that actually blocks.
+# CI (.github/workflows/tests.yml) runs after the push and can only warn;
+# Warden acts on the push itself. This script is the gate that actually blocks.
 #
 # Checks, in order (all run before anything is written):
 #   1. on the release branch (main), with a clean tree — untracked files
