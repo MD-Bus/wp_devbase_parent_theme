@@ -47,6 +47,9 @@ require_once __DIR__ . '/inc/hide-admin-menu-items.php';
 // versions and clears the retired daily update checks from older sites.
 require_once __DIR__ . '/inc/dependencies/bundled-versions.php';
 
+// Clears the data the removed MCP sign-in left on sites that ran 1.11.0 or 1.13.0.
+require_once __DIR__ . '/inc/legacy-mcp-oauth-cleanup.php';
+
 // Delivers updates for this theme AND the active child theme from Warden,
 // through WordPress's own theme-update pipeline. warden.php is the signed
 // API client; theme-updates.php is the wiring into core. Both depend on the

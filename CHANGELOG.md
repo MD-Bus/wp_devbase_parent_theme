@@ -10,6 +10,14 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.14.1] — 2026-10-30
+
+### Fixed
+
+- Sites that ran the removed sign-in (1.11.0 or 1.13.0) no longer keep its leftover data: registered clients,
+  connected-app grants and the on/off setting are deleted once (`inc/legacy-mcp-oauth-cleanup.php`). It does
+  nothing while sign-in code is loaded and never runs again, so it cannot affect a sign-in that returns.
+
 ## [1.14.0] — 2026-10-30
 
 ### Removed
