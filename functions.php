@@ -35,6 +35,8 @@ require_once __DIR__ . '/inc/abilities/helpers.php';
 require_once __DIR__ . '/inc/abilities/post-types.php';
 require_once __DIR__ . '/inc/abilities/posts.php';
 require_once __DIR__ . '/inc/abilities/options-pages.php';
+require_once __DIR__ . '/inc/abilities/blocks.php';
+require_once __DIR__ . '/inc/abilities/media.php';
 
 // Hides Posts and Comments from the wp-admin menu while this theme is active.
 require_once __DIR__ . '/inc/hide-admin-menu-items.php';

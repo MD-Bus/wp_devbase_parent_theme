@@ -48,7 +48,7 @@ function devbase_abilities_options_page_fields( $menu_slug ) {
 			// policy management lives) would let an MCP client rewrite its
 			// own allow-list via devbase/update-options and grant itself
 			// access to anything. Confirmed exploitable during testing.
-			if ( in_array( $field['name'], array( 'mcp_allowed_post_types', 'mcp_allowed_options_pages' ), true ) ) {
+			if ( in_array( $field['name'], devbase_abilities_protected_option_fields(), true ) ) {
 				continue;
 			}
 
@@ -113,7 +113,7 @@ function devbase_abilities_options_page_schema( $menu_slug ) {
 			// Same self-referential-control exclusion as
 			// devbase_abilities_options_page_fields() — never even show
 			// these as available fields, since writing them is blocked too.
-			if ( in_array( $field['name'], array( 'mcp_allowed_post_types', 'mcp_allowed_options_pages' ), true ) ) {
+			if ( in_array( $field['name'], devbase_abilities_protected_option_fields(), true ) ) {
 				continue;
 			}
 

@@ -21,7 +21,19 @@ function devbase_abilities_post_write_properties() {
 		),
 		'content' => array(
 			'type'        => 'string',
-			'description' => __( 'The post content (HTML).', 'devbase_parent_theme' ),
+			'description' => __( 'The post content (HTML). For a page built from blocks, send blocks instead.', 'devbase_parent_theme' ),
+		),
+		'blocks'  => array(
+			'type'        => 'array',
+			'description' => __( 'The whole content as a list of blocks, in order: [{ "block": "acf/<name>", "fields": { ... } }]. Replaces all existing content. See devbase/list-blocks and devbase/get-block-schema. Cannot be combined with content.', 'devbase_parent_theme' ),
+			'items'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'block'  => array( 'type' => 'string' ),
+					'fields' => array( 'type' => 'object' ),
+				),
+				'required'   => array( 'block' ),
+			),
 		),
 		'status'  => array(
 			'type'        => 'string',
@@ -33,6 +45,48 @@ function devbase_abilities_post_write_properties() {
 			'description' => __( 'Custom field values, keyed by field name — see devbase/get-post-type-schema for the available fields.', 'devbase_parent_theme' ),
 		),
 	);
+}
+
+/**
+ * The content to write for a create/update call that sent blocks: the
+ * serialized blocks, or a WP_Error. Null when the call sent no blocks.
+ *
+ * @param array        $input     The ability input.
+ * @param WP_Post|null $post      The post being updated, or null for a new one.
+ * @return string|WP_Error|null
+ */
+function devbase_abilities_content_from_blocks( array $input, $post = null ) {
+	if ( ! array_key_exists( 'blocks', $input ) ) {
+		return null;
+	}
+
+	if ( isset( $input['content'] ) ) {
+		return new WP_Error( 'devbase_blocks_and_content', __( 'Send either content or blocks, not both.', 'devbase_parent_theme' ) );
+	}
+
+	if ( ! post_type_supports( $input['post_type'], 'editor' ) ) {
+		return new WP_Error( 'devbase_no_editor', __( 'This post type has no content editor, so it cannot be built from blocks.', 'devbase_parent_theme' ) );
+	}
+
+	return devbase_abilities_serialize_blocks( $input['blocks'], $post, $input['post_type'] );
+}
+
+/**
+ * Adds built_from_blocks and blocks (see devbase_abilities_describe_blocks())
+ * to a post response, read from the stored content: the REST response only
+ * carries rendered HTML, which hides the blocks a page is made of.
+ *
+ * @param array $data A REST post response.
+ * @return array
+ */
+function devbase_abilities_with_blocks( $data ) {
+	$post = is_array( $data ) && ! empty( $data['id'] ) ? get_post( $data['id'] ) : null;
+
+	if ( $post ) {
+		$data = array_merge( $data, devbase_abilities_describe_blocks( $post->post_content ) );
+	}
+
+	return $data;
 }
 
 add_action( 'wp_abilities_api_init', function () {
@@ -117,7 +171,7 @@ add_action( 'wp_abilities_api_init', function () {
 
 	wp_register_ability( 'devbase/get-post', array(
 		'label'               => __( 'Get Post', 'devbase_parent_theme' ),
-		'description'         => __( 'Gets a single post by ID: core fields (title, content, status) plus its real custom field values.', 'devbase_parent_theme' ),
+		'description'         => __( 'Gets a single post by ID: core fields (title, content, status) plus its real custom field values. built_from_blocks says whether its content is made of blocks, and blocks lists them in order, ACF blocks as { block, fields } (the shape devbase/update-post takes back).', 'devbase_parent_theme' ),
 		'category'            => 'devbase',
 		'input_schema'        => array(
 			'type'       => 'object',
@@ -143,7 +197,7 @@ add_action( 'wp_abilities_api_init', function () {
 				return $error;
 			}
 
-			return $data;
+			return devbase_abilities_with_blocks( $data );
 		},
 		'permission_callback' => function ( $input ) {
 			if ( empty( $input['id'] ) ) {
@@ -194,6 +248,12 @@ add_action( 'wp_abilities_api_init', function () {
 				}
 			}
 
+			$block_content = devbase_abilities_content_from_blocks( $input );
+
+			if ( is_wp_error( $block_content ) ) {
+				return $block_content;
+			}
+
 			$params = array( 'status' => $input['status'] ?? 'draft' );
 
 			if ( isset( $input['title'] ) ) {
@@ -202,6 +262,10 @@ add_action( 'wp_abilities_api_init', function () {
 
 			if ( isset( $input['content'] ) ) {
 				$params['content'] = $input['content'];
+			}
+
+			if ( null !== $block_content ) {
+				$params['content'] = $block_content;
 			}
 
 			if ( ! empty( $input['fields'] ) ) {
@@ -216,7 +280,7 @@ add_action( 'wp_abilities_api_init', function () {
 				return $error;
 			}
 
-			return $data;
+			return devbase_abilities_with_blocks( $data );
 		},
 		'permission_callback' => function ( $input ) {
 			$post_types = devbase_abilities_content_post_types();
@@ -279,12 +343,22 @@ add_action( 'wp_abilities_api_init', function () {
 				}
 			}
 
+			$block_content = devbase_abilities_content_from_blocks( $input, get_post( $input['id'] ) );
+
+			if ( is_wp_error( $block_content ) ) {
+				return $block_content;
+			}
+
 			$params = array();
 
 			foreach ( array( 'title', 'content', 'status' ) as $key ) {
 				if ( isset( $input[ $key ] ) ) {
 					$params[ $key ] = $input[ $key ];
 				}
+			}
+
+			if ( null !== $block_content ) {
+				$params['content'] = $block_content;
 			}
 
 			if ( ! empty( $input['fields'] ) ) {
@@ -299,7 +373,7 @@ add_action( 'wp_abilities_api_init', function () {
 				return $error;
 			}
 
-			return $data;
+			return devbase_abilities_with_blocks( $data );
 		},
 		'permission_callback' => function ( $input ) {
 			if ( empty( $input['id'] ) ) {

@@ -110,10 +110,17 @@ function devbase_abilities_shape_conditional_logic( $conditional_logic, array $k
  * field types (tab, message) are dropped — they have no value of their
  * own to read or write.
  *
- * @param array $fields Field configs at this level (siblings of each other).
+ * With $detailed (devbase/get-block-schema), each field also says what a
+ * writer needs to send: required, default, choices, and the shape of its
+ * value (an attachment ID for image/file, a list of them for gallery, a
+ * {title, url, target} object for link, ...). Off by default so the
+ * existing schema abilities' output is unchanged.
+ *
+ * @param array $fields   Field configs at this level (siblings of each other).
+ * @param bool  $detailed Add required/default/choices/value to each field.
  * @return array[] Shaped fields.
  */
-function devbase_abilities_shape_fields( array $fields ) {
+function devbase_abilities_shape_fields( array $fields, $detailed = false ) {
 	$key_to_name = array();
 
 	foreach ( $fields as $field ) {
@@ -139,9 +146,13 @@ function devbase_abilities_shape_fields( array $fields ) {
 			$entry['conditional_on'] = $conditional;
 		}
 
+		if ( $detailed ) {
+			$entry = array_merge( $entry, devbase_abilities_field_details( $field ) );
+		}
+
 		// Repeater/group: a flat list of sub_fields, same shape as this level.
 		if ( ! empty( $field['sub_fields'] ) && is_array( $field['sub_fields'] ) ) {
-			$entry['sub_fields'] = devbase_abilities_shape_fields( $field['sub_fields'] );
+			$entry['sub_fields'] = devbase_abilities_shape_fields( $field['sub_fields'], $detailed );
 		}
 
 		// Flexible content: named layouts, each with their own sub_fields.
@@ -153,7 +164,7 @@ function devbase_abilities_shape_fields( array $fields ) {
 					'name'       => $layout['name'],
 					'label'      => $layout['label'],
 					'sub_fields' => ! empty( $layout['sub_fields'] )
-						? devbase_abilities_shape_fields( $layout['sub_fields'] )
+						? devbase_abilities_shape_fields( $layout['sub_fields'], $detailed )
 						: array(),
 				);
 			}
@@ -163,6 +174,76 @@ function devbase_abilities_shape_fields( array $fields ) {
 	}
 
 	return $shaped;
+}
+
+/**
+ * The extra schema keys devbase_abilities_shape_fields() adds in detailed
+ * mode: what a writer has to send for this one field.
+ *
+ * @param array $field A raw ACF/SCF field config.
+ * @return array
+ */
+function devbase_abilities_field_details( array $field ) {
+	$details = array( 'required' => ! empty( $field['required'] ) );
+
+	if ( ! empty( $field['instructions'] ) ) {
+		$details['instructions'] = wp_strip_all_tags( $field['instructions'] );
+	}
+
+	if ( isset( $field['default_value'] ) && '' !== $field['default_value'] && array() !== $field['default_value'] ) {
+		$details['default'] = $field['default_value'];
+	}
+
+	if ( ! empty( $field['choices'] ) && is_array( $field['choices'] ) ) {
+		$details['choices'] = $field['choices'];
+	}
+
+	if ( ! empty( $field['multiple'] ) || 'checkbox' === $field['type'] ) {
+		$details['multiple'] = true;
+	}
+
+	// The shape of the value itself, where it isn't a plain string/number.
+	$value_shapes = array(
+		'image'            => 'attachment ID (integer), see devbase/upload-media',
+		'file'             => 'attachment ID (integer), see devbase/upload-media',
+		'gallery'          => 'list of attachment IDs',
+		'link'             => 'object {title, url, target}',
+		'true_false'       => 'boolean',
+		'repeater'         => 'list of rows, each an object of sub_fields',
+		'group'            => 'object of sub_fields',
+		'flexible_content' => 'list of rows, each {acf_fc_layout: <layout name>, ...its sub_fields}',
+		'post_object'      => 'post ID (integer)',
+		'relationship'     => 'list of post IDs',
+		'page_link'        => 'post ID or URL',
+		'taxonomy'         => 'term ID or list of term IDs',
+		'user'             => 'user ID',
+	);
+
+	if ( isset( $value_shapes[ $field['type'] ] ) ) {
+		$details['value'] = $value_shapes[ $field['type'] ];
+	}
+
+	if ( 'repeater' === $field['type'] || 'flexible_content' === $field['type'] ) {
+		foreach ( array( 'min', 'max' ) as $limit ) {
+			if ( ! empty( $field[ $limit ] ) ) {
+				$details[ $limit ] = (int) $field[ $limit ];
+			}
+		}
+	}
+
+	return $details;
+}
+
+/**
+ * Option field names never readable or writable through MCP, on any page:
+ * the MCP Access controls themselves. Without this, an MCP client allowed
+ * onto the Miscellaneous page could rewrite its own allow-list (or switch
+ * on media uploads) via devbase/update-options. See bug 6 in AGENT.md.
+ *
+ * @return string[]
+ */
+function devbase_abilities_protected_option_fields() {
+	return array( 'mcp_allowed_post_types', 'mcp_allowed_options_pages', 'mcp_allow_media_upload' );
 }
 
 /**

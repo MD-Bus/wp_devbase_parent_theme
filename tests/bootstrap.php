@@ -67,3 +67,14 @@ function devbase_tests_reset_rest_server() {
 }
 
 require $wp_tests_dir . '/includes/bootstrap.php';
+
+// SCF creates its local meta store (what ACF block values are read through) on
+// first use, and hooks its read filters at that moment. WP_UnitTestCase
+// restores every hook after each test, so a store first created inside a test
+// keeps living while its filters are gone for every later test: block values
+// then read back as their defaults (Test_MCP_Abilities_Blocks). Creating it
+// here, before any test backs up the hooks, keeps the filters. A real request
+// never has this problem, since nothing restores hooks mid-request.
+if ( function_exists( 'acf_get_instance' ) ) {
+	acf_get_instance( 'ACF_Local_Meta' );
+}

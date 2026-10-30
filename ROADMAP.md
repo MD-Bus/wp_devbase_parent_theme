@@ -14,31 +14,6 @@ pushed rather than at release time. A workflow cannot stop Warden
 publishing, since Warden acts on the push itself, so it warns and a release
 is withdrawn in Warden; the script stays the real gate.
 
-**MCP: blocks.** MCP can write a page's content but cannot see the blocks
-that content is made of: no ability lists the registered blocks or describes
-their fields, and `get-post-type-schema` does not report them because block
-fields belong to the block, not to the post type. A tool connected only
-through MCP therefore cannot build a page from the site's blocks, and its
-reads show one opaque string. The parent should discover whatever the active
-child registers, not know any site's blocks:
-
-- `devbase/list-blocks`: the registered blocks the editor allows (name,
-  title, category).
-- `devbase/get-block-schema`: one block's fields (name, type, choices,
-  default), read from its field group, including which are images.
-- Create or update a page from a list of blocks, such as
-  `[{ block: "acf/home-hero", fields: { ... } }]`, with the parent writing the
-  markup. This is the hard part: ACF stores block values flat, with a hidden
-  reference beside each, and repeater rows flattened into keys like
-  `items_0_image`. Unknown blocks and fields must be rejected, and it needs
-  its own tests.
-- Post responses say whether a page is built from blocks, and which.
-
-Block image fields hold attachment IDs and MCP has no upload ability, so this
-goes with an upload ability (or documents the media REST route). It must follow
-the editor's block allow-list and the same admin-only check as the other
-abilities. A new minor version.
-
 **A full suspend-and-restore round trip.** The update client has been
 verified against a locally generated keypair (signature verification, nonce
 replay rejection, every failure mode), and releases published through Warden
@@ -59,9 +34,10 @@ needs. Product, FAQ and Review come up often enough that a shared
 implementation may eventually earn its place — but each additional type is
 a maintenance commitment against a spec that changes.
 
-**A richer MCP surface.** Deleting posts, managing taxonomy terms and
-media operations (an upload is needed by the blocks work above) are all
-plausible. Each widens what an AI client can do
+**A richer MCP surface.** Deleting posts, managing taxonomy terms, and
+listing or editing existing media (upload exists since 1.6.0) are all
+plausible. So is editing one block of a page in place; today a page's
+`blocks` are always written whole. Each widens what an AI client can do
 to a live site, so each needs its own argument rather than being added for
 completeness.
 

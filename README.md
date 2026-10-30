@@ -35,7 +35,7 @@ fix reaches every client site through a single release.
 | **Tracking** | GTM/GA4 IDs plus raw header/footer script fields. |
 | **Schema** | Organization, Website and Breadcrumb JSON-LD, each independently toggleable. |
 | **Archives** | Custom fields on a CPT archive (which ACF has no location rule for), an **SEO** tab on each archive that sets its search title and description, and CPT archives in the internal link picker. |
-| **MCP** | Content abilities over the WordPress MCP Adapter — list/get/create/update posts and options values, generic across every post type, behind an opt-in allow-list. |
+| **MCP** | Content abilities over the WordPress MCP Adapter — list/get/create/update posts and options values, generic across every post type, behind an opt-in allow-list. Pages can be read and built as a list of the site's own blocks, and media uploaded (opt-in). |
 | **Updates** | Vendored dependencies track upstream on a daily schedule; both themes update themselves from [Warden](https://github.com/momardia54/Warden), a self-hosted licensing and release service. |
 
 ## Installing
@@ -168,7 +168,44 @@ webhook) plus the forms it applies to.
 
 **Opt-in, always.** Nothing is readable or writable through MCP until an
 admin explicitly ticks it here. A newly registered post type starts fully
-locked down.
+locked down. **Allow Media Uploads** is a separate switch, off by default.
+
+**Building pages from blocks.** An MCP client can see and use the blocks the
+active child theme registers, without the parent knowing any of them:
+
+| Ability | What it does |
+| --- | --- |
+| `devbase/list-blocks` | The blocks the editor allows (name, title, description, category), and whether each can be written. |
+| `devbase/get-block-schema` | One block's fields: type, required, default, choices, sub-fields, and the shape of the value (an image takes an attachment ID). |
+| `devbase/create-post`, `update-post` | Accept `blocks` instead of `content`: the page's whole content, in order. |
+| `devbase/get-post` | Says whether a page is `built_from_blocks` and lists its `blocks` in the same shape. |
+| `devbase/upload-media` | Adds a file (public URL or base64) to the media library and returns its ID. Off until switched on. |
+
+```json
+{ "post_type": "page", "title": "About", "blocks": [
+  { "block": "acf/page-hero", "fields": { "title": "About us", "image": 77 } },
+  { "block": "acf/item-list", "fields": { "layout": "steps", "items": [ { "title": "Research" } ] } }
+] }
+```
+
+- **Only what the editor allows.** The block list is the editor's own
+  allow-list (`allowed_block_types_all`), so a child that limits the inserter
+  limits MCP the same way.
+- **ACF blocks only, for writing.** Their content is their field values, which
+  the theme turns into the markup the editor would save, using Secure Custom
+  Fields' own save logic (so repeaters and groups are stored exactly as the
+  editor stores them). Other blocks are listed and read back as markup, never
+  written.
+- **Strict.** An unknown block, an unknown field or sub-field at any depth, a
+  value that isn't one of a select's choices, a repeater that isn't a list, or
+  an image that isn't in the media library is refused with the exact place
+  (`blocks[1].fields.items[0].titel`), and nothing is saved. A field left out
+  renders with its default.
+- **Round trip.** What `get-post` returns can be edited and sent back to
+  `update-post`. Content written this way comes back identical; a page saved
+  in the editor renders the same after a round trip (checked on every OCWOF
+  page), though SCF may store a default it filled in, or drop a reference the
+  editor left without a value.
 
 ### Credit
 

@@ -10,6 +10,44 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.6.0] — 2026-10-29
+
+### Added
+
+- **MCP can build and read pages from the site's blocks** (`inc/abilities/blocks.php`). The parent knows no
+  site's blocks: it discovers what the active child registers.
+  - `devbase/list-blocks`: the blocks the editor allows for a post type (its own `allowed_block_types_all`
+    allow-list), with title, description, category and whether each can be written.
+  - `devbase/get-block-schema`: one block's fields from its field group, with required, default, choices,
+    repeater min/max, sub-fields and the shape of each value (image = attachment ID, link = object, ...).
+  - `devbase/create-post` and `update-post` take `blocks`, `[{ "block": "acf/<name>", "fields": {...} }]`, as the
+    page's whole content (not combined with `content`). The markup is produced by Secure Custom Fields' own
+    save logic captured in memory (`acf_setup_meta()`), so the flat storage (`items: 2`, `items_0_title`,
+    `_items_0_title`) is exactly what the editor writes. Everything is checked against the field group first:
+    an unknown or disallowed block, a non-ACF block, an unknown field or sub-field at any depth, a choice that
+    isn't one, a repeater that isn't a list, an image that isn't an attachment, all refused with the exact
+    path, and nothing is saved.
+  - `devbase/get-post`, `create-post` and `update-post` responses carry `built_from_blocks` and `blocks`, ACF
+    blocks as `{ block, fields }` in the shape the writer takes, other blocks as `{ block, markup }`. Content
+    written this way round-trips identically; a page saved in the editor renders the same after a round trip
+    (every OCWOF page checked). Sub-fields never stored are left out of a read, so a round trip doesn't add
+    empty values.
+- **`devbase/upload-media`** (`inc/abilities/media.php`): adds one file from a public URL (fetched with
+  `wp_safe_remote_get`, so private and local addresses are refused) or base64 data, with alt text, and returns
+  its attachment ID. **Off by default**: Theme Settings > Miscellaneous > MCP Access > **Allow Media Uploads**.
+  Needs `upload_files`; WordPress decides which file types are allowed. Base64 limited to 15 MB
+  (filter `devbase_abilities_media_max_bytes`).
+- The new switch is protected like the allow-lists: never readable or writable through MCP
+  (`devbase_abilities_protected_option_fields()`, now the single list both options abilities use).
+- 29 tests (`tests/Test_MCP_Abilities_Blocks.php`). Also checked on the OCWOF site's real blocks and pages.
+
+### Changed
+
+- `devbase_abilities_shape_fields()` takes an optional `$detailed` flag (used by the block schema). Without it
+  the output of the existing schema abilities is unchanged.
+- `tests/bootstrap.php` creates SCF's local meta store before any test runs. Created inside a test, it lost its
+  hooks when the test framework restored them, and block values read back as defaults in later tests. Test-only.
+
 ## [1.5.0] — 2026-10-29
 
 ### Added

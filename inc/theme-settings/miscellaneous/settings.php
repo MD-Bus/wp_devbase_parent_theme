@@ -226,6 +226,18 @@ add_action( 'acf/init', function () {
 				'instructions' => __( 'Which options pages an MCP client can list, read, and update. Unlisted options pages are completely invisible to MCP.', 'devbase_parent_theme' ),
 				'choices'      => array(), // populated dynamically, see below
 			),
+			// devbase/upload-media (inc/abilities/media.php). Off by default:
+			// it lets an MCP client add files to the site, which is its own
+			// decision, separate from which content it can edit.
+			array(
+				'key'           => 'field_devbase_mcp_allow_media_upload',
+				'label'         => __( 'Allow Media Uploads', 'devbase_parent_theme' ),
+				'name'          => 'mcp_allow_media_upload',
+				'type'          => 'true_false',
+				'ui'            => 1,
+				'default_value' => 0,
+				'instructions'  => __( 'Lets an MCP client add images and files to the media library, for example a photo for a block. Off: it can only use what is already in the library.', 'devbase_parent_theme' ),
+			),
 
 			// Tab: Credit. One setting; everything else is downloaded. See credit.php.
 			array(
