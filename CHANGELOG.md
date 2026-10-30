@@ -10,6 +10,19 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.8.2] — 2026-10-29
+
+### Changed
+
+- **Author and description.** The theme header credits Momar (https://momar-web.ca), and the description
+  shown under Appearance → Themes now says what the theme provides and that the child theme requires it.
+  It also declares `Requires PHP: 8.2`.
+
+### Fixed
+
+- **Licence file.** `License.md` carried the MIT licence while the theme header and README said GPL v2 or
+  later, the licence the bundled plugins require. It now holds the GPL v2 text with the copyright notice.
+
 ## [1.8.1] — 2026-10-29
 
 ### Fixed

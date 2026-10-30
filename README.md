@@ -603,6 +603,6 @@ expected to pass before a change is considered complete.
 
 ## Licence
 
-GPL v2 or later — see [LICENSE](LICENSE). This is not a stylistic choice:
+GPL v2 or later — see [License.md](License.md). Copyright © 2026 [Momar](https://momar-web.ca). This is not a stylistic choice:
 the theme bundles GPLv2+ code, so a non-GPL licence would conflict with
 what it ships.
