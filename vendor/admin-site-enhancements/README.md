@@ -5,7 +5,7 @@ Donate link: https://bowo.io/asenha-sp-rdm
 Tags: enhancements, tweaks, optimizations, tools  
 Requires at least: 4.6  
 Tested up to: 7.1.3  
-Stable tag: 9.3.0  
+Stable tag: 9.3.1  
 Requires PHP: 5.6  
 License: GPLv2 or later  
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -43,119 +43,119 @@ _"ASE is an amazing plugin! **Time and money saver**. Thank you!"_ ~[Iulian Baci
 ### FEATURES & MODULES
 
 **80 modules** in total:  
-**62 free modules** (33 has Pro features) | **18 Pro modules**
+**62 free modules** (34 has Pro features) | **18 Pro modules**
 
 [**See all features >>**](https://www.wpase.com/features/)
 
 ### Content Management
 
-* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Custom Content Types**. Register custom post types (CPT), custom taxonomies, custom field groups and options pages that integrates with Bricks, Breakdance, Oxygen and Elementor, and compatible with various block themes and plugins. Also integrates with WPML and works with TranslatePress to create multilingual sites. An alternative for ACF Pro, Meta Box, Toolset, Pods, JetEngine or ACPT.
-* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Post Type Switcher**. Switch the post type of one or more posts to a different post type.
-* **Content Duplication**. Duplicate pages, posts and public CPTs. [ASE Pro](https://www.wpase.com/rdme-to-web) enables duplication only for certain user roles and certain public and non-public post types, and adds location option for duplication links.
-* **Content Order**. Drag-and-drop custom ordering of hierarchical post types. [ASE Pro](https://www.wpase.com/rdme-to-web) enables ordering of non-hierarchical post types, including media / attachments, reordering and changing the parent of child posts is supported, as well as applying the custom order on the frontend. Also WPML compatible.
-* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Terms Order**. Drag-and-drop custom ordering of terms and child terms from various taxonomies and apply the custom order on the frontend. WPML compatible.
-* **Media Files Visibility Control**: Limit media files visibility so only administrators can see all media files. Non-administrator users will only see media files they uploaded themselves. [ASE Pro](https://www.wpase.com/rdme-to-web) adds an option to specify which non-administrator user roles will have such limitation. 
-* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Media Categories**. Hierarchical categories for the media library with drag-and-drop categorization. Compatible with WPML.
-* **Media Replacement**. Replace any type of media file with a new one while ensuring no existing links will break. [ASE Pro](https://www.wpase.com/rdme-to-web) allows replacing media from the grid view of media library, replacing with a different file type and file name and replacing sub-sizes of image files inside posts and options.
-* **SVG Upload**. Allow some or all user roles to upload SVG files with sanitization to keep things secure.
-* **AVIF Upload**. Enable uploading AVIF files in the Media Library.
-* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Public Preview for Drafts**. Public preview for draft and scheduled posts from some or all public post types.
-* **External Permalinks**. Enable pages, posts and/or custom post types to have permalinks pointing to external URLs. [ASE Pro](https://www.wpase.com/rdme-to-web) allows enabling only on / except on certain post types, or on all post types.
-* **Open All External Links in New Tab**. Force all links to external sites to open in new browser tab. [ASE Pro](https://www.wpase.com/rdme-to-web) allows excluding links with certain domains / subdomains from opening in a new tab and from getting the rel="nofollow" attribute.
-* **Allow Custom Navigation Menu Items to Open in New Tab**. Allow custom navigation menu items to have links that open in a new browser tab.
-* **Auto-Publish Posts with Missed Schedule**. Trigger publishing of scheduled posts marked with "missed schedule", anytime the site is visited.
+* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Custom Content Types**. Register custom post types, taxonomies, field groups and options pages. Integrates with Bricks, Breakdance, Oxygen, Elementor and block themes, and works with WPML and TranslatePress. An alternative to ACF Pro, Meta Box, Pods or JetEngine.
+* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Post Type Switcher**. Switch one or more posts to a different post type.
+* **Content Duplication**. Duplicate pages, posts and public CPTs. [ASE Pro](https://www.wpase.com/rdme-to-web) adds per-role and per-post-type control and link location options.
+* **Content Order**. Drag-and-drop ordering of hierarchical post types. [ASE Pro](https://www.wpase.com/rdme-to-web) adds non-hierarchical post types and media, parent changes, frontend ordering and WPML support.
+* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Terms Order**. Drag-and-drop ordering of terms and child terms, applied on the frontend. WPML compatible.
+* **Media Files Visibility Control**. Non-administrators only see media files they uploaded. [ASE Pro](https://www.wpase.com/rdme-to-web) adds per-role control.
+* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Media Categories**. Hierarchical, drag-and-drop categories for the media library. WPML compatible.
+* **Media Replacement**. Replace any media file without breaking existing links. [ASE Pro](https://www.wpase.com/rdme-to-web) adds grid view replacement, different file types and names, and sub-size replacement in posts and options.
+* **SVG Upload**. Let some or all user roles upload sanitized SVG files.
+* **AVIF Upload**. Enable AVIF uploads in the media library.
+* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Public Preview for Drafts**. Share public previews of draft and scheduled posts.
+* **External Permalinks**. Point permalinks of posts, pages or CPTs to external URLs. [ASE Pro](https://www.wpase.com/rdme-to-web) adds per-post-type targeting.
+* **Open All External Links in New Tab**. Also adds rel="nofollow". [ASE Pro](https://www.wpase.com/rdme-to-web) adds domain exclusions.
+* **Allow Custom Navigation Menu Items to Open in New Tab**.
+* **Auto-Publish Posts with Missed Schedule**. Publish scheduled posts that missed their schedule.
 
 ### Admin Interface
 
-* **Clean Up Admin Bar**. Remove various default elements from the admin bar. [ASE Pro](https://www.wpase.com/rdme-to-web) enables removal of admin bar items from other plugins.
+* **Clean Up Admin Bar**. Remove default admin bar elements. [ASE Pro](https://www.wpase.com/rdme-to-web) also removes items added by other plugins.
 * **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Admin Bar Custom Elements**. Add custom menu and submenu items to the admin bar.
-* **Hide Admin Notices**. Move notices into a dedicated panel accessible via the admin bar. [ASE Pro](https://www.wpase.com/rdme-to-web) enables completely hiding notices for non-admins.
-* **Disable Dashboard Widgets**. Completely disable some or all widgets.
-* **Hide Admin Bar**. Frontend hiding for all or some user roles. [ASE Pro](https://www.wpase.com/rdme-to-web) allows hiding on the backend and make frontend admin bar toggleable.
-* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Admin Logo**. Show custom logo in the admin bar or the (top of) admin menu.
+* **Hide Admin Notices**. Move notices into a panel in the admin bar. [ASE Pro](https://www.wpase.com/rdme-to-web) can hide them entirely for non-admins.
+* **Disable Dashboard Widgets**. Disable some or all dashboard widgets.
+* **Hide Admin Bar**. Hide on the frontend for some or all roles. [ASE Pro](https://www.wpase.com/rdme-to-web) adds backend hiding and a toggleable frontend admin bar.
+* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Admin Logo**. Show a custom logo in the admin bar or admin menu.
 * **Wider Admin Menu**. Up to 300px wide.
-* **Admin Menu Editor / Organizer**. Customize order for the admin menu. Change menu item title or hide some items. [ASE Pro](https://www.wpase.com/rdme-to-web) allows always hiding menu items for some or all user roles, adding custom menu and submenu items, reordering submenu items and always allowing eligible users to view and access a menu item.
-* **Navigation Menu Duplicator**. Duplicate a navigation menu with one click from Appearance → Menus.
-* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Admin Columns Manager**. Organize columns in the admin list tables. Supports columns for ASE, ACF and Meta Box custom fields.
-* **Show Custom Taxonomy Filters**. Show additional filter(s) on list tables for hierarchical, custom taxonomies. [ASE Pro](https://www.wpase.com/rdme-to-web) allows showing additional filter(s) for non-hierarchical taxonomies.
-* **Enhance List Tables**. Improve the usefulness of listing pages of various post types by adding / removing columns and elements, e.g. featured image, excerpt, last modified, ID, media file size columns.
+* **Admin Menu Editor / Organizer**. Reorder, rename or hide admin menu items. [ASE Pro](https://www.wpase.com/rdme-to-web) adds per-role hiding, custom menu and submenu items, submenu reordering and access overrides.
+* **Navigation Menu Duplicator**. Duplicate a navigation menu with one click.
+* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Admin Columns Manager**. Organize list table columns, including ASE, ACF and Meta Box fields.
+* **Show Custom Taxonomy Filters**. Add filters for hierarchical custom taxonomies to list tables. [ASE Pro](https://www.wpase.com/rdme-to-web) adds non-hierarchical taxonomies.
+* **Enhance List Tables**. Add or remove list table columns and elements, e.g. featured image, excerpt, last modified, ID and file size.
 * **Various Admin UI Enhancements**:
-  * **Media Library Infinite Scrolling**: Re-enable this in the grid view.
-  * **Display Active Plugins First**: On the plugins list.
-  * **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Preserve Taxonomy Hierarchy**: Preserve the visual hierarchy of taxonomy terms checklist in the classic editor.
-  * **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Enable Dashboard Columns Settings**: Set columns layout between 1 to 4 columns.
+  * **Media Library Infinite Scrolling** in the grid view.
+  * **Display Active Plugins First** on the plugins list.
+  * **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Preserve Taxonomy Hierarchy** in the classic editor.
+  * **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Enable Dashboard Columns Settings** (1 to 4 columns).
   * **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Add User Role Slug(s) to Admin Body Classes**.
-  * **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Add Usermame to Admin Body Classes**.
-* **Custom Admin Footer Text**: Customize the text you see on the footer of wp-admin. [ASE Pro](https://www.wpase.com/rdme-to-web) enables media insertion.
+  * **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Add Username to Admin Body Classes**.
+* **Custom Admin Footer Text**. [ASE Pro](https://www.wpase.com/rdme-to-web) adds media insertion.
 
 ### Log In/Out & Register
 
-* **Change Login URL**. Make the login URL more memorable and secure. [ASE Pro](https://www.wpase.com/rdme-to-web) adds compatibility with login process in WooCommerce pages, i.e. account and checkout, and custom 404 redirect on default login URLs.
-* **Login ID Type**. Restrict login ID only to username or email address.
-* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Login Page Customizer**. Easily customize the design of the login page.
-* **Site Identity on Login Page**. Use the site icon and URL to replace the default WordPress logo on the login page.
-* **Log In/Out Menu**. Enable log in, log out and dynamic log in/out menu item for addition to any navigation menu. [ASE Pro](https://www.wpase.com/rdme-to-web) allows customizing the "Log In" and "Log Out" text.
-* **Registration Column**. Show users registration date. [ASE Pro](https://www.wpase.com/rdme-to-web) makes the column sortable.
-* **Last Login Column**. Log last login datetime and show it in the users list table. [ASE Pro](https://www.wpase.com/rdme-to-web) makes the column sortable.
-* **Redirect After Login / Logout**. Set custom redirect URL for all or some user roles after login / logout. [ASE Pro](https://www.wpase.com/rdme-to-web) allows setting separate redirect URL for each role.
-* **Disable User Account**. Disable login for individual users while preserving their content and display name.
+* **Change Login URL**. A custom, more secure login URL. [ASE Pro](https://www.wpase.com/rdme-to-web) adds WooCommerce login compatibility and a custom 404 redirect for default login URLs.
+* **Login ID Type**. Allow login by username only or email only.
+* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Login Page Customizer**. Customize the login page design.
+* **Site Identity on Login Page**. Replace the WordPress logo with the site icon and URL.
+* **Log In/Out Menu**. Add log in, log out and dynamic log in/out items to any menu. [ASE Pro](https://www.wpase.com/rdme-to-web) adds custom labels.
+* **Registration Column**. Show user registration dates. [ASE Pro](https://www.wpase.com/rdme-to-web) makes it sortable.
+* **Last Login Column**. Log and show each user's last login. [ASE Pro](https://www.wpase.com/rdme-to-web) makes it sortable.
+* **Redirect After Login / Logout**. Custom redirects for some or all roles. [ASE Pro](https://www.wpase.com/rdme-to-web) adds a separate URL per role.
+* **Disable User Account**. Block login for individual users while keeping their content.
 
 ### Custom Code
 
-* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Code Snippets Manager**. Manage CSS / SCSS, JS, HTML and PHP code snippets to modify your site's content, design, behaviour and functionalities.
+* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Code Snippets Manager**. Manage CSS / SCSS, JS, HTML and PHP snippets.
 * **Custom Admin CSS**.
 * **Custom Frontend CSS**.
-* **Insert &lt;head&gt;, &lt;body&gt; and &lt;footer&gt; Code**. Easily insert &lt;meta&gt;, &lt;link&gt;, &lt;script&gt; and &lt;style&gt; tags for tracking, analytics, etc.
+* **Insert &lt;head&gt;, &lt;body&gt; and &lt;footer&gt; Code**. Add &lt;meta&gt;, &lt;link&gt;, &lt;script&gt; and &lt;style&gt; tags for tracking, analytics, etc.
 * **Custom Body Class**.
 * **Manage ads.txt and app-ads.txt**.
 * **Manage robots.txt**.
 
 ### Disable Components
 
-* **Disable Gutenberg** for some or all applicable post types. Optionally disable frontend block assets. [ASE Pro](https://www.wpase.com/rdme-to-web) allows disabling only on / except on certain post types, or on all post types, and adds optional always disable/enable on certain posts.
-* **Disable Comments**. Disable comments for some or all public post types. [ASE Pro](https://www.wpase.com/rdme-to-web) allows disabling only on / except on certain post types, or on all post types.
-* **Disable REST API**. Disable REST API access for non-authenticated users and remove URL traces from &lt;head&gt;, HTTP headers and WP RSD endpoint. [ASE Pro](https://www.wpase.com/rdme-to-web) allows enabling access only for some, authenticated user roles, and adds a way to exclude certain API routes.
+* **Disable Gutenberg** for some or all post types, optionally with frontend block assets. [ASE Pro](https://www.wpase.com/rdme-to-web) adds per-post-type targeting and per-post overrides.
+* **Disable Comments** for some or all public post types. [ASE Pro](https://www.wpase.com/rdme-to-web) adds per-post-type targeting.
+* **Disable REST API** for non-authenticated users and remove its traces. [ASE Pro](https://www.wpase.com/rdme-to-web) adds per-role access and route exclusions.
 * **Disable Feeds**. Disable all RSS, Atom and RDF feeds.
-* **Disable Embeds**. Prevent your site content from being embedded on other sites. Prevent embedding of non-whitelisted sites in your site. Disable all, related JavaScript. Removes support for the embed block.
-* **Disable All Updates**. Completely disable core, theme and plugin updates and auto-updates. Will also disable update checks, notices and emails.
-* **Disable Author Archives**. Return 404 (Not Found) error when trying to load author archives. Remove or disable links to author archives. Remove authors archives from the sitemap.
-* **Disable Smaller Components**. Prevent smaller components from running or loading. Those are generator &lt;meta&gt; tag, version number, Windows Live Writer (WLW) manifest &lt;link&gt; tag, Really Simple Discovery (RSD) &lt;link&gt; tag, WordPress shortlink &lt;link&gt; tag in &lt;head&gt;, and also dashicons CSS and JS files, emoji support, jQuery Migrate, block-based widgets settings screen, native lazy load of images, application passwords, site admin email verification screen, user email notification after password change and plugin / theme editor.
+* **Disable Embeds**. Stop your content from being embedded elsewhere and block non-whitelisted embeds on your site.
+* **Disable Updates**. Disable core, theme and plugin updates, update checks, notices and emails. [ASE Pro](https://www.wpase.com/rdme-to-web) adds granular control per update type, a core security mode, and hiding of update notices, emails and menus.
+* **Disable Author Archives**. Return a 404 for author archives and remove their links and sitemap entries.
+* **Disable Smaller Components**, e.g. generator tag, WLW manifest, RSD and shortlink tags, dashicons, emoji, jQuery Migrate, block-based widgets, lazy load, application passwords, admin email verification and the plugin / theme editor.
 
 ### Security
 
-* **Limit Login Attempts**. Prevent brute force attacks by limiting the number of failed login attempts allowed per IP address. [ASE Pro](https://www.wpase.com/rdme-to-web) adds IP whitelisting, which is also useful to unblock users.
-* **Password Policy**. Enforce a minimum length and optional complexity rules (uppercase, lowercase, digits, special characters, unique characters) when users register, reset, or update their password.
-**[[ASE Pro](https://www.wpase.com/rdme-to-web)] CAPTCHA Protection**. Support for [ALTCHA](https://altcha.org/) self-hosted version (GDPR-compliant, open source, free), Google reCaptcha v2 and v3, and Cloudflare Turnstile for WordPress and WooCommerce default forms (login, password reset, registration and comment forms).
-**[[ASE Pro](https://www.wpase.com/rdme-to-web)] Two-Factor Authentication (2FA)**. Apply 2FA for some or all user roles with grace period settings and the option to apply different 2FA settings for each user role. Supported methods are authenticator app (TOTP), recovery codes and email.
-* **Obfuscate Author Slugs**. Obfuscate publicly exposed author page URLs that shows the user slugs / usernames.
-* **Email Address Obfuscator**. Obfuscate email address to prevent spam bots from harvesting them,. [ASE Pro](https://www.wpase.com/rdme-to-web) enables output of obfuscated mailto: link and also auto-obfuscation of email addresses in post content.
-* **Disable XML-RPC**. Protect your site from brute force, DOS and DDOS attacks via XML-RPC. Also disables trackbacks and pingbacks.
+* **Limit Login Attempts**. Limit failed logins per IP address to stop brute force attacks. [ASE Pro](https://www.wpase.com/rdme-to-web) adds IP whitelisting.
+* **Password Policy**. Enforce minimum length and complexity rules for user passwords.
+* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] CAPTCHA Protection**. [ALTCHA](https://altcha.org/) (self-hosted, GDPR-compliant), Google reCaptcha v2 / v3 and Cloudflare Turnstile for WordPress and WooCommerce forms.
+* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Two-Factor Authentication (2FA)**. Per-role 2FA with a grace period, using an authenticator app (TOTP), recovery codes or email.
+* **Obfuscate Author Slugs**. Hide usernames in public author URLs.
+* **Email Address Obfuscator**. Hide email addresses from spam bots. [ASE Pro](https://www.wpase.com/rdme-to-web) adds mailto: links and auto-obfuscation in post content.
+* **Disable XML-RPC**. Block brute force and DDoS attacks via XML-RPC, plus trackbacks and pingbacks.
 
 ### Optimizations
 
-* **Image Upload Control**. Resize newly uploaded, large images to a smaller dimension and delete originally uploaded files. BMPs and non-transparent PNGs will be converted to JPGs and resized. [ASE Pro](https://www.wpase.com/rdme-to-web) enables setting custom JPG conversion quality and adds an option for conversion to WebP with custom conversion quality. You can also disable generation of some or all intermediate sizes.
-* **Clean Media Filenames**. On upload, convert filenames to a safe, consistent form: remove accents, strip problematic characters, use lowercase, and replace spaces, dots, pluses and punctuation in the name with hyphens. Applies to all file types, including media library and sideloaded uploads.
-* **Revisions Control**. Limit the number of revisions to keep for some or all post types. [ASE Pro](https://www.wpase.com/rdme-to-web) enables revisions control "only for", "except for" or "for all" post types.
-* **Heartbeat Control**. Modify the interval of the WordPress heartbeat API or disable it on admin pages, post creation/edit screens and/or the frontend.
+* **Image Upload Control**. Resize large uploads, delete originals, and convert BMPs and non-transparent PNGs to JPG. [ASE Pro](https://www.wpase.com/rdme-to-web) adds JPG quality, WebP conversion and disabling intermediate sizes.
+* **Clean Media Filenames**. Convert uploaded filenames to a safe, lowercase, hyphenated form.
+* **Revisions Control**. Limit revisions for some or all post types. [ASE Pro](https://www.wpase.com/rdme-to-web) adds per-post-type targeting.
+* **Heartbeat Control**. Change or disable the heartbeat interval in the admin, the editor and the frontend.
 
 ### Utilities
 
-* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Site Backup and Migration**. Backup files and database, restore from backups, migrate to another server and surgical sync of components between sites.
-* **Plugins and Themes Rollback**. Roll back plugins and themes to earlier or newer versions from WordPress.org. [ASE Pro](https://www.wpase.com/rdme-to-web) adds the option to roll back paid / premium plugins and themes.
-* **Email Delivery**. Set custom sender name and email. Optionally use external SMTP service to ensure notification and transactional emails from your site are being delivered to inboxes. [ASE Pro](https://www.wpase.com/rdme-to-web) adds the option to specify a custom reply-to name and email, Bcc address(es), disable authentication and the option to log email delivery.
-* **Contact Form**. A simple, customizable contact form (shortcode and block) with AJAX submission, built-in spam protection layers, submission entries management and notification email.
-* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Form Builder**. Enable the drag-and-drop creation of various types of forms (contact, feedback, booking, application, proposal, admission, support, survey, etc.) on the frontend to collect information from site visitors or users or members. 33 field types are available, including Net Promoter Score (NPS), Likert, Matrix of Uniform and Variable Dropdowns and CAPTCHA fields. Support custom form styles, multi-columns layout, conditional logic, multi-step with saving progress, email notification, auto responder, entries management and webhooks for sending submission data to Zapier, n8n, etc.
-* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] File Manager**. A comprehensive file manager with folder tree navigation, file and folder operations, and code editing capabilities.
-* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Local User Avatar**. Enable usage of any image from the media library as user avatars.
-* **Multiple User Roles**. Assign multiple roles during user account creation and editing.
-* **Image Sizes Panel**. Display a panel showing and linking to all available sizes when viewing an image in the media library. [ASE Pro](https://www.wpase.com/rdme-to-web) adds a copy button for the image URL on click.
-* **View Admin as Role**. View admin pages and the site (logged-in) as one of the non-administrator user roles.
-* **Password Protection**. Password-protect the entire site to hide the content from public view and search engine bots / crawlers. [ASE Pro](https://www.wpase.com/rdme-to-web) adds IP whitelisting, REST API route allowlisting, and bypassing via URL parameter, and also applies design elements from the Login Page Customizer module.
-* **Maintenance Mode**. Show a simple maintenance message. [ASE Pro](https://www.wpase.com/rdme-to-web) adds option to set custom page and browser tab title, use WYSIWYG editor, use pattern, image, solid color background, apply custom CSS, and also add the option to use an existing page created with the block / classic editor or a page builder as the maintenance page. It also adds an option to exclude certain URLs (wildcard support) and allow non-admins to access the frontend.
-* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Redirect Manager**. Easily manage various types of redirects / redirections (3xx, 4xx, 5xx codes) with support for wildcards and regular expressions (regex).
-* **Redirect 404**. Perform 301 (permanent) redirect to the homepage for all 404 (not found) pages. [ASE Pro](https://www.wpase.com/rdme-to-web) adds option to set custom redirect URL.
-* **Display System Summary**. Show web server software, PHP version, database software and server IP address in the "At a Glance" dashboard widget. [ASE Pro](https://www.wpase.com/rdme-to-web) also shows the size of the site, database and root, wp-content, plugins, themes and upload folders.
-* **Search Engines Visibility Status**. Show admin bar status and admin notice when search engines are set to be discouraged from indexing the site. [ASE Pro](https://www.wpase.com/rdme-to-web) adds a way to prevent dev / staging sites from having search engine visibility enabled.
+* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Site Backup and Migration**. Back up, restore and migrate files and database, and sync components between sites.
+* **Plugins and Themes Rollback**. Roll back or forward to any WordPress.org version. [ASE Pro](https://www.wpase.com/rdme-to-web) adds premium plugins and themes.
+* **Email Delivery**. Custom sender name and email, with optional external SMTP. [ASE Pro](https://www.wpase.com/rdme-to-web) adds reply-to, Bcc, fallback connection, connection monitoring and email logging.
+* **Contact Form**. A simple AJAX contact form (shortcode and block) with spam protection, entries and email notifications.
+* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Form Builder**. Drag-and-drop forms with 33 field types (incl. NPS, Likert, Matrix and CAPTCHA), custom styles, multi-column layouts, conditional logic, multi-step, notifications, entries and webhooks to Zapier, n8n, etc.
+* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] File Manager**. Browse, manage and edit files and folders.
+* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Local User Avatar**. Use any media library image as a user avatar.
+* **Multiple User Roles**. Assign multiple roles to a user.
+* **Image Sizes Panel**. List and link all sizes of an image in the media library. [ASE Pro](https://www.wpase.com/rdme-to-web) adds a copy URL button.
+* **View Admin as Role**. View the admin and site as a non-administrator role.
+* **Password Protection**. Password-protect the entire site. [ASE Pro](https://www.wpase.com/rdme-to-web) adds IP whitelisting, REST API route allowlisting, URL parameter bypass and Login Page Customizer styling.
+* **Maintenance Mode**. Show a simple maintenance message. [ASE Pro](https://www.wpase.com/rdme-to-web) adds a custom title, WYSIWYG content, backgrounds, custom CSS, using an existing page as the maintenance page, URL exclusions and frontend access for non-admins.
+* **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Redirect Manager**. Manage 3xx, 4xx and 5xx redirects with wildcards and regex.
+* **Redirect 404**. 301 redirect all 404 pages to the homepage. [ASE Pro](https://www.wpase.com/rdme-to-web) adds a custom redirect URL.
+* **Display System Summary**. Show server, PHP and database info in the "At a Glance" widget. [ASE Pro](https://www.wpase.com/rdme-to-web) adds site, database and folder sizes.
+* **Search Engines Visibility Status**. Warn when search engines are discouraged. [ASE Pro](https://www.wpase.com/rdme-to-web) prevents dev / staging sites from being indexed.
 
 [**See all features >>**](https://www.wpase.com/features/)
 
@@ -210,36 +210,32 @@ ASE does not officially support multisite. Please use at your own risk. That sai
 
 ## Changelog
 
-**Admin and Site Enhancements (ASE) v1.0.0** was released on October 17, 2022. Since then, there have been **93 _major_ releases** (e.g. 1.1.0 ) and **212 _minor_ releases** (e.g. 4.9.1), for a **total of 305 releases**.
+**Admin and Site Enhancements (ASE) v1.0.0** was released on October 17, 2022. Since then, there have been **93 _major_ releases** (e.g. 1.1.0 ) and **213 _minor_ releases** (e.g. 4.9.1), for a **total of 306 releases**.
 
 Each **_major release_** usually corresponds with the addition of one new module/feature. Each module/feature usually is the equivalent of one (or more) single-purpose plugin. Each **_minor release_** usually contain one or more bugfix or improvements to existing modules/features.
 
 [**Upgrade to ASE Pro**](https://www.wpase.com/chnlg-to-web). **Currently on YEAR END SALE, 20% discount on new license and license upgrade**. Lifetime Deal (LTD) available.
 
-### 9.3.0.1 (2026.10.26) - ASE Pro
+### 9.3.1 (2026.11.02) - ASE Free and Pro
 
-* **[FIXED in Pro] Utilities >> Password Protection >> Translation**: Fixed Czech translation string that causes fatal error after changes made in v9.3.0. Props to Aleš S. for reporting the issue complete with the error stack trace.
+* **[FIXED in Free and Pro] Utilities >> View Admin as Role**: Fixed role lockout when making changes in the block editor preference. Props to [@lucasp1](https://wordpress.org/support/users/lucasp1/) for [reporting](https://wordpress.org/support/topic/view-admin-as-role-switch-back-and-recovery-url-stop-working-after-opening-the/) the issue in detail.
 
-### 9.3.0 (2026.10.26) - ASE Free and Pro
+* **[IMPROVED in Free and Pro] Disable Components >> Disable All Updates**: 
+  * ASE Free: Update checks are now also blocked at the HTTP and cron level so they do not keep coming back, and plugin/theme auto-update emails are silenced along with core update emails.
+  * ASE Pro: Renamed the module to Disable Updates. Adds granular settings to disable updates and/or automatic updates for WordPress core, plugins, themes and translations, a core security mode that allows minor/security auto-updates while blocking major and development updates, and separate toggles for update nags, core update emails, plugin/theme auto-update emails, the Dashboard >> Updates menu and Site Health update tests. Existing sites that already had the module enabled keep the previous all-or-nothing behavior until the settings are changed. Props to Jan S., Dominik K., David M., Jamie O., Michael S. and John R. for prompting this improvement.
 
-* **[ADDED in Free and Pro] Optimizations >> Clean Media Filenames**: new module that on media file upload / sideload, convert filenames to a safe, consistent form: remove accents, strip problematic characters, use lowercase, and replace spaces, dots, pluses and punctuation in the name with hyphens. Props to Olivier M. and Yasin for prompting this addition.
+* **[IMPROVED and FIXED in Pro] Content Management >> Custom Content Types >> Custom Field Groups**: Improve alignments of meta box content in the block editor, both when tab fieldss are set to horizontal or vertical.
 
-* **[IMPROVED in Pro] Utilities >> Email Delivery**: 
-  * Added the ability to set a fallback SMTP connection, for when delivery via the primary one fails. Props to Torsten W. for prompting this improvement.
-  * Added connection monitoring for both primary and fallback SMTP connections with email and webhook alerts in case of connection or delivery failure. An admin notice will also be shown when either or both connections fail. Props to Upekkha, Fahd M., Mark v.E., Alexander S. and Torsten W. for prompting this improvement.
+* **[IMPROVED in Pro] Utilities >> Redirect Manager**: Added the option to manage redirects via the REST API. Props to Cremel M. for prompting this improvement.
 
-* **[IMPROVED and FIXED in Pro] Content Management >> Custom Content Types >> Custom Field Groups**: 
-  * Added the option to show tab fields as vertical tabs in the post edit screen's custom field group meta box.
-  * Fixed repeater sub-fields not appearing for selection in atomic elements when inside a loop item. Props to Sonia M. for reporting the issue in detail and facilitating the troubleshooting process.
+* **[IMPROVED and FIXED in Pro] Utilities >> Maintenance Mode**: Added an option to set the HTTP response code to either be "503 Service Unavailable" (default) or "200 OK" (which works better with troubleshooting and monitoring tools). Props to Ivan C.d.A. for prompting this improvement.
 
-* **[IMPROVED in Pro] Utilities >> Site Backup and Migration**: SFTP backup location now detects the real root folder and allows it's use, no longer forcing the use of `/home/sftp_username/` subfolder as the root folder. Props to Uli L. for prompting this improvement.
-
-* **[IMPROVED in Pro] Custom Code >> Code Snippets Manager**: Fixed PHP warning and deprecation errors in PHP 8.5. Props to Joe S. for reporting the issue in detail.
+* **[FIXED in Pro] Optimizations >> Image Upload Control**: With Convert to WebP enabled, converted images no longer get an unnecessary "-1" or "-1-1" suffix. Props to Stijn V. for reporting the issue.
 
 * **[TRANSLATION in Free and Pro]** ASE is now being translated into [41 languages](https://translate.wpase.com/):
   * **Added new/improved translation** for:
-    * ASE Free: Updated Czech, Turkish, Spanish, Serbian, Portuguese (Brazil), Polish, Norwegian, Galician.
-    * ASE Pro: Completed Czech, props to Jan S.! Updated Portuguese (Brazil).
+    * ASE Free: Updated Turkish, Spanish, Slovak, Serbian, Portuguese (Brazil), Norwegian, Galician, Dutch.
+    * ASE Pro: Updated Portuguese (Brazil).
   * **More strings have been internationalized**. @Translators, please visit the respective project pages for the Free and Pro versions to translate the new strings, if you havent' done so already.
   * **Interested to help translate or improve the translation?** Please go to [https://translate.wpase.com](https://translate.wpase.com) for more info.
   * **[Chinese (China)](https://translate.wordpress.org/locale/zh-cn/default/wp-plugins/admin-site-enhancements/)**: ASE Free and Pro (completed). Props to [@bricksvip](https://profiles.wordpress.org/bricksvip/) et al. Current status: [39 strings untranslated](https://translate.wordpress.org/projects/wp-plugins/admin-site-enhancements/stable/zh-cn/default/?filters%5Bstatus%5D=untranslated).

@@ -495,6 +495,7 @@
       $('.disable-feeds').appendTo('.fields-disable-components > table > tbody');
       $('.disable-embeds').appendTo('.fields-disable-components > table > tbody');
       $('.disable-all-updates').appendTo('.fields-disable-components > table > tbody');
+      
       $('.disable-author-archives').appendTo('.fields-disable-components > table > tbody');
       $('.disable-smaller-components').appendTo('.fields-disable-components > table > tbody');
       $('.disable-head-generator-tag').appendTo('.fields-disable-components .disable-smaller-components .asenha-subfields');
@@ -1160,6 +1161,8 @@
       
       
          subfieldsToggler( 'maintenance_mode', 'maintenance-mode' );
+      
+
       
 
       

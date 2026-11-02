@@ -138,7 +138,12 @@ class Image_Upload_Control {
                         if ( 'image/jpg' === $upload['type'] || 'image/jpeg' === $upload['type'] ) {
                             $wp_image_editor->set_quality( $convert_to_jpg_quality );
                         }
+                        // Overwrite the upload in its own format. ASE's output format map (for
+                        // client-side processing) would otherwise make WP_Image_Editor write
+                        // x.webp next to an unresized x.jpg. Conversion happens further below.
+                        add_filter( 'image_editor_output_format', '__return_empty_array', PHP_INT_MAX );
                         $wp_image_editor->save( $upload['file'] );
+                        remove_filter( 'image_editor_output_format', '__return_empty_array', PHP_INT_MAX );
                     }
                 }
             }
@@ -171,13 +176,10 @@ class Image_Upload_Control {
         $keep_original_image = false;
         if ( is_object( $image_object ) || class_exists( 'Imagick' ) ) {
             $wp_uploads = wp_upload_dir();
-            $old_filename = wp_basename( $upload['file'] );
-            // Assign new, unique file name for the converted image
-            // $new_filename    = wp_basename( str_ireplace( '.' . $file_extension, '.jpg', $old_filename ) );
-            $new_filename = str_ireplace( '.' . $file_extension, '.jpg', $old_filename );
-            $new_filename = wp_unique_filename( dirname( $upload['file'] ), $new_filename );
             // original image is always deleted in ASE Free
             $keep_original_image = false;
+            // Assign new, unique file name for the converted image
+            $new_filename = $this->get_converted_image_filename( $upload['file'], 'jpg', !$keep_original_image );
             $converted_to_jpg = false;
         }
         // Prefer GD when JPEG encode is available. Some custom PHP builds ship GD with PNG
@@ -227,6 +229,38 @@ class Image_Upload_Control {
             $upload['type'] = 'image/jpeg';
         }
         return $upload;
+    }
+
+    /**
+     * Pick a unique file name for a converted image.
+     *
+     * With an output format map active (e.g. jpeg => webp), wp_unique_filename()
+     * also treats same-named files with the mapped extensions as conflicts. The
+     * source file is still on disk at this point, so photo.webp would become
+     * photo-1.webp because of photo.jpg. When the source is about to be deleted
+     * that conflict is not real. wp_handle_upload() already checked the source
+     * name against those alternate names, so the map is set aside here. Exact
+     * matches and sub-size names are still checked.
+     *
+     * @since 9.3.1
+     *
+     * @param string $source_file        Absolute path of the image being converted.
+     * @param string $new_extension      Extension of the converted image, without the dot.
+     * @param bool   $will_delete_source Whether the source file is deleted after conversion.
+     * @return string Unique file name (basename) in the source file's directory.
+     */
+    private function get_converted_image_filename( $source_file, $new_extension, $will_delete_source ) {
+        $directory = dirname( $source_file );
+        $source_ext = pathinfo( $source_file, PATHINFO_EXTENSION );
+        $source_name = wp_basename( $source_file, ( '' !== $source_ext ? '.' . $source_ext : '' ) );
+        $new_filename = $source_name . '.' . $new_extension;
+        if ( !$will_delete_source ) {
+            return wp_unique_filename( $directory, $new_filename );
+        }
+        add_filter( 'image_editor_output_format', '__return_empty_array', PHP_INT_MAX );
+        $new_filename = wp_unique_filename( $directory, $new_filename );
+        remove_filter( 'image_editor_output_format', '__return_empty_array', PHP_INT_MAX );
+        return $new_filename;
     }
 
     /**
@@ -769,11 +803,16 @@ class Image_Upload_Control {
     }
 
     /**
-     * Delete Core's oversized original after client-side finalize.
+     * Delete the oversized original after client-side finalize.
      *
-     * Matches Image Upload Control's "delete originally uploaded files" behavior.
+     * The scaled file stays as the attachment. This removes only the original
+     * named in the metadata passed into the filter. That metadata has not been
+     * saved yet. A repeated finalize deletes nothing once that original is gone.
      *
      * @since 9.2.0
+     * @since 9.3.1 Resolves the original from incoming metadata. Stored metadata
+     *              has no original_image on the first finalize, so
+     *              wp_get_original_image_path() would return the scaled file.
      *
      * @param array  $metadata      Attachment metadata.
      * @param int    $attachment_id Attachment ID.
@@ -790,23 +829,119 @@ class Image_Upload_Control {
         if ( !$this->is_client_side_upload_request() ) {
             return $metadata;
         }
-        if ( empty( $metadata['original_image'] ) ) {
+        if ( empty( $metadata['original_image'] ) || !is_string( $metadata['original_image'] ) ) {
             return $metadata;
         }
-        $original_basename = $metadata['original_image'];
-        if ( false !== strpos( $original_basename, '-nr.' ) ) {
+        $original_image = $metadata['original_image'];
+        if ( false !== strpos( $original_image, '-nr.' ) ) {
             return $metadata;
         }
         $attached_file = get_attached_file( $attachment_id );
-        if ( $attached_file && false !== strpos( $attached_file, '-nr.' ) ) {
+        if ( !is_string( $attached_file ) || '' === $attached_file ) {
             return $metadata;
         }
-        $original_path = wp_get_original_image_path( $attachment_id );
-        if ( $original_path && file_exists( $original_path ) ) {
-            wp_delete_file( $original_path );
+        if ( false !== strpos( $attached_file, '-nr.' ) ) {
+            return $metadata;
         }
-        unset($metadata['original_image']);
+        $this->maybe_delete_pre_conversion_original( $attachment_id, $attached_file, $metadata );
+        /*
+         * Core stores original_image as a basename in the attachment directory.
+         * Reject anything else so a finalize payload cannot point cleanup at
+         * another path. The active scaled file is never a deletion candidate.
+         */
+        $original_basename = wp_basename( $original_image );
+        if ( !$this->is_plain_basename( $original_image ) || wp_basename( $attached_file ) === $original_basename ) {
+            unset($metadata['original_image']);
+            return $metadata;
+        }
+        $directory = dirname( $attached_file );
+        $original_path = path_join( $directory, $original_basename );
+        $real_original = realpath( $original_path );
+        $real_attached = realpath( $attached_file );
+        if ( is_string( $real_original ) && is_string( $real_attached ) ) {
+            $real_original = wp_normalize_path( $real_original );
+            $real_attached = wp_normalize_path( $real_attached );
+            if ( $real_original === $real_attached ) {
+                unset($metadata['original_image']);
+                return $metadata;
+            }
+        }
+        // Already removed, including a retried finalize. Drop the stale key.
+        if ( !is_file( $original_path ) ) {
+            unset($metadata['original_image']);
+            return $metadata;
+        }
+        // Leave original_image set when the file is real but could not be deleted.
+        if ( wp_delete_file_from_directory( $original_path, $directory ) ) {
+            unset($metadata['original_image']);
+        }
         return $metadata;
+    }
+
+    /**
+     * Delete the pre-conversion original that finalize is about to forget.
+     *
+     * When the server converts the upload on create (e.g. photo.jpg to
+     * photo.webp), stored metadata records original_image = photo.jpg. A scaled
+     * sideload then sends original_image = photo.webp, and finalize overwrites
+     * the stored value with it. Without this, photo.jpg stays on disk with no
+     * metadata pointing at it. It survives attachment deletion, and the next
+     * upload with the same name gets a "-1" suffix.
+     *
+     * Stored metadata is read here because finalize has not saved yet.
+     *
+     * @since 9.3.1
+     *
+     * @param int    $attachment_id Attachment ID.
+     * @param string $attached_file Absolute path of the active attached file.
+     * @param array  $metadata      Incoming attachment metadata.
+     */
+    private function maybe_delete_pre_conversion_original( $attachment_id, $attached_file, $metadata ) {
+        $stored_metadata = wp_get_attachment_metadata( $attachment_id, true );
+        if ( !is_array( $stored_metadata ) || empty( $stored_metadata['original_image'] ) || !is_string( $stored_metadata['original_image'] ) ) {
+            return;
+        }
+        $stored_original = $stored_metadata['original_image'];
+        if ( !$this->is_plain_basename( $stored_original ) || false !== strpos( $stored_original, '-nr.' ) ) {
+            return;
+        }
+        // Still referenced by the metadata being saved, or the active file itself.
+        $referenced = array(wp_basename( $attached_file ));
+        foreach ( array('original_image', 'file') as $key ) {
+            if ( !empty( $metadata[$key] ) && is_string( $metadata[$key] ) ) {
+                $referenced[] = wp_basename( $metadata[$key] );
+            }
+        }
+        if ( in_array( $stored_original, $referenced, true ) ) {
+            return;
+        }
+        $directory = dirname( $attached_file );
+        $original_path = path_join( $directory, $stored_original );
+        if ( !is_file( $original_path ) ) {
+            return;
+        }
+        $real_original = realpath( $original_path );
+        $real_attached = realpath( $attached_file );
+        if ( !is_string( $real_original ) || is_string( $real_attached ) && wp_normalize_path( $real_original ) === wp_normalize_path( $real_attached ) ) {
+            return;
+        }
+        wp_delete_file_from_directory( $original_path, $directory );
+    }
+
+    /**
+     * Whether a metadata file name is a plain basename.
+     *
+     * Core stores original_image as a basename in the attachment directory.
+     * Anything else (a path, "." or "..") is rejected so cleanup cannot be
+     * pointed outside that directory.
+     *
+     * @since 9.3.1
+     *
+     * @param string $name File name from attachment metadata.
+     * @return bool
+     */
+    private function is_plain_basename( $name ) {
+        return wp_basename( $name ) === $name && '.' !== $name && '..' !== $name && false === strpos( $name, '/' ) && false === strpos( $name, '\\' );
     }
 
     /**

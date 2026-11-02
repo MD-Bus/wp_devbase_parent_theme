@@ -1,10 +1,31 @@
 ## Changelog
 
-**Admin and Site Enhancements (ASE) v1.0.0** was released on October 17, 2022. Since then, there have been **93 _major_ releases** (e.g. 1.1.0 ) and **212 _minor_ releases** (e.g. 4.9.1), for a **total of 305 releases**.
+**Admin and Site Enhancements (ASE) v1.0.0** was released on October 17, 2022. Since then, there have been **93 _major_ releases** (e.g. 1.1.0 ) and **213 _minor_ releases** (e.g. 4.9.1), for a **total of 306 releases**.
 
 Each **_major release_** usually corresponds with the addition of one new module/feature. Each module/feature usually is the equivalent of one (or more) single-purpose plugin. Each **_minor release_** usually contain one or more bugfix or improvements to existing modules/features.
 
 [**Upgrade to ASE Pro**](https://www.wpase.com/chnlg-to-web). **Currently on YEAR END SALE, 20% discount on new license and license upgrade**. Lifetime Deal (LTD) available.
+
+### 9.3.1 (2026.11.02) - ASE Free and Pro
+
+* **[FIXED in Free and Pro] Utilities >> View Admin as Role**: Fixed role lockout when making changes in the block editor preference. Props to [@lucasp1](https://wordpress.org/support/users/lucasp1/) for [reporting](https://wordpress.org/support/topic/view-admin-as-role-switch-back-and-recovery-url-stop-working-after-opening-the/) the issue in detail.
+
+* **[IMPROVED in Free and Pro] Disable Components >> Disable All Updates**: 
+  * ASE Free: Update checks are now also blocked at the HTTP and cron level so they do not keep coming back, and plugin/theme auto-update emails are silenced along with core update emails.
+  * ASE Pro: Renamed the module to Disable Updates. Adds granular settings to disable updates and/or automatic updates for WordPress core, plugins, themes and translations, a core security mode that allows minor/security auto-updates while blocking major and development updates, and separate toggles for update nags, core update emails, plugin/theme auto-update emails, the Dashboard >> Updates menu and Site Health update tests. Existing sites that already had the module enabled keep the previous all-or-nothing behavior until the settings are changed. Props to Jan S., Dominik K., David M., Jamie O., Michael S. and John R. for prompting this improvement.
+
+* **[IMPROVED and FIXED in Pro] Content Management >> Custom Content Types >> Custom Field Groups**: Improve alignments of meta box content in the block editor, both when tab fieldss are set to horizontal or vertical.
+
+* **[IMPROVED in Pro] Utilities >> Redirect Manager**: Added the option to manage redirects via the REST API. Props to Cremel M. for prompting this improvement.
+
+* **[IMPROVED and FIXED in Pro] Utilities >> Maintenance Mode**: Added an option to set the HTTP response code to either be "503 Service Unavailable" (default) or "200 OK" (which works better with troubleshooting and monitoring tools). Props to Ivan C.d.A. for prompting this improvement.
+
+* **[FIXED in Pro] Optimizations >> Image Upload Control**: With Convert to WebP enabled, converted images no longer get an unnecessary "-1" or "-1-1" suffix. Props to Stijn V. for reporting the issue.
+
+* **[TRANSLATION in Free and Pro]** ASE is now being translated into [41 languages](https://translate.wpase.com/):
+  * **Added new/improved translation** for:
+    * ASE Free: Updated Turkish, Spanish, Slovak, Serbian, Portuguese (Brazil), Norwegian, Galician, Dutch.
+    * ASE Pro: Updated Portuguese (Brazil).
 
 ### 9.3.0 (2026.10.26) - ASE Free and Pro
 

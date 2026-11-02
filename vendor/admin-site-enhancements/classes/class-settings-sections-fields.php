@@ -2271,10 +2271,13 @@ class Settings_Sections_Fields {
                 'class'                  => 'asenha-toggle disable-components ' . $field_slug,
             )
         );
-        // Disable Auto Updates
+        // Disable All Updates / Disable Updates
         $field_id = 'disable_all_updates';
         $field_slug = 'disable-all-updates';
+        $field_options_wrapper = false;
+        $field_options_moreless = false;
         $field_title = __( 'Disable All Updates', 'admin-site-enhancements' );
+        $field_description = __( 'Completely disable core, theme and plugin updates and auto-updates. Will also disable update checks, notices and emails.', 'admin-site-enhancements' );
         add_settings_field(
             $field_id,
             $field_title,
@@ -2287,9 +2290,9 @@ class Settings_Sections_Fields {
                 'field_slug'             => $field_slug,
                 'field_title'            => $field_title,
                 'field_name'             => ASENHA_SLUG_U . '[' . $field_id . ']',
-                'field_description'      => __( 'Completely disable core, theme and plugin updates and auto-updates. Will also disable update checks, notices and emails.', 'admin-site-enhancements' ),
-                'field_options_wrapper'  => true,
-                'field_options_moreless' => true,
+                'field_description'      => $field_description,
+                'field_options_wrapper'  => $field_options_wrapper,
+                'field_options_moreless' => $field_options_moreless,
                 'class'                  => 'asenha-toggle disable-components ' . $field_slug,
             )
         );
