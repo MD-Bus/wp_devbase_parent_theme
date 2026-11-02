@@ -64,7 +64,7 @@ class Settings_Fields_Render {
         }
         $field_name = $args['field_name'];
         $field_label = $args['field_label'];
-        $default_value = false;
+        $default_value = ( isset( $args['field_default'] ) ? (bool) $args['field_default'] : false );
         switch ( $args['field_id'] ) {
             case 'login_page_disable_registration':
                 $default_value = ( 1 == get_option( 'users_can_register' ) ? false : true );

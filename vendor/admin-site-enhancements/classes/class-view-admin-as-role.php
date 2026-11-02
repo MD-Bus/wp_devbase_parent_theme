@@ -710,10 +710,14 @@ class View_Admin_As_Role {
     /**
      * Clear recovery state when a user's role is changed outside this module.
      *
+     * Also runs on add_user_role and remove_user_role. Those hooks cover role
+     * edits that never call set_role(), including Multiple User Roles, which
+     * changes roles before wp_update_user() snapshots the previous user.
+     *
      * @since 8.8.5
      * @param int      $user_id   User ID.
-     * @param string   $role      New role.
-     * @param string[] $old_roles Previous roles.
+     * @param string   $role      New or removed role.
+     * @param string[] $old_roles Previous roles. Only set_user_role provides this.
      * @return void
      */
     public function maybe_clear_view_admin_as_on_external_role_change( $user_id, $role = '', $old_roles = array() ) {
@@ -731,20 +735,65 @@ class View_Admin_As_Role {
     }
 
     /**
-     * When changing a user's role via their profile edit screen, maybe we sbould remove the user's username from a list of usernames that can switch back to the administrator role. This addresses a vulnerability in a rare scenario disclosed by Pathstack.
-     * 
+     * Clear recovery state when a profile update changes the user's roles.
+     *
+     * profile_update runs for every wp_update_user() call, including block editor
+     * preference saves and profile saves that do not change roles. Those must keep
+     * the view-as recovery data. Role changes made with set_role(), add_role(), or
+     * remove_role() are cleared by their own hooks.
+     *
      * @since 7.6.3
+     * @param int            $user_id       User ID.
+     * @param \WP_User|mixed $old_user_data User object from before this update. Null when unavailable.
+     * @return void
      */
-    public function maybe_prevent_switchback_to_administrator( $user_id ) {
+    public function maybe_prevent_switchback_to_administrator( $user_id, $old_user_data = null ) {
         if ( self::$is_internal_role_switch ) {
             return;
         }
 
         $viewing_admin_as = get_user_meta( $user_id, '_asenha_viewing_admin_as', true );
 
-        if ( 'administrator' != $viewing_admin_as && ! empty( $viewing_admin_as ) ) {
-            $this->clear_view_admin_as_recovery_state( $user_id );
+        if ( 'administrator' === $viewing_admin_as || empty( $viewing_admin_as ) ) {
+            return;
         }
+
+        if ( ! $this->did_user_roles_change( $user_id, $old_user_data ) ) {
+            return;
+        }
+
+        $this->clear_view_admin_as_recovery_state( $user_id );
+    }
+
+    /**
+     * Whether this profile update changed the user's roles.
+     *
+     * Missing before-data means the change cannot be confirmed, so the caller
+     * leaves recovery state in place.
+     *
+     * @since 9.3.0
+     * @param int            $user_id       User ID.
+     * @param \WP_User|mixed $old_user_data User object from before the update.
+     * @return bool
+     */
+    private function did_user_roles_change( $user_id, $old_user_data ) {
+        if ( ! $old_user_data instanceof \WP_User ) {
+            return false;
+        }
+
+        $user = get_userdata( $user_id );
+
+        if ( ! $user instanceof \WP_User ) {
+            return false;
+        }
+
+        $old_roles = array_map( 'strval', (array) $old_user_data->roles );
+        $new_roles = array_map( 'strval', (array) $user->roles );
+
+        sort( $old_roles );
+        sort( $new_roles );
+
+        return $old_roles !== $new_roles;
     }
     
     /**

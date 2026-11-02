@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "de4f135de0615710a597ca16e7e378cb",
+    "content-hash": "fc133a8cb71d771222da124870c8a6d3",
     "packages": [
         {
             "name": "composer/installers",
@@ -590,15 +590,15 @@
         },
         {
             "name": "wpackagist-plugin/admin-site-enhancements",
-            "version": "9.3.0",
+            "version": "9.3.1",
             "source": {
                 "type": "svn",
                 "url": "https://plugins.svn.wordpress.org/admin-site-enhancements/",
-                "reference": "tags/9.3.0"
+                "reference": "tags/9.3.1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/admin-site-enhancements.9.3.0.zip"
+                "url": "https://downloads.wordpress.org/plugin/admin-site-enhancements.9.3.1.zip"
             },
             "require": {
                 "composer/installers": "^1.0 || ^2.0"

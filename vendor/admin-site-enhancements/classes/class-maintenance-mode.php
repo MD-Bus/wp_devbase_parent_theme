@@ -240,10 +240,7 @@ class Maintenance_Mode {
         $maintenance_page_type = 'custom';
         // ======== Customizable maintenance page ========
         if ( 'custom' == $maintenance_page_type ) {
-            header( 'HTTP/1.1 503 Service Unavailable', true, 503 );
-            header( 'Status: 503 Service Unavailable' );
-            header( 'Retry-After: 3600' );
-            // Tell search engine bots to return after 3600 seconds, i.e. 1 hour
+            $this->send_maintenance_page_status_headers( $options );
             $heading = $options['maintenance_page_heading'];
             $description = $options['maintenance_page_description'];
             $background = ( isset( $options['maintenance_page_background'] ) ? $options['maintenance_page_background'] : 'stripes' );
@@ -400,6 +397,28 @@ class Maintenance_Mode {
             $allow_frontend_access = true;
         }
         return $allow_frontend_access;
+    }
+
+    /**
+     * Send the HTTP status for the frontend maintenance page.
+     *
+     * 503 includes Retry-After so search engines return later. 200 does not.
+     * Missing or invalid values stay 503. REST, AJAX, and XML-RPC are unchanged.
+     *
+     * @since 9.3.0
+     * @param array $options Plugin options.
+     */
+    private function send_maintenance_page_status_headers( $options ) {
+        $status = ( isset( $options['maintenance_page_http_status'] ) ? (string) $options['maintenance_page_http_status'] : '503' );
+        if ( '200' === $status ) {
+            header( 'HTTP/1.1 200 OK', true, 200 );
+            header( 'Status: 200 OK' );
+            return;
+        }
+        header( 'HTTP/1.1 503 Service Unavailable', true, 503 );
+        header( 'Status: 503 Service Unavailable' );
+        header( 'Retry-After: 3600' );
+        // Tell search engine bots to return after 3600 seconds, i.e. 1 hour
     }
 
 }

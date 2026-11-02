@@ -896,13 +896,22 @@ class Admin_Site_Enhancements {
             add_filter( 'auto_update_plugin', '__return_false' );
             add_filter( 'auto_update_theme', '__return_false' );
             add_filter( 'auto_update_translation', '__return_false' );
+            add_filter( 'async_update_translation', '__return_false' );
             remove_action( 'init', 'wp_schedule_update_checks' );
             // Disable update emails
             add_filter( 'auto_core_update_send_email', '__return_false' );
             add_filter( 'send_core_update_notification_email', '__return_false' );
             add_filter( 'automatic_updates_send_debug_email', '__return_false' );
+            add_filter( 'auto_plugin_update_send_email', '__return_false' );
+            add_filter( 'auto_theme_update_send_email', '__return_false' );
             // Remove Dashboard >> Updates menu
             add_action( 'admin_menu', [$disable_updates, 'remove_updates_menu'] );
+            $disable_updates->enable_request_and_cron_blocks( array(
+                'core'        => true,
+                'plugins'     => true,
+                'themes'      => true,
+                'auto_update' => true,
+            ) );
         }
         // Disable Author Archives
         if ( array_key_exists( 'disable_author_archives', $options ) && $options['disable_author_archives'] ) {
@@ -1232,12 +1241,29 @@ class Admin_Site_Enhancements {
             add_action( 'init', [$view_admin_as_role, 'role_switcher_to_view_admin_as'] );
             add_action( 'init', [$view_admin_as_role, 'maybe_extend_view_as_session'], 20 );
             add_action( 'wp_logout', [$view_admin_as_role, 'maybe_restore_administrator_on_logout'] );
-            add_action( 'profile_update', [$view_admin_as_role, 'maybe_prevent_switchback_to_administrator'], 20 );
+            add_action(
+                'profile_update',
+                [$view_admin_as_role, 'maybe_prevent_switchback_to_administrator'],
+                20,
+                2
+            );
             add_action(
                 'set_user_role',
                 [$view_admin_as_role, 'maybe_clear_view_admin_as_on_external_role_change'],
                 20,
                 3
+            );
+            add_action(
+                'add_user_role',
+                [$view_admin_as_role, 'maybe_clear_view_admin_as_on_external_role_change'],
+                20,
+                2
+            );
+            add_action(
+                'remove_user_role',
+                [$view_admin_as_role, 'maybe_clear_view_admin_as_on_external_role_change'],
+                20,
+                2
             );
             // add_action( 'wp_die_handler', [ $view_admin_as_role, 'custom_error_page_on_switch_failure' ] );
             add_action( 'admin_footer', [$view_admin_as_role, 'add_floating_reset_button'] );
