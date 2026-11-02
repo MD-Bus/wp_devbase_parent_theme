@@ -10,6 +10,12 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.14.2] — 2026-11-02
+
+### Changed
+
+- **Admin Site Enhancements 9.3.0 → 9.3.1** (bundled; Dependabot pull request #3).
+
 ### Added
 
 - **Dependabot vendor sync** (`.github/workflows/dependabot-vendor.yml`): on a Dependabot pull request that
