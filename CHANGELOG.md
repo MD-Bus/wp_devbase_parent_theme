@@ -10,6 +10,16 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+### Added
+
+- **Dependabot vendor sync** (`.github/workflows/dependabot-vendor.yml`): on a Dependabot pull request that
+  changes `composer.lock`, runs `composer install`, commits the updated `vendor/` to the PR branch and starts
+  `tests.yml` on it again, so **Release-ready** goes green by itself and the PR is merge-ready once its checks
+  pass. Until now every such PR was red until someone ran the same steps by hand. Runs only for
+  Dependabot-authored PRs from this repository, with Composer scripts off. Dependabot no longer updates a PR
+  the workflow has pushed to (`@dependabot recreate` rebuilds it). CI tooling only (`.github/` is
+  export-ignored): no code change on sites, no release needed.
+
 ## [1.14.1] — 2026-10-30
 
 ### Fixed

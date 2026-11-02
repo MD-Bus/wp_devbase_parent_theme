@@ -1,0 +1,88 @@
+# Keeps vendor/ in step with composer.lock on Dependabot pull requests.
+#
+# A Dependabot PR edits composer.json/composer.lock only, while vendor/ is
+# committed (a release tag ships it), so every one of them turns the
+# "Release-ready" check in tests.yml red. This workflow does the manual step
+# for it: `composer install`, then commit vendor/ to the PR branch.
+#
+# After the push it starts tests.yml on that branch itself. A push made with
+# the default GITHUB_TOKEN does not trigger workflows (GitHub's guard against
+# loops), but workflow_dispatch is the exception, so the new commit still gets
+# its Tests and Release-ready checks and the PR shows the real result.
+#
+# Why pull_request_target: on a Dependabot `pull_request` the token is
+# read-only, so it could not push. That event runs the workflow file from the
+# base branch with a write token, and checks out the PR branch, which is
+# normally unsafe for code from forks. It is acceptable here because the job
+# runs only for a Dependabot-authored PR from this repository (the `if:`
+# below: a commit pushed by anyone else, or a fork, is skipped), and the only
+# thing it executes is `composer install` with scripts off. Composer's plugin
+# (composer/installers, which places the WordPress plugins in vendor/) must
+# stay enabled, so that one comes from composer.lock as the PR proposes it.
+#
+# Only the theme's own composer.lock (the `paths` filter matches the root
+# file, not tests/composer.lock: test tooling is never shipped). Nothing is
+# committed when vendor/ already matches the lock.
+#
+# Dependabot stops updating a PR that someone else has pushed to. So this
+# PR is final: to take a newer version, close it and let Dependabot open a
+# new one, or comment `@dependabot recreate`, which rebuilds the branch and
+# runs this again.
+#
+# The mcp-adapter/ folder in vendor/ isn't Composer-managed and is left as
+# committed; composer install doesn't touch it.
+#
+# .github/ is export-ignored, so none of this reaches a site.
+name: Dependabot vendor sync
+
+on:
+  pull_request_target:
+    branches: [main]
+    paths: [composer.lock]
+
+permissions:
+  contents: write   # push the vendor/ commit to the PR branch
+  actions: write    # start tests.yml on it (workflow_dispatch)
+
+concurrency:
+  group: dependabot-vendor-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  vendor-sync:
+    name: Sync vendor/ with composer.lock
+    runs-on: ubuntu-latest
+    if: >-
+      github.actor == 'dependabot[bot]' &&
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"   # the theme's minimum, as in tests.yml
+          tools: composer
+          coverage: none
+
+      - name: Install the locked dependencies into vendor/
+        run: composer install --no-dev --no-scripts --no-interaction --no-progress
+
+      - name: Commit vendor/ and re-run the checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          git add --all vendor
+          if git diff --cached --quiet; then
+            echo "vendor/ already matches composer.lock: nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Dependencies: sync vendor/ with composer.lock" \
+                     -m "Automated by .github/workflows/dependabot-vendor.yml: composer install, vendor/ committed."
+          git push origin "HEAD:${BRANCH}"
+          gh workflow run tests.yml --ref "${BRANCH}"

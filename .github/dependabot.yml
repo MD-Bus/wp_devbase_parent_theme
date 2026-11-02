@@ -9,9 +9,14 @@
 # A Dependabot PR edits composer.json/composer.lock only. vendor/ is committed
 # and is what a tag ships, so merging the PR alone changes nothing on sites,
 # and bin/check-vendor-drift.sh (run by bin/release.sh) refuses to release
-# until vendor/ matches the lock again. After merging:
+# until vendor/ matches the lock again. .github/workflows/dependabot-vendor.yml
+# does that step on the PR itself (composer install, commit vendor/ to the PR
+# branch, re-run the checks), so a PR is merge-ready once its checks are green.
+# By hand, if it ever has to be:
 #     git pull && composer install && php tests/vendor/bin/phpunit
 #     git add vendor composer.lock && git commit
+# Dependabot won't update a PR someone has pushed to, which includes that
+# workflow's commit: `@dependabot recreate` rebuilds it (and re-runs the sync).
 #
 # SCF and ASE are exact pins ("6.9.7"); Dependabot moves the pin, which is
 # the intent: a newer version is offered, never a range that drifts.

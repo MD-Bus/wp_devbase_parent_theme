@@ -510,15 +510,28 @@ You are told when an update is due:
 - **Dependabot** (`.github/dependabot.yml`) opens a pull request, checked
   daily, when SCF, ASE, Timber, Twig or their Symfony dependencies have a new
   version (grouped into one). It edits only `composer.json` and
-  `composer.lock`, while a release ships the committed `vendor/`, so after
-  merging one:
+  `composer.lock`, while a release ships the committed `vendor/`. A workflow
+  (`.github/workflows/dependabot-vendor.yml`) closes that gap on the pull
+  request itself: it runs `composer install`, commits the updated `vendor/` to
+  the PR branch as `github-actions[bot]`, and starts the **Tests** workflow on
+  it again. So **a Dependabot pull request is ready to merge once its checks
+  are green**, and its diff shows exactly what will ship. If the
+  **Release-ready** check stays red, the sync did not run or failed: open its
+  run under the Actions tab, or do it by hand:
 
   ```bash
-  git pull && composer install && php tests/vendor/bin/phpunit
-  git add vendor composer.lock && git commit
+  git checkout <the PR branch> && composer install && php tests/vendor/bin/phpunit
+  git add vendor composer.lock && git commit && git push
   ```
 
-  Until that is done, `bin/release.sh` refuses to release.
+  Until `vendor/` matches the lock, `bin/release.sh` refuses to release.
+
+  Because the workflow pushes to the branch, Dependabot no longer updates that
+  PR when a newer version appears (it never overwrites a branch someone else
+  pushed to). Close it and a fresh one opens, or comment `@dependabot recreate`
+  to rebuild it, which runs the sync again. It acts only on PRs authored by
+  Dependabot from this repository, only when the root `composer.lock`
+  changes, and runs Composer with scripts off.
 - **The MCP Adapter** isn't on Packagist, so Dependabot can't see it. A daily
   workflow (`.github/workflows/mcp-adapter-release.yml`) opens an issue when
   a newer release exists; replace `vendor/mcp-adapter/` with it, test, release.
@@ -641,9 +654,11 @@ pull request and every release tag:
   with a MySQL service and runs the suite on PHP 8.2 (the minimum) and 8.4.
   On a Dependabot pull request that means the *proposed* versions are tested:
   green means the update works.
-- **Release-ready** runs the vendor drift check. It is red on a Dependabot pull
-  request until `composer install` has been run and `vendor/` committed, the
-  same thing `bin/release.sh` refuses without.
+- **Release-ready** runs the vendor drift check, the same thing
+  `bin/release.sh` refuses without. On a Dependabot pull request it is red
+  only until the **Dependabot vendor sync** workflow has committed `vendor/` to
+  the branch (see Updates above) and started these checks again; if it stays
+  red, the sync failed.
 
 CI only reports. Warden publishes a tag the moment it is pushed, so a red tag
 means withdrawing that release in Warden; `bin/release.sh` is the gate that

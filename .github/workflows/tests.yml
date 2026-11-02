@@ -9,9 +9,11 @@
 #   tests          installs exactly what composer.lock says (for a Dependabot
 #                  PR, the NEW versions) and runs the suite: does the update work?
 #   release-ready  bin/check-vendor-drift.sh: is the committed vendor/ what the
-#                  lock says? Red on a Dependabot PR until `composer install`
-#                  has been run and vendor/ committed, which is the step
-#                  release.sh would refuse without.
+#                  lock says? Red on a Dependabot PR for the moment between
+#                  the bot's push and dependabot-vendor.yml committing vendor/
+#                  (which then starts this workflow again, so the PR ends
+#                  green). Stays red if that didn't run or failed: it is the
+#                  step release.sh would refuse without.
 #
 # The suite needs a real WordPress (ABSPATH is four levels above tests/, see
 # tests/wp-tests-config.php), so the theme is checked out inside a fresh
@@ -123,6 +125,6 @@ jobs:
       - name: Vendor drift check
         run: |
           if ! ./bin/check-vendor-drift.sh; then
-            echo "::error::vendor/ does not match composer.lock. After merging a Dependabot PR: composer install, run the suite, commit vendor/ with composer.lock. bin/release.sh refuses until then."
+            echo "::error::vendor/ does not match composer.lock. On a Dependabot PR, dependabot-vendor.yml commits vendor/ by itself (check that its run succeeded); otherwise: composer install, run the suite, commit vendor/ with composer.lock. bin/release.sh refuses until then."
             exit 1
           fi
