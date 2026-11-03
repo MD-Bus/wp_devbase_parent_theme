@@ -116,6 +116,8 @@ rsync -a "$THEME_DIR/" "$BUILD_DIR/" \
 	--exclude='/ROADMAP.md' \
 	--exclude='/SECURITY.md' \
 	--exclude='/docs' \
+	--exclude='* 2.*' \
+	--exclude='* 2' \
 	--exclude='.gitignore' \
 	--exclude='/languages/*.po' \
 	--exclude='/languages/*.pot'

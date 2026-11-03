@@ -87,6 +87,18 @@ function devbase_ase_default_settings() {
 		// table is created separately — see inc/dependencies/ase-limit-login-table.php.
 		'limit_login_attempts' => true,
 
+		// ASE's login screen code reads these four keys unconditionally and only
+		// ASE's own settings form (on save) ever fills them in, so turning the
+		// feature on above without them prints "Undefined array key" warnings on
+		// wp-login.php (class-limit-login-attempts.php) on every site. These are
+		// ASE's own defaults. Gap-fill only: a saved value always wins, and a child
+		// that wants other numbers uses devbase/ase/defaults (fresh sites) or
+		// devbase/ase/enforced (always).
+		'login_fails_allowed'    => 3,     // Failed attempts before a lockout.
+		'login_lockout_maxcount' => 3,     // Lockouts before a longer one.
+		'change_login_url'       => false, // Keep the standard /wp-login.php.
+		'custom_login_slug'      => 'backend', // Only used when change_login_url is on.
+
 		// Obfuscates author slugs (e.g. /author/username/ -> a hashed slug)
 		// so usernames aren't exposed via author archive URLs.
 		'obfuscate_author_slugs' => true,

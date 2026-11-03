@@ -30,6 +30,10 @@ tests/wp-tests-config.php
 !/bundled-plugins/*.zip
 /bundled-plugins/.build/
 
+# Stray Finder duplicates ("forms 2.php", "main 2.css", ...): never part of the theme
+* 2.*
+* 2
+
 # OS and editor cruft
 .DS_Store
 .vscode/

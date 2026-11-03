@@ -156,6 +156,17 @@ class Test_ASE_Overrides extends WP_UnitTestCase {
 		$this->assertTrue( $resolved['disable_plugin_theme_editor'] );
 	}
 
+	public function test_the_login_limit_settings_ase_reads_unconditionally_have_defaults() {
+		// Without these four keys ASE's login screen prints "Undefined array key" warnings.
+		$resolved = devbase_ase_resolved_defaults();
+
+		$this->assertTrue( $resolved['limit_login_attempts'] );
+		$this->assertSame( 3, $resolved['login_fails_allowed'] );
+		$this->assertSame( 3, $resolved['login_lockout_maxcount'] );
+		$this->assertFalse( $resolved['change_login_url'] );
+		$this->assertSame( 'backend', $resolved['custom_login_slug'] );
+	}
+
 	public function test_a_filter_returning_a_non_array_is_ignored_rather_than_fatal() {
 		$fn = function () { return 'oops'; };
 		add_filter( 'devbase/ase/enforced', $fn );

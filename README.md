@@ -36,6 +36,8 @@ fix reaches every client site through a single release.
 | **Schema** | Organization, Website and Breadcrumb JSON-LD, each independently toggleable. |
 | **Archives** | Custom fields on a CPT archive (which ACF has no location rule for), an **SEO** tab on each archive that sets its search title and description, and CPT archives in the internal link picker. |
 | **MCP** | Content abilities over the WordPress MCP Adapter — list/get/create/update posts and options values, generic across every post type, behind an opt-in allow-list. Pages can be read and built as a list of the site's own blocks, and media uploaded (opt-in). |
+| **Shops** | WooCommerce ships inside the theme as a zip and is installed into `wp-content/plugins/` only for a child theme that requires it. It is activated, kept active, and cannot be updated, deactivated or deleted from WordPress: only a theme release changes it, and a release never downgrades it. Off unless a child asks. |
+| **Payment kill switch** | The site follows its Warden licence status: Suspended means public visitors get a 503 page, `wp-admin` stays open. Off unless a child turns it on. |
 | **Updates** | Both themes update themselves from [Warden](https://github.com/momardia54/Warden), a self-hosted licensing and release service. Bundled dependencies change only in a tested theme release; Dependabot and a release workflow say when one is due. |
 
 ## Installing
@@ -311,6 +313,34 @@ add_filter( 'devbase/forms/registered_forms', function ( $forms ) {
 } );
 ```
 
+### Turning on the optional parts
+
+Two features are built in but **off** until a child theme asks for them, so a
+site that doesn't need them is unchanged. Both are filters, registered at the
+top level of the child's `functions.php` (or a file it requires): child code
+loads before the parent, so never call a `devbase_*` function there.
+
+```php
+// A shop: install, activate and keep WooCommerce (ships with the theme).
+add_filter( 'devbase/required_plugins', function ( $plugins ) {
+    $plugins[] = 'woocommerce';
+    return $plugins;
+} );
+
+// The payment kill switch, with this site's blocked-page settings.
+add_filter( 'devbase/suspension/enabled', '__return_true' );
+add_filter( 'devbase/suspension/config', function ( $config ) {
+    $config['contact'] = 'https://example.com'; // the button on the blocked page
+    return $config;
+} );
+```
+
+| Filter | Purpose |
+| --- | --- |
+| `devbase/required_plugins` | Slugs of bundled plugins this site needs (`woocommerce`). Required means installed, activated and locked against WordPress changes. Details: `inc/bundled-plugins/AGENT.md`. |
+| `devbase/suspension/enabled` | `true` turns the kill switch on. |
+| `devbase/suspension/config` | Manual override, lock statuses, check interval, the blocked page's title, message, contact button and fonts. Details: `inc/suspension/AGENT.md`. |
+
 ### Building a form
 
 A form is its fields, its rules and its words; the theme does the rest. In the
@@ -567,6 +597,13 @@ committed (Warden ships what is committed).
 
 Theme Settings > Miscellaneous > System Status shows the bundled versions.
 
+**Payment kill switch** (off unless a child theme turns it on with the
+`devbase/suspension/enabled` filter): the site follows its Warden licence
+status. Set the licence to Suspended in Warden and public visitors get a 503
+"unavailable" page at the next licence check; set it back and the site is
+restored. `wp-admin` and `wp-login.php` stay open, and a failed check never
+changes anything. Details in `inc/suspension/AGENT.md`.
+
 **The themes themselves** are delivered by [Warden](https://github.com/momardia54/Warden) — a self-hosted
 licensing and release service, and a separate project. Each theme has its
 own release track and its own licence key, so the parent and a client's
@@ -648,7 +685,13 @@ Two gates run before a zip is produced:
 2. **The test suite** — a zip is only produced from code that passes.
 
 The result excludes `tests/`, `bin/`, development translation sources and
-internal documentation.
+internal documentation. It does include `bundled-plugins/woocommerce.zip`.
+
+That zip is built by `./bin/bundle-plugins.sh` from `bundled-plugins/composer.lock`
+and **committed**: Warden publishes what a tag contains. After changing the
+WooCommerce pin, run the script and commit the zip with the lock;
+`bin/check-vendor-drift.sh` (so `bin/release.sh` and CI) refuses a release
+where they disagree.
 
 ## Tests
 

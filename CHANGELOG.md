@@ -10,6 +10,30 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.16.0] — 2026-11-03
+
+### Added
+
+- **Payment kill switch** (`inc/suspension/`), moved from the OCWOF child so any client site can use it. The
+  site follows its Warden licence status: Suspended in Warden means public visitors get a 503 "unavailable"
+  page at the next licence check (the REST API and logged-out AJAX too); setting it back restores the site.
+  `wp-admin` and `wp-login.php` stay open, only the status `suspended` locks, and a failed check changes
+  nothing. **Off unless a child theme turns it on** (`devbase/suspension/enabled`; message, contact button
+  and fonts through `devbase/suspension/config`), so no site changes on update.
+
+### Fixed
+
+- **Warnings on the login screen.** The parent switches Admin Site Enhancements' login-attempt limit on but
+  never set that feature's own settings, so `wp-login.php` printed four "Undefined array key" warnings
+  (`login_fails_allowed`, `login_lockout_maxcount`, `change_login_url`, `custom_login_slug`) on every site.
+  They now get ASE's own defaults (3, 3, off, `backend`). Gap-fill only: a saved value, or a child's
+  `devbase/ase/defaults` / `devbase/ase/enforced`, still wins.
+
+### Changed
+
+- README: the Shops and Payment kill switch features, how a child turns them on, and the committed
+  WooCommerce zip under Packaging.
+
 ## [1.15.0] — 2026-11-03
 
 ### Added
