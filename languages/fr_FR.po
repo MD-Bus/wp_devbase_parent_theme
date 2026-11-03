@@ -574,24 +574,3 @@ msgstr "Cette extension est gérée par le thème. Elle n’est mise à jour que
 
 msgid "Updated with the theme"
 msgstr "Mise à jour avec le thème"
-
-msgid "This site is suspended."
-msgstr "Ce site est suspendu."
-
-msgid "Visitors see an \"unavailable\" page. It is restored automatically at the next licence check once the licence is active again."
-msgstr "Les visiteurs voient une page « indisponible ». Le site est rétabli automatiquement à la prochaine vérification de la licence, une fois celle-ci de nouveau active."
-
-msgid "Visitors see an \"unavailable\" page. Please contact the developer."
-msgstr "Les visiteurs voient une page « indisponible ». Veuillez contacter le développeur."
-
-msgid "The site stays online until %s. After that, visitors will see an \"unavailable\" page. Please contact the developer."
-msgstr "Le site reste en ligne jusqu’au %s. Ensuite, les visiteurs verront une page « indisponible ». Veuillez contacter le développeur."
-
-msgid "After the grace period, visitors will see an \"unavailable\" page. Please contact the developer."
-msgstr "Après le délai de grâce, les visiteurs verront une page « indisponible ». Veuillez contacter le développeur."
-
-msgid "Licence payment is late."
-msgstr "Le paiement de la licence est en retard."
-
-msgid "Site suspended"
-msgstr "Site suspendu"

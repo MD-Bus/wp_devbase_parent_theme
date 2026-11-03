@@ -10,6 +10,17 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.17.0] — 2026-11-03
+
+### Removed
+
+- **The payment kill switch is gone from the parent** (added in 1.16.0, never enabled by a released child
+  theme except OCWOF 1.3.0, which has since handed it back). It belongs with each site's own code, where a
+  parent release cannot remove or change it: it is now part of the starter child theme (1.2.0) and the OCWOF
+  child (1.3.1). Removed: `inc/suspension/`, the `devbase/suspension/enabled` and `devbase/suspension/config`
+  filters, and their strings. **Release order: a child that carries its own copy (OCWOF 1.3.1) first, then this
+  parent.** A site on OCWOF 1.3.0 with this parent has no kill switch until the child updates.
+
 ## [1.16.1] — 2026-11-03
 
 ### Fixed

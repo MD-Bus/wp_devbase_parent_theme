@@ -572,24 +572,3 @@ msgstr ""
 
 msgid "Updated with the theme"
 msgstr ""
-
-msgid "This site is suspended."
-msgstr ""
-
-msgid "Visitors see an \"unavailable\" page. It is restored automatically at the next licence check once the licence is active again."
-msgstr ""
-
-msgid "Visitors see an \"unavailable\" page. Please contact the developer."
-msgstr ""
-
-msgid "The site stays online until %s. After that, visitors will see an \"unavailable\" page. Please contact the developer."
-msgstr ""
-
-msgid "After the grace period, visitors will see an \"unavailable\" page. Please contact the developer."
-msgstr ""
-
-msgid "Licence payment is late."
-msgstr ""
-
-msgid "Site suspended"
-msgstr ""

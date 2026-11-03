@@ -59,12 +59,6 @@ require_once __DIR__ . '/inc/bundled-plugins/lock.php';
 // Clears the data the removed MCP sign-in left on sites that ran 1.11.0 or 1.13.0.
 require_once __DIR__ . '/inc/legacy-mcp-oauth-cleanup.php';
 
-// Payment kill switch: follows the Warden licence status and answers 503 while
-// suspended. OFF unless a child theme turns it on (devbase/suspension/enabled),
-// so nothing changes on a site that doesn't. See inc/suspension/AGENT.md.
-require_once __DIR__ . '/inc/suspension/suspension.php';
-require_once __DIR__ . '/inc/suspension/licence.php';
-
 // Delivers updates for this theme AND the active child theme from Warden,
 // through WordPress's own theme-update pipeline. warden.php is the signed
 // API client; theme-updates.php is the wiring into core. Both depend on the
