@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fc133a8cb71d771222da124870c8a6d3",
+    "content-hash": "1a03cf361674aa156cc95952b7b87b55",
     "packages": [
         {
             "name": "composer/installers",
@@ -608,15 +608,15 @@
         },
         {
             "name": "wpackagist-plugin/secure-custom-fields",
-            "version": "6.9.7",
+            "version": "6.9.8",
             "source": {
                 "type": "svn",
                 "url": "https://plugins.svn.wordpress.org/secure-custom-fields/",
-                "reference": "tags/6.9.7"
+                "reference": "tags/6.9.8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/secure-custom-fields.6.9.7.zip"
+                "url": "https://downloads.wordpress.org/plugin/secure-custom-fields.6.9.8.zip"
             },
             "require": {
                 "composer/installers": "^1.0 || ^2.0"
