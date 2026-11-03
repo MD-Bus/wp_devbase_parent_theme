@@ -91,7 +91,7 @@ add_action( 'acf/init', function () {
 		),
 		array(
 			'key'          => 'field_devbase_warden_licence_key',
-			'label'        => __( 'Licence Key', 'devbase_parent_theme' ),
+			'label'        => __( 'Theme Update Licence Key', 'devbase_parent_theme' ),
 			'name'         => 'warden_licence_key',
 			'type'         => 'password',
 			'instructions' => __( 'The single Warden licence key for this site. It covers the base theme (tag parent-theme) and this site\'s own theme (tag child-theme). Shown as dots; leave empty to disable update checks.', 'devbase_parent_theme' ),

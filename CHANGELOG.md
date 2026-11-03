@@ -16,6 +16,12 @@ see the README's Versioning section. Every release needs a section here.
   zip, because it excludes every `*.zip`, and included the theme's own `.github/`. The plugin zips are kept now and
   `.github/` is left out. Tooling only: nothing changes on sites, no release needed.
 
+## [1.18.1] — 2026-11-03
+
+### Changed
+
+- The Licence page names its key field **Theme Update Licence Key** (it was "Licence Key"), so it says what the key is for. Same field, same value; French translations added.
+
 ## [1.18.0] — 2026-11-03
 
 Works with Warden 0.5.0 or later (one licence key for several apps, selected by tag). A site's tags in Warden

@@ -578,3 +578,6 @@ msgstr ""
 
 msgid "Old per-theme key, no tag — enter the single licence key."
 msgstr ""
+
+msgid "Theme Update Licence Key"
+msgstr ""

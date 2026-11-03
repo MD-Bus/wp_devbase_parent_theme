@@ -680,6 +680,7 @@ class Test_Warden_Updates extends WP_UnitTestCase {
 
 		$this->assertIsArray( $field );
 		$this->assertSame( 'warden_licence_key', $field['name'] );
+		$this->assertSame( __( 'Theme Update Licence Key', 'devbase_parent_theme' ), $field['label'] );
 		$this->assertSame( 'password', $field['type'] );
 		$this->assertFalse( acf_get_field( 'field_devbase_warden_parent_licence' ) );
 		$this->assertFalse( acf_get_field( 'field_devbase_warden_child_licence' ) );

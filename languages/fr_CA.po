@@ -580,3 +580,6 @@ msgstr "Étiquette %1$s%2$s"
 
 msgid "Old per-theme key, no tag — enter the single licence key."
 msgstr "Ancienne clé par thème, sans étiquette — saisissez la clé de licence unique."
+
+msgid "Theme Update Licence Key"
+msgstr "Clé de licence des mises à jour du thème"
