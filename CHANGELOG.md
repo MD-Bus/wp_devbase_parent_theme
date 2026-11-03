@@ -10,6 +10,12 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- `bin/build-zip.sh` (manual installs only; a release tag is unaffected) left `bundled-plugins/woocommerce.zip` out of the
+  zip, because it excludes every `*.zip`, and included the theme's own `.github/`. The plugin zips are kept now and
+  `.github/` is left out. Tooling only: nothing changes on sites, no release needed.
+
 ## [1.18.0] — 2026-11-03
 
 Works with Warden 0.5.0 or later (one licence key for several apps, selected by tag). A site's tags in Warden

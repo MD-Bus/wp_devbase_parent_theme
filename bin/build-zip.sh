@@ -46,6 +46,11 @@
 # client's server). The excludes are anchored with a leading slash so they
 # only match this theme's own copies, never third-party ones inside vendor/.
 #
+# The plugin zips in bundled-plugins/ (WooCommerce) are KEPT: the --include above
+# comes before --exclude='*.zip' on purpose (rsync takes the first rule that
+# matches), because without them a child theme that requires the plugin has
+# nothing to install. Every other .zip, i.e. build output, stays out.
+#
 # LICENSE is deliberately KEPT. This theme is GPLv2+ and bundles GPLv2+ code
 # (Secure Custom Fields, Admin Site Enhancements); the GPL requires the
 # licence text to travel with the distributed work. The licence files inside
@@ -109,7 +114,9 @@ rsync -a "$THEME_DIR/" "$BUILD_DIR/" \
 	--exclude='/bundled-plugins/.build' \
 	--exclude='/bundled-plugins/composer.json' \
 	--exclude='/bundled-plugins/composer.lock' \
+	--include='/bundled-plugins/*.zip' \
 	--exclude='*.zip' \
+	--exclude='/.github' \
 	--exclude='AGENT.md' \
 	--exclude='/README.md' \
 	--exclude='/CHANGELOG.md' \
