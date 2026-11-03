@@ -9,16 +9,20 @@ class Test_Bundled_Plugins extends WP_UnitTestCase {
 
 	private $zip_dir;
 	private $required = array();
+	private $loaded   = false; // does the plugin count as running in this request?
 
 	public function set_up() {
 		parent::set_up();
 
 		$this->zip_dir  = trailingslashit( get_temp_dir() ) . 'devbase-bundled-test-' . wp_generate_password( 6, false ) . '/';
 		$this->required = array();
+		$this->loaded   = false;
+		devbase_bundled_plugins_deferred(); // drop anything a previous test queued
 		wp_mkdir_p( $this->zip_dir );
 
 		add_filter( 'devbase/bundled_plugins', array( $this, 'fixture_registry' ) );
 		add_filter( 'devbase/required_plugins', array( $this, 'fixture_required' ) );
+		add_filter( 'devbase/bundled_plugin_is_loaded', array( $this, 'fixture_loaded' ) );
 
 		delete_option( DEVBASE_BUNDLED_PLUGINS_MANAGED );
 		delete_option( DEVBASE_BUNDLED_PLUGINS_ERRORS );
@@ -29,6 +33,8 @@ class Test_Bundled_Plugins extends WP_UnitTestCase {
 	public function tear_down() {
 		remove_filter( 'devbase/bundled_plugins', array( $this, 'fixture_registry' ) );
 		remove_filter( 'devbase/required_plugins', array( $this, 'fixture_required' ) );
+		remove_filter( 'devbase/bundled_plugin_is_loaded', array( $this, 'fixture_loaded' ) );
+		devbase_bundled_plugins_deferred();
 		devbase_bundled_plugins_unlocked( false );
 
 		$this->delete_dir( WP_PLUGIN_DIR . '/fixtureplug' );
@@ -47,6 +53,10 @@ class Test_Bundled_Plugins extends WP_UnitTestCase {
 				'version' => $this->zip_version,
 			),
 		);
+	}
+
+	public function fixture_loaded() {
+		return $this->loaded;
 	}
 
 	public function fixture_required() {
@@ -189,12 +199,59 @@ class Test_Bundled_Plugins extends WP_UnitTestCase {
 		$this->assertSame( '', devbase_installed_plugin_version( 'fixtureplug' ) );
 	}
 
+	// --- never change a plugin's files while it is running ----------------------------
+
+	public function test_a_loaded_plugin_is_upgraded_at_the_end_of_the_request_not_during_it() {
+		$this->install_on_disk( '1.0.0' );
+		update_option( 'active_plugins', array( 'fixtureplug/fixtureplug.php' ) );
+		$this->make_zip( '2.0.0' );
+		$this->require_it();
+		$this->loaded = true;
+
+		$results = devbase_sync_bundled_plugins();
+
+		$this->assertSame( 'upgrading', $results['fixtureplug'] );
+		$this->assertSame( '1.0.0', devbase_installed_plugin_version( 'fixtureplug' ), 'Files untouched while the plugin is running.' );
+		$this->assertNotFalse( get_option( 'devbase_bundled_plugins_lock' ), 'The lock is held until the swap is done.' );
+
+		devbase_bundled_plugins_run_deferred();
+
+		$this->assertSame( '2.0.0', devbase_installed_plugin_version( 'fixtureplug' ) );
+		$this->assertFalse( get_option( 'devbase_bundled_plugins_lock' ) );
+		$this->assertSame( array( 'fixtureplug' ), get_option( DEVBASE_BUNDLED_PLUGINS_MANAGED ) );
+	}
+
+	public function test_a_deferred_upgrade_that_does_not_raise_the_version_is_reported() {
+		$this->install_on_disk( '1.0.0' );
+		update_option( 'active_plugins', array( 'fixtureplug/fixtureplug.php' ) );
+		$this->make_zip( '1.0.0' );
+		$this->zip_version = '2.0.0';
+		$this->require_it();
+		$this->loaded = true;
+
+		devbase_sync_bundled_plugins();
+		devbase_bundled_plugins_run_deferred();
+
+		$this->assertNotEmpty( get_option( DEVBASE_BUNDLED_PLUGINS_ERRORS )['fixtureplug'] );
+		$this->assertFalse( devbase_bundled_plugins_pending(), 'Not retried on every page.' );
+	}
+
+	public function test_a_plugin_that_is_not_loaded_is_removed_at_once() {
+		$this->install_on_disk( '1.0.0' );
+		update_option( DEVBASE_BUNDLED_PLUGINS_MANAGED, array( 'fixtureplug' ) );
+		$this->required = array();
+
+		$this->assertSame( 'removed', devbase_sync_bundled_plugins()['fixtureplug'] );
+		$this->assertDirectoryDoesNotExist( WP_PLUGIN_DIR . '/fixtureplug' );
+	}
+
 	// --- removal --------------------------------------------------------------
 
 	public function test_a_plugin_nobody_requires_any_more_is_removed_but_its_data_stays() {
 		$this->make_zip( '2.0.0' );
 		$this->require_it();
 		devbase_sync_bundled_plugins();
+		$this->loaded = true; // it was active when this request started
 		update_option( 'fixtureplug_orders', array( 1, 2, 3 ) );
 
 		$this->required = array();
@@ -202,6 +259,11 @@ class Test_Bundled_Plugins extends WP_UnitTestCase {
 		$results = devbase_sync_bundled_plugins();
 
 		$this->assertSame( 'removed', $results['fixtureplug'] );
+		$this->assertFalse( devbase_bundled_plugin_is_active( 'fixtureplug/fixtureplug.php' ), 'Deactivated at once.' );
+		$this->assertDirectoryExists( WP_PLUGIN_DIR . '/fixtureplug', 'Loaded in this request: files go at the end of it.' );
+
+		devbase_bundled_plugins_run_deferred();
+
 		$this->assertDirectoryDoesNotExist( WP_PLUGIN_DIR . '/fixtureplug' );
 		$this->assertFalse( devbase_bundled_plugin_is_active( 'fixtureplug/fixtureplug.php' ) );
 		$this->assertSame( array(), get_option( DEVBASE_BUNDLED_PLUGINS_MANAGED ) );
@@ -224,6 +286,7 @@ class Test_Bundled_Plugins extends WP_UnitTestCase {
 		devbase_sync_bundled_plugins();
 
 		do_action( 'switch_theme', 'Twenty Twenty-Five', wp_get_theme( 'twentytwentyfive' ), wp_get_theme() );
+		devbase_bundled_plugins_run_deferred();
 
 		$this->assertDirectoryDoesNotExist( WP_PLUGIN_DIR . '/fixtureplug' );
 	}

@@ -12,6 +12,11 @@
 //     the front end, never on AJAX or cron, never on a POST.
 //   - Removal deletes the plugin's FILES only. Its uninstall.php is not run,
 //     so orders, products and settings stay in the database.
+//   - A plugin that is LOADED in the current request (WooCommerce is, on every
+//     wp-admin page while active) never has its files swapped or deleted
+//     mid-request: it loads classes lazily and runs its own shutdown hooks
+//     (Action Scheduler), so missing or half-new files are a fatal error.
+//     The change is queued and done at the very end of shutdown instead.
 
 /** Option listing the slugs this theme installed (and so may remove). */
 const DEVBASE_BUNDLED_PLUGINS_MANAGED = 'devbase_bundled_plugins_managed';
@@ -80,10 +85,68 @@ function devbase_sync_bundled_plugins() {
 		}
 	}
 
-	delete_option( 'devbase_bundled_plugins_lock' );
+	devbase_bundled_plugins_release_lock();
 
 	return $results;
 }
+
+/**
+ * Work that must wait until the end of the request, because the plugin it
+ * changes is loaded right now. Pass a callable to queue it; pass nothing to
+ * take (and clear) the queue.
+ *
+ * @param callable|null $job
+ * @return callable[]
+ */
+function devbase_bundled_plugins_deferred( $job = null ) {
+	static $queue = array();
+
+	if ( null !== $job ) {
+		$queue[] = $job;
+		return $queue;
+	}
+
+	$jobs  = $queue;
+	$queue = array();
+
+	return $jobs;
+}
+
+/** Whether the plugin's code is running in this request. */
+function devbase_bundled_plugin_is_loaded( $slug, $def ) {
+	$real   = realpath( WP_PLUGIN_DIR . '/' . $def['file'] );
+	$loaded = false !== $real && in_array( $real, get_included_files(), true );
+
+	return (bool) apply_filters( 'devbase/bundled_plugin_is_loaded', $loaded, $slug );
+}
+
+/** Frees the sync lock, unless deferred work still needs it. */
+function devbase_bundled_plugins_release_lock() {
+	if ( ! devbase_bundled_plugins_pending_jobs() ) {
+		delete_option( 'devbase_bundled_plugins_lock' );
+	}
+}
+
+/** Whether deferred work is queued (without taking it). */
+function devbase_bundled_plugins_pending_jobs() {
+	$jobs = devbase_bundled_plugins_deferred();
+
+	foreach ( $jobs as $job ) {
+		devbase_bundled_plugins_deferred( $job );
+	}
+
+	return (bool) $jobs;
+}
+
+/** Runs the queued file changes. Hooked to the very end of shutdown. */
+function devbase_bundled_plugins_run_deferred() {
+	foreach ( devbase_bundled_plugins_deferred() as $job ) {
+		$job();
+	}
+
+	delete_option( 'devbase_bundled_plugins_lock' );
+}
+add_action( 'shutdown', 'devbase_bundled_plugins_run_deferred', PHP_INT_MAX );
 
 /** A short-lived lock; a crashed run frees itself after five minutes. */
 function devbase_bundled_plugins_take_lock() {
@@ -143,20 +206,22 @@ function devbase_ensure_bundled_plugin( $slug, $def ) {
 	$result    = 'ok';
 
 	if ( ! $was_here || ( '' !== $bundled && version_compare( $installed, $bundled, '<' ) ) ) {
-		$copied = devbase_install_bundled_plugin_files( $slug, $def );
-		if ( is_wp_error( $copied ) ) {
-			return devbase_bundled_plugin_problem( $slug, $copied );
+		if ( $was_here && devbase_bundled_plugin_is_loaded( $slug, $def ) ) {
+			// Running right now: swap its files after everything else has finished.
+			devbase_bundled_plugins_deferred( function () use ( $slug, $def, $installed ) {
+				$done = devbase_install_and_check_bundled_plugin( $slug, $def, $installed );
+				if ( ! is_wp_error( $done ) ) {
+					devbase_bundled_plugin_manage( $slug, true );
+					devbase_bundled_plugin_problem( $slug );
+				}
+			} );
+
+			return 'upgrading';
 		}
 
-		// The zip must really have raised the version, or this would unpack
-		// 17 MB on every request (a release built without bundle-plugins.sh).
-		$after = devbase_installed_plugin_version( $slug );
-		if ( '' === $after || ( '' !== $installed && version_compare( $after, $installed, '<=' ) ) ) {
-			return devbase_bundled_plugin_problem( $slug, new WP_Error( 'no_change', sprintf(
-				/* translators: %s: plugin name. */
-				__( 'The bundled %s did not install. The theme release is built wrong; reinstall the theme.', 'devbase_parent_theme' ),
-				$def['name']
-			) ) );
+		$done = devbase_install_and_check_bundled_plugin( $slug, $def, $installed );
+		if ( is_wp_error( $done ) ) {
+			return $done;
 		}
 
 		$result = $was_here ? 'upgraded' : 'installed';
@@ -176,6 +241,35 @@ function devbase_ensure_bundled_plugin( $slug, $def ) {
 	devbase_bundled_plugin_problem( $slug );
 
 	return $result;
+}
+
+/**
+ * Unpacks the zip, then checks the version really went up. Records the problem
+ * when it didn't (or the unpack failed).
+ *
+ * @param string $before The version on disk before, '' when none.
+ * @return true|WP_Error
+ */
+function devbase_install_and_check_bundled_plugin( $slug, $def, $before ) {
+	require_once ABSPATH . 'wp-admin/includes/file.php';
+
+	$copied = devbase_install_bundled_plugin_files( $slug, $def );
+	if ( is_wp_error( $copied ) ) {
+		return devbase_bundled_plugin_problem( $slug, $copied );
+	}
+
+	// The zip must really have raised the version, or this would unpack
+	// 17 MB on every request (a release built without bundle-plugins.sh).
+	$after = devbase_installed_plugin_version( $slug );
+	if ( '' === $after || ( '' !== $before && version_compare( $after, $before, '<=' ) ) ) {
+		return devbase_bundled_plugin_problem( $slug, new WP_Error( 'no_change', sprintf(
+			/* translators: %s: plugin name. */
+			__( 'The bundled %s did not install. The theme release is built wrong; reinstall the theme.', 'devbase_parent_theme' ),
+			$def['name']
+		) ) );
+	}
+
+	return true;
 }
 
 /**
@@ -265,36 +359,49 @@ function devbase_install_bundled_plugin_files( $slug, $def ) {
  * @return string|WP_Error
  */
 function devbase_remove_bundled_plugin( $slug, $def ) {
-	devbase_bundled_plugins_unlocked( true );
-
 	if ( devbase_bundled_plugin_is_active( $def['file'] ) ) {
+		devbase_bundled_plugins_unlocked( true );
 		deactivate_plugins( $def['file'] );
+		devbase_bundled_plugins_unlocked( false );
 	}
 
-	$removed = true;
-	if ( file_exists( WP_PLUGIN_DIR . '/' . dirname( $def['file'] ) ) ) {
-		if ( WP_Filesystem() ) {
-			global $wp_filesystem;
-			$removed = $wp_filesystem->delete( trailingslashit( $wp_filesystem->wp_plugins_dir() ) . dirname( $def['file'] ), true );
-		} else {
+	$delete = function () use ( $slug, $def ) {
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+
+		$removed = true;
+		if ( file_exists( WP_PLUGIN_DIR . '/' . dirname( $def['file'] ) ) ) {
 			$removed = false;
+			if ( WP_Filesystem() ) {
+				global $wp_filesystem;
+				$removed = $wp_filesystem->delete( trailingslashit( $wp_filesystem->wp_plugins_dir() ) . dirname( $def['file'] ), true );
+			}
 		}
+
+		if ( ! $removed ) {
+			return devbase_bundled_plugin_problem( $slug, new WP_Error( 'remove', sprintf(
+				/* translators: %s: plugin name. */
+				__( '%s could not be removed from the plugins folder.', 'devbase_parent_theme' ),
+				$def['name']
+			) ) );
+		}
+
+		devbase_bundled_plugin_manage( $slug, false );
+		devbase_bundled_plugin_problem( $slug );
+
+		return true;
+	};
+
+	if ( devbase_bundled_plugin_is_loaded( $slug, $def ) ) {
+		// Still running in this request (it was active when the page started).
+		// Deleting now breaks its lazy class loading and its shutdown hooks.
+		devbase_bundled_plugins_deferred( $delete );
+
+		return 'removed';
 	}
 
-	devbase_bundled_plugins_unlocked( false );
+	$done = $delete();
 
-	if ( ! $removed ) {
-		return devbase_bundled_plugin_problem( $slug, new WP_Error( 'remove', sprintf(
-			/* translators: %s: plugin name. */
-			__( '%s could not be removed from the plugins folder.', 'devbase_parent_theme' ),
-			$def['name']
-		) ) );
-	}
-
-	devbase_bundled_plugin_manage( $slug, false );
-	devbase_bundled_plugin_problem( $slug );
-
-	return 'removed';
+	return is_wp_error( $done ) ? $done : 'removed';
 }
 
 // wp-admin GET requests and WP-CLI: the moment a theme release's newer zip
@@ -311,21 +418,7 @@ add_action( 'admin_init', function () {
 		return;
 	}
 
-	$was_active = array();
-	foreach ( devbase_required_plugins() as $slug ) {
-		$was_active[ $slug ] = devbase_bundled_plugin_is_active( devbase_bundled_plugins()[ $slug ]['file'] );
-	}
-
-	$results = devbase_sync_bundled_plugins();
-
-	// An active plugin's old files were already loaded for this request, and
-	// its new ones are on disk now. Start over on a clean request.
-	foreach ( $results as $slug => $result ) {
-		if ( 'upgraded' === $result && ! empty( $was_active[ $slug ] ) && ! headers_sent() && isset( $_SERVER['REQUEST_URI'] ) ) {
-			wp_safe_redirect( set_url_scheme( 'http://' . wp_unslash( $_SERVER['HTTP_HOST'] ?? '' ) . wp_unslash( $_SERVER['REQUEST_URI'] ) ) );
-			exit;
-		}
-	}
+	devbase_sync_bundled_plugins();
 } );
 
 // Right after this theme is activated: install what it requires, and remove
@@ -361,7 +454,7 @@ add_action( 'switch_theme', function ( $new_name, $new_theme ) {
 		}
 	}
 
-	delete_option( 'devbase_bundled_plugins_lock' );
+	devbase_bundled_plugins_release_lock();
 }, 10, 2 );
 
 // Says so when a required plugin could not be installed. A shop without

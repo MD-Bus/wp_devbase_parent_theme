@@ -10,6 +10,17 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.16.1] — 2026-11-03
+
+### Fixed
+
+- **A fatal error when WooCommerce is removed or upgraded.** The files of a plugin that was running in the
+  current request were deleted or replaced mid-request, so WooCommerce (which loads classes lazily and runs
+  Action Scheduler at shutdown) failed with "Failed opening required" / "Class ActionScheduler_Lock not
+  found" on that one page load, then recovered. The plugin is now deactivated at once and its files are
+  deleted or swapped at the very end of the request, after every shutdown hook; the page-reload workaround
+  for upgrades is gone.
+
 ## [1.16.0] — 2026-11-03
 
 ### Added
