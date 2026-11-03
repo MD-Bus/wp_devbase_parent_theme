@@ -10,6 +10,27 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.15.0] — 2026-11-03
+
+### Added
+
+- **WooCommerce can ship with the theme** (WooCommerce 11.2.1), for child themes that are shops. Off unless
+  the child asks: a child adds `'woocommerce'` through the `devbase/required_plugins` filter and the site
+  then gets WooCommerce installed into `wp-content/plugins/` from a zip in the theme (`bundled-plugins/`,
+  `inc/bundled-plugins/`), activated, and kept active. Sites whose child doesn't ask are unaffected apart
+  from the larger download (about 17 MB).
+- **Only a theme release changes it.** While a child requires it, WordPress's automatic updates, the update
+  notice, one-click and bulk updates, an uploaded zip over it, Deactivate and Delete are all blocked. A
+  release installs its WooCommerce version when it is newer than the site's; it never downgrades.
+- **Removing it:** switching to a theme that isn't built on this parent removes WooCommerce's files (the
+  shop's orders, products and settings stay in the database). Switching to another child leaves it to that
+  child.
+- A problem installing it (the host won't allow file writes, a broken package) shows as an admin notice.
+- `bin/bundle-plugins.sh` builds the zip from `bundled-plugins/composer.lock`; `bin/check-vendor-drift.sh`
+  (so `bin/release.sh` and CI) refuses a zip that doesn't hold the locked version; Dependabot watches the pin
+  and `dependabot-vendor.yml` rebuilds the zip on its pull request.
+- System Status lists WooCommerce's bundled version on a site that requires it.
+
 ## [1.14.2] — 2026-11-02
 
 ### Changed

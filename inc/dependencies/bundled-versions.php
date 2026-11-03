@@ -38,6 +38,14 @@ function devbase_bundled_versions() {
 
 	$versions['Timber'] = class_exists( 'Timber\Timber' ) && ! empty( Timber\Timber::$version ) ? Timber\Timber::$version : '—';
 
+	// The plugins installed into wp-content/plugins/ (not vendor/), only on a
+	// site whose child theme requires them: the version this release ships.
+	$bundled = devbase_bundled_plugins();
+	foreach ( devbase_required_plugins() as $slug ) {
+		$version                          = devbase_bundled_plugin_version( $slug );
+		$versions[ $bundled[ $slug ]['name'] ] = '' !== $version ? $version : '—';
+	}
+
 	return $versions;
 }
 

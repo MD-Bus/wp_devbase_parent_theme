@@ -25,6 +25,10 @@ tests/wp-tests-config.php
 
 # Build output
 *.zip
+# ...except the plugin zips a release ships (bin/bundle-plugins.sh builds them;
+# Warden publishes the committed files, so they must be in git).
+!/bundled-plugins/*.zip
+/bundled-plugins/.build/
 
 # OS and editor cruft
 .DS_Store

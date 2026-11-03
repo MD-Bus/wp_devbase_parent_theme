@@ -8,6 +8,8 @@
 /tests                  export-ignore
 /bin                    export-ignore
 /docs                   export-ignore
+/bundled-plugins/composer.json export-ignore
+/bundled-plugins/composer.lock export-ignore
 /.github                export-ignore
 /phpunit.xml.dist       export-ignore
 .phpunit.result.cache   export-ignore

@@ -106,6 +106,9 @@ rsync -a "$THEME_DIR/" "$BUILD_DIR/" \
 	--exclude='phpunit.xml.dist' \
 	--exclude='.phpunit.result.cache' \
 	--exclude='bin' \
+	--exclude='/bundled-plugins/.build' \
+	--exclude='/bundled-plugins/composer.json' \
+	--exclude='/bundled-plugins/composer.lock' \
 	--exclude='*.zip' \
 	--exclude='AGENT.md' \
 	--exclude='/README.md' \

@@ -89,4 +89,40 @@ if ! php -r '
 	DRIFT=1
 fi
 
+# The plugins installed into wp-content/plugins/ instead of loaded from vendor/
+# (WooCommerce, see inc/bundled-plugins/AGENT.md). What a tag ships is the
+# COMMITTED bundled-plugins/<slug>.zip, so the version inside that zip must be
+# the one bundled-plugins/composer.lock pins; otherwise sites would be sent a
+# different version than the one that was tested. Fix: ./bin/bundle-plugins.sh
+while IFS='|' read -r SLUG MAIN_FILE; do
+	[ -z "$SLUG" ] && continue
+
+	ZIP="$THEME_DIR/bundled-plugins/$SLUG.zip"
+	ZIP_VERSION=""
+	if [ -f "$ZIP" ]; then
+		ZIP_VERSION="$(unzip -p "$ZIP" "$SLUG/$MAIN_FILE" 2>/dev/null | grep -m1 -i '^[[:space:]*]*Version:' | sed 's/.*[Vv]ersion:[[:space:]]*//' | tr -d '\r' || true)"
+	fi
+
+	LOCK_VERSION="$(php -r '
+		$lock = json_decode( file_get_contents( $argv[1] ), true );
+		foreach ( $lock["packages"] as $p ) {
+			if ( "wpackagist-plugin/" . $argv[2] === $p["name"] ) { echo $p["version"]; return; }
+		}
+	' "$THEME_DIR/bundled-plugins/composer.lock" "$SLUG")"
+
+	if [ -z "$ZIP_VERSION" ]; then
+		echo "    DRIFT: bundled-plugins/$SLUG.zip is missing or has no $SLUG/$MAIN_FILE"
+		echo "           -> ./bin/bundle-plugins.sh, then commit the zip"
+		DRIFT=1
+	elif [ "$ZIP_VERSION" != "$LOCK_VERSION" ]; then
+		echo "    DRIFT: bundled-plugins/$SLUG.zip holds $ZIP_VERSION but bundled-plugins/composer.lock pins $LOCK_VERSION"
+		echo "           -> ./bin/bundle-plugins.sh, then commit the zip"
+		DRIFT=1
+	else
+		echo "    ok: bundled-plugins/$SLUG.zip $ZIP_VERSION"
+	fi
+done <<-ZIPS
+	woocommerce|woocommerce.php
+ZIPS
+
 exit "$DRIFT"

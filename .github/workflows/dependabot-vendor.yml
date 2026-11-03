@@ -20,6 +20,9 @@
 # (composer/installers, which places the WordPress plugins in vendor/) must
 # stay enabled, so that one comes from composer.lock as the PR proposes it.
 #
+# A PR that changes bundled-plugins/composer.lock (WooCommerce) also gets the
+# zip rebuilt by bin/bundle-plugins.sh and committed: that zip is what a tag ships.
+#
 # Only the theme's own composer.lock (the `paths` filter matches the root
 # file, not tests/composer.lock: test tooling is never shipped). Nothing is
 # committed when vendor/ already matches the lock.
@@ -38,7 +41,7 @@ name: Dependabot vendor sync
 on:
   pull_request_target:
     branches: [main]
-    paths: [composer.lock]
+    paths: [composer.lock, bundled-plugins/composer.lock]
 
 permissions:
   contents: write   # push the vendor/ commit to the PR branch
@@ -60,6 +63,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0   # the next steps compare the PR against its base
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -70,12 +74,23 @@ jobs:
       - name: Install the locked dependencies into vendor/
         run: composer install --no-dev --no-scripts --no-interaction --no-progress
 
+      - name: Rebuild the bundled plugin zips (WooCommerce) from their lock
+        env:
+          BASE: ${{ github.event.pull_request.base.ref }}
+        run: |
+          # Only when this PR moved that lock: a rebuilt zip is never byte-identical.
+          if git diff --quiet "origin/${BASE}...HEAD" -- bundled-plugins/composer.lock; then
+            echo "bundled-plugins/composer.lock is unchanged: zip left as committed."
+          else
+            ./bin/bundle-plugins.sh
+          fi
+
       - name: Commit vendor/ and re-run the checks
         env:
           GH_TOKEN: ${{ github.token }}
           BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
-          git add --all vendor
+          git add --all vendor bundled-plugins
           if git diff --cached --quiet; then
             echo "vendor/ already matches composer.lock: nothing to commit."
             exit 0

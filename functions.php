@@ -47,6 +47,15 @@ require_once __DIR__ . '/inc/hide-admin-menu-items.php';
 // versions and clears the retired daily update checks from older sites.
 require_once __DIR__ . '/inc/dependencies/bundled-versions.php';
 
+// Plugins that ship in the theme as a zip and are installed into
+// wp-content/plugins/ (WooCommerce), but only for a child theme that requires
+// them. registry.php says what exists and what is required; sync.php installs,
+// upgrades and removes; lock.php stops WordPress changing them. Nothing here
+// does anything until a child opts in through devbase/required_plugins.
+require_once __DIR__ . '/inc/bundled-plugins/registry.php';
+require_once __DIR__ . '/inc/bundled-plugins/sync.php';
+require_once __DIR__ . '/inc/bundled-plugins/lock.php';
+
 // Clears the data the removed MCP sign-in left on sites that ran 1.11.0 or 1.13.0.
 require_once __DIR__ . '/inc/legacy-mcp-oauth-cleanup.php';
 

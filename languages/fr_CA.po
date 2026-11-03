@@ -547,3 +547,30 @@ msgstr "%1$s : à jour (%2$s)."
 
 msgid "no response"
 msgstr "aucune réponse"
+
+msgid "The bundled %s did not install. The theme release is built wrong; reinstall the theme."
+msgstr "Le module %s inclus ne s’est pas installé. La version du thème est mal construite ; réinstallez le thème."
+
+msgid "The bundled %s file is missing from the theme."
+msgstr "Le fichier du module %s inclus est absent du thème."
+
+msgid "WordPress cannot write to the plugins folder, so %s was not installed. The host must allow direct file access."
+msgstr "WordPress ne peut pas écrire dans le dossier des extensions ; %s n’a donc pas été installé. L’hébergeur doit autoriser l’accès direct aux fichiers."
+
+msgid "The bundled %s file is not a valid plugin package."
+msgstr "Le fichier du module %s inclus n’est pas un paquet d’extension valide."
+
+msgid "The existing %s could not be replaced."
+msgstr "%s existant n’a pas pu être remplacé."
+
+msgid "%s could not be installed. The previous copy was restored."
+msgstr "%s n’a pas pu être installé. La copie précédente a été rétablie."
+
+msgid "%s could not be removed from the plugins folder."
+msgstr "%s n’a pas pu être retiré du dossier des extensions."
+
+msgid "This plugin is managed by the theme. It is updated only when the theme is updated, and stays active while the theme needs it."
+msgstr "Cette extension est gérée par le thème. Elle n’est mise à jour que lors d’une mise à jour du thème et reste active tant que le thème en a besoin."
+
+msgid "Updated with the theme"
+msgstr "Mise à jour avec le thème"

@@ -545,3 +545,30 @@ msgstr ""
 
 msgid "no response"
 msgstr ""
+
+msgid "The bundled %s did not install. The theme release is built wrong; reinstall the theme."
+msgstr ""
+
+msgid "The bundled %s file is missing from the theme."
+msgstr ""
+
+msgid "WordPress cannot write to the plugins folder, so %s was not installed. The host must allow direct file access."
+msgstr ""
+
+msgid "The bundled %s file is not a valid plugin package."
+msgstr ""
+
+msgid "The existing %s could not be replaced."
+msgstr ""
+
+msgid "%s could not be installed. The previous copy was restored."
+msgstr ""
+
+msgid "%s could not be removed from the plugins folder."
+msgstr ""
+
+msgid "This plugin is managed by the theme. It is updated only when the theme is updated, and stays active while the theme needs it."
+msgstr ""
+
+msgid "Updated with the theme"
+msgstr ""

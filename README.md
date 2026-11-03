@@ -555,6 +555,16 @@ You are told when an update is due:
 Neither repeats daily: an open Dependabot pull request is updated in place,
 not sent again, and an ignored version or closed issue never comes back.
 
+**WooCommerce** is bundled differently: it is a real plugin, shipped as a zip in
+`bundled-plugins/` and installed into `wp-content/plugins/` only on a site whose
+child theme asks for it (`devbase/required_plugins` filter; off by default). The
+child makes it a requirement: it is installed, activated and kept active, and
+WordPress cannot update, deactivate or delete it. Only a theme release changes
+it, and a release never downgrades it. Switching to a theme that doesn't need
+it removes the files and leaves the shop's data. The version is pinned in
+`bundled-plugins/composer.json`; `bin/bundle-plugins.sh` builds the zip, which is
+committed (Warden ships what is committed).
+
 Theme Settings > Miscellaneous > System Status shows the bundled versions.
 
 **The themes themselves** are delivered by [Warden](https://github.com/momardia54/Warden) — a self-hosted
