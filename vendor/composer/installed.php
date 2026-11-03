@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => '__root__',
-        'pretty_version' => 'dev-dependabot/composer/dependencies-e3a1720946',
-        'version' => 'dev-dependabot/composer/dependencies-e3a1720946',
-        'reference' => '6b7f314744dfce385e5fe3c84566713f03d67fba',
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => 'b7f58666d6dbbcf03f53dece007450eca9cc2144',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         '__root__' => array(
-            'pretty_version' => 'dev-dependabot/composer/dependencies-e3a1720946',
-            'version' => 'dev-dependabot/composer/dependencies-e3a1720946',
-            'reference' => '6b7f314744dfce385e5fe3c84566713f03d67fba',
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => 'b7f58666d6dbbcf03f53dece007450eca9cc2144',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -83,9 +83,9 @@
             'dev_requirement' => false,
         ),
         'wpackagist-plugin/secure-custom-fields' => array(
-            'pretty_version' => '6.9.7',
-            'version' => '6.9.7.0',
-            'reference' => 'tags/6.9.7',
+            'pretty_version' => '6.9.8',
+            'version' => '6.9.8.0',
+            'reference' => 'tags/6.9.8',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../secure-custom-fields',
             'aliases' => array(),
