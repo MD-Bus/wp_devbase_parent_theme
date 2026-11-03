@@ -15,10 +15,14 @@
 // from one place to another.
 //
 //   GET {relay url}/v1/site        Authorization: Bearer {relay site key}
-//   { ..., "params": { "warden_base_url":       "https://...",
-//                      "warden_public_key":     "base64...",
-//                      "warden_parent_licence": "WRD-...",
-//                      "warden_child_licence":  "WRD-..." } }
+//   { ..., "params": { "warden_base_url":    "https://...",
+//                      "warden_public_key":  "base64...",
+//                      "warden_licence_key": "WRD-..." } }
+//
+// ONE licence key (since 1.18.0; Warden 0.5.0 lets one key cover several
+// apps). It is checked as the tag parent-theme for the base theme and child-theme for
+// the site's own theme (see warden.php). The two params of 1.17.0 and earlier,
+// `warden_parent_licence` and `warden_child_licence`, are no longer read.
 //
 // NAMING. One name per value, everywhere. A Brand Relay param is called
 // exactly like the Licence-page field it fills (see devbase_relay_params()),
@@ -164,16 +168,15 @@ function devbase_relay_ping_secret() {
 /**
  * The provisionable values: param name (identical to the field name) =>
  * how to treat it. `fill_only` values are never overwritten while present;
- * `track` is the theme whose cached Warden answer a change invalidates. Order
- * matters: the address and key are written before the licences that depend on
- * them.
+ * `tracks` are the themes whose cached Warden answer a change invalidates (the
+ * one licence key serves both). Order matters: the address and key are written
+ * before the licence that depends on them.
  */
 function devbase_relay_params() {
 	return array(
-		'warden_base_url'       => array( 'fill_only' => true,  'track' => '' ),
-		'warden_public_key'     => array( 'fill_only' => true,  'track' => '' ),
-		'warden_parent_licence' => array( 'fill_only' => false, 'track' => get_template() ),
-		'warden_child_licence'  => array( 'fill_only' => false, 'track' => is_child_theme() ? get_stylesheet() : '' ),
+		'warden_base_url'    => array( 'fill_only' => true,  'tracks' => array() ),
+		'warden_public_key'  => array( 'fill_only' => true,  'tracks' => array() ),
+		'warden_licence_key' => array( 'fill_only' => false, 'tracks' => array_values( array_unique( array_filter( array( get_template(), is_child_theme() ? get_stylesheet() : '' ) ) ) ) ),
 	);
 }
 
@@ -311,8 +314,11 @@ function devbase_relay_sync( $respect_interval = false ) {
 		update_field( $name, $value, 'option' );
 		$result['changed'][] = $name;
 
-		if ( '' !== $rule['track'] ) {
-			$stale[] = $rule['track'];
+		$stale = array_merge( $stale, $rule['tracks'] );
+
+		// The single key replaces the two old per-theme keys for good.
+		if ( 'warden_licence_key' === $name ) {
+			devbase_warden_forget_legacy_licences();
 		}
 	}
 
@@ -320,7 +326,7 @@ function devbase_relay_sync( $respect_interval = false ) {
 	// the next check asks about the new one, and ask now rather than waiting
 	// for core's schedule: that is the point of changing a licence remotely.
 	if ( $result['changed'] ) {
-		foreach ( $stale as $stylesheet ) {
+		foreach ( array_unique( $stale ) as $stylesheet ) {
 			delete_option( devbase_warden_state_option( $stylesheet ) );
 		}
 

@@ -26,7 +26,7 @@ class Test_Relay_Sync extends WP_UnitTestCase {
 		parent::set_up();
 
 		delete_option( DEVBASE_RELAY_STATE_OPTION );
-		update_field( 'warden_parent_licence', 'WRD-OLD', 'option' );
+		update_field( 'warden_licence_key', 'WRD-OLD', 'option' );
 
 		// Every ping now counts against its IP; give each test a fresh one.
 		static $n = 0;
@@ -95,29 +95,29 @@ class Test_Relay_Sync extends WP_UnitTestCase {
 	// --- Pulling the values ---------------------------------------------------
 
 	public function test_sync_sends_the_site_key_and_stores_a_new_licence() {
-		$this->fake_relay( 200, array( 'params' => array( 'warden_parent_licence' => 'WRD-NEW' ) ) );
+		$this->fake_relay( 200, array( 'params' => array( 'warden_licence_key' => 'WRD-NEW' ) ) );
 
 		$result = devbase_relay_sync();
 
 		$this->assertTrue( $result['ok'] );
-		$this->assertSame( array( 'warden_parent_licence' ), $result['changed'] );
-		$this->assertSame( 'WRD-NEW', devbase_warden_parent_licence() );
+		$this->assertSame( array( 'warden_licence_key' ), $result['changed'] );
+		$this->assertSame( 'WRD-NEW', devbase_warden_licence() );
 		$this->assertSame( 'https://relay.test/v1/site', $this->requests[0]['url'] );
 		$this->assertSame( 'Bearer brs_testkey', $this->requests[0]['args']['headers']['Authorization'] );
 	}
 
 	public function test_a_removed_licence_is_put_back() {
-		update_field( 'warden_parent_licence', '', 'option' );
-		$this->fake_relay( 200, array( 'params' => array( 'warden_parent_licence' => 'WRD-NEW' ) ) );
+		update_field( 'warden_licence_key', '', 'option' );
+		$this->fake_relay( 200, array( 'params' => array( 'warden_licence_key' => 'WRD-NEW' ) ) );
 
 		devbase_relay_sync();
 
-		$this->assertSame( 'WRD-NEW', devbase_warden_parent_licence() );
+		$this->assertSame( 'WRD-NEW', devbase_warden_licence() );
 	}
 
 	public function test_a_changed_key_drops_the_cached_warden_answer() {
 		update_option( devbase_warden_state_option( get_template() ), array( 'response' => array( 'valid' => true ) ), false );
-		$this->fake_relay( 200, array( 'params' => array( 'warden_parent_licence' => 'WRD-NEW' ) ) );
+		$this->fake_relay( 200, array( 'params' => array( 'warden_licence_key' => 'WRD-NEW' ) ) );
 
 		devbase_relay_sync();
 
@@ -125,7 +125,7 @@ class Test_Relay_Sync extends WP_UnitTestCase {
 	}
 
 	public function test_an_unchanged_key_changes_nothing() {
-		$this->fake_relay( 200, array( 'params' => array( 'warden_parent_licence' => 'WRD-OLD' ) ) );
+		$this->fake_relay( 200, array( 'params' => array( 'warden_licence_key' => 'WRD-OLD' ) ) );
 
 		$result = devbase_relay_sync();
 
@@ -134,12 +134,12 @@ class Test_Relay_Sync extends WP_UnitTestCase {
 	}
 
 	public function test_missing_empty_or_non_string_params_never_clear_a_key() {
-		foreach ( array( array(), array( 'warden_parent_licence' => '' ), array( 'warden_parent_licence' => array( 'x' ) ) ) as $params ) {
+		foreach ( array( array(), array( 'warden_licence_key' => '' ), array( 'warden_licence_key' => array( 'x' ) ) ) as $params ) {
 			$this->fake_relay( 200, array( 'params' => $params ) );
 
 			devbase_relay_sync();
 
-			$this->assertSame( 'WRD-OLD', devbase_warden_parent_licence() );
+			$this->assertSame( 'WRD-OLD', devbase_warden_licence() );
 		}
 	}
 
@@ -150,7 +150,7 @@ class Test_Relay_Sync extends WP_UnitTestCase {
 			$result = devbase_relay_sync();
 
 			$this->assertFalse( $result['ok'] );
-			$this->assertSame( 'WRD-OLD', devbase_warden_parent_licence() );
+			$this->assertSame( 'WRD-OLD', devbase_warden_licence() );
 			$this->assertNotSame( '', devbase_relay_get_state()['last_error'] );
 		}
 	}
@@ -272,5 +272,35 @@ class Test_Relay_Sync extends WP_UnitTestCase {
 
 	public function test_a_ping_without_headers_is_refused() {
 		$this->assertWPError( devbase_relay_verify_ping( new WP_REST_Request( 'POST', '/devbase/v1/sync' ) ) );
+	}
+
+	public function test_the_single_key_replaces_the_two_old_ones() {
+		update_option( 'options_warden_parent_licence', 'WRD-OLD-PARENT' );
+		update_option( 'options_warden_child_licence', 'WRD-OLD-CHILD' );
+		update_option( devbase_warden_state_option( get_template() ), array( 'response' => array( 'valid' => true ) ), false );
+		$this->fake_relay( 200, array( 'params' => array( 'warden_licence_key' => 'WRD-NEW' ) ) );
+
+		devbase_relay_sync();
+
+		$this->assertSame( 'WRD-NEW', devbase_warden_licence() );
+		$this->assertFalse( get_option( 'options_warden_parent_licence' ) );
+		$this->assertFalse( get_option( 'options_warden_child_licence' ) );
+		$this->assertArrayNotHasKey( 'response', devbase_warden_get_state( get_template() ) );
+	}
+
+	public function test_the_two_old_param_names_are_no_longer_read() {
+		$this->fake_relay( 200, array( 'params' => array(
+			'warden_parent_licence' => 'WRD-IGNORED-1',
+			'warden_child_licence'  => 'WRD-IGNORED-2',
+		) ) );
+
+		$result = devbase_relay_sync();
+
+		$this->assertSame( array(), $result['changed'] );
+		$this->assertSame( 'WRD-OLD', devbase_warden_licence() );
+	}
+
+	public function test_the_only_licence_param_is_warden_licence_key() {
+		$this->assertSame( array( 'warden_base_url', 'warden_public_key', 'warden_licence_key' ), array_keys( devbase_relay_params() ) );
 	}
 }

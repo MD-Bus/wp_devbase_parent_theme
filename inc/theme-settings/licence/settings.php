@@ -1,8 +1,10 @@
 <?php
 
 // Registers the Licence sub-page (under Theme Settings): the Warden
-// endpoint and signing key for this install, plus one licence key per
-// theme track — this parent theme, and the active child theme.
+// endpoint and signing key for this install, plus ONE licence key. Since
+// Warden 0.5.0 a single key covers several apps, each under a tag; this
+// parent theme checks it as the tag parent-theme and the active child theme as
+// the tag child-theme (see inc/updates/warden.php).
 //
 // Same self-registering acf/init + acf_add_options_sub_page() +
 // acf_add_local_field_group() pattern as every other sub-page under Theme
@@ -84,22 +86,15 @@ add_action( 'acf/init', function () {
 		),
 		array(
 			'key'   => 'field_devbase_licence_tab_keys',
-			'label' => __( 'Licence Keys', 'devbase_parent_theme' ),
+			'label' => __( 'Licence Key', 'devbase_parent_theme' ),
 			'type'  => 'tab',
 		),
 		array(
-			'key'          => 'field_devbase_warden_parent_licence',
-			'label'        => __( 'Base Theme Licence Key', 'devbase_parent_theme' ),
-			'name'         => 'warden_parent_licence',
+			'key'          => 'field_devbase_warden_licence_key',
+			'label'        => __( 'Licence Key', 'devbase_parent_theme' ),
+			'name'         => 'warden_licence_key',
 			'type'         => 'password',
-			'instructions' => __( 'Licence key covering this base (parent) theme. Shown as dots; paste a new key to replace it. Leave empty to disable update checks for it.', 'devbase_parent_theme' ),
-		),
-		array(
-			'key'          => 'field_devbase_warden_child_licence',
-			'label'        => __( 'Child Theme Licence Key', 'devbase_parent_theme' ),
-			'name'         => 'warden_child_licence',
-			'type'         => 'password',
-			'instructions' => __( 'Licence key covering this site\'s own child theme. Shown as dots; paste a new key to replace it. Leave empty to disable update checks for it.', 'devbase_parent_theme' ),
+			'instructions' => __( 'The single Warden licence key for this site. It covers the base theme (tag parent-theme) and this site\'s own theme (tag child-theme). Shown as dots; leave empty to disable update checks.', 'devbase_parent_theme' ),
 		),
 		array(
 			'key'   => 'field_devbase_licence_tab_status',
@@ -175,23 +170,73 @@ function devbase_warden_public_key() {
 	return trim( (string) get_field( 'warden_public_key', 'option' ) );
 }
 
+/**
+ * The site's single Warden licence key ('' when none is set).
+ */
+function devbase_warden_licence() {
+	if ( ! function_exists( 'get_field' ) ) {
+		return '';
+	}
+
+	return trim( (string) get_field( 'warden_licence_key', 'option' ) );
+}
+
+/**
+ * A per-theme key stored by 1.17.0 and earlier (two keys, no tags). Those
+ * fields no longer exist, but the saved values do, and a site that has not yet
+ * been given the single key keeps updating with them (untagged checks, which
+ * Warden answers for a licence with one app until 1.0).
+ *
+ * @param string $which 'parent' or 'child'.
+ */
+function devbase_warden_legacy_licence( $which ) {
+	return trim( (string) get_option( 'options_warden_' . $which . '_licence', '' ) );
+}
+
+/**
+ * The key to check the parent theme with: the single key, else the old
+ * parent-only key.
+ */
 function devbase_warden_parent_licence() {
-	if ( ! function_exists( 'get_field' ) ) {
-		return '';
-	}
+	$key = devbase_warden_licence();
 
-	return trim( (string) get_field( 'warden_parent_licence', 'option' ) );
+	return '' !== $key ? $key : devbase_warden_legacy_licence( 'parent' );
 }
 
+/**
+ * The key to check the child theme with: the single key, else the old
+ * child-only key. (Child themes call this, so its name and meaning stay.)
+ */
 function devbase_warden_child_licence() {
-	if ( ! function_exists( 'get_field' ) ) {
-		return '';
-	}
+	$key = devbase_warden_licence();
 
-	return trim( (string) get_field( 'warden_child_licence', 'option' ) );
+	return '' !== $key ? $key : devbase_warden_legacy_licence( 'child' );
 }
 
-// These four values are provisioned from Brand Relay (inc/updates/relay-sync.php),
+/**
+ * Drops the two old keys once the single key is in place, so nothing is left
+ * to fall back on and no stale licence lingers in the database.
+ */
+function devbase_warden_forget_legacy_licences() {
+	foreach ( array( 'parent', 'child' ) as $which ) {
+		delete_option( 'options_warden_' . $which . '_licence' );
+		delete_option( '_options_warden_' . $which . '_licence' );
+	}
+}
+
+/**
+ * Housekeeping, run on wp-admin pages: once the single key is set, the old
+ * ones go.
+ */
+function devbase_warden_forget_replaced_licences() {
+	if ( '' !== devbase_warden_licence()
+		&& ( false !== get_option( 'options_warden_parent_licence' ) || false !== get_option( 'options_warden_child_licence' ) ) ) {
+		devbase_warden_forget_legacy_licences();
+	}
+}
+add_action( 'admin_init', 'devbase_warden_forget_replaced_licences' );
+
+// These three values are provisioned from Brand Relay (inc/updates/relay-sync.php),
 // so they are always shown but never editable. `disabled` rather than `readonly`:
 // a disabled input is not submitted, so saving this page can never rewrite them,
 // and browsers grey it out.
@@ -203,8 +248,7 @@ add_filter( 'acf/prepare_field', function ( $field ) {
 	$provisioned = array(
 		'field_devbase_warden_base_url',
 		'field_devbase_warden_public_key',
-		'field_devbase_warden_parent_licence',
-		'field_devbase_warden_child_licence',
+		'field_devbase_warden_licence_key',
 	);
 
 	if ( isset( $field['key'] ) && in_array( $field['key'], $provisioned, true ) ) {

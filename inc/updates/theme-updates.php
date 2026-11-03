@@ -27,6 +27,10 @@
  * Which themes we deliver updates for, as
  *   stylesheet (directory name) => licence key.
  *
+ * Both tracks carry the SAME key (the site's single licence key); what tells
+ * Warden which theme is meant is the tag, parent-theme or child-theme, added when the
+ * track is checked (devbase_warden_tag()).
+ *
  * A track with an empty licence key is skipped entirely — an unlicensed or
  * not-yet-configured site simply never sees an update offer, rather than
  * erroring.

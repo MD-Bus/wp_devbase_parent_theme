@@ -32,7 +32,7 @@ class Test_Warden_Updates extends WP_UnitTestCase {
 
 		update_field( 'warden_base_url', 'https://warden.test', 'option' );
 		update_field( 'warden_public_key', $this->public_key_base64, 'option' );
-		update_field( 'warden_parent_licence', self::LICENCE, 'option' );
+		update_field( 'warden_licence_key', self::LICENCE, 'option' );
 	}
 
 	public function tear_down() {
@@ -43,6 +43,8 @@ class Test_Warden_Updates extends WP_UnitTestCase {
 
 		$this->requests = array();
 		delete_option( devbase_warden_state_option( get_template() ) );
+		delete_option( devbase_warden_state_option( 'a_child_theme' ) );
+		devbase_warden_forget_legacy_licences();
 
 		parent::tear_down();
 	}
@@ -81,6 +83,11 @@ class Test_Warden_Updates extends WP_UnitTestCase {
 				'domain'      => isset( $query['domain'] ) ? $query['domain'] : '',
 				'nonce'       => isset( $query['nonce'] ) ? $query['nonce'] : null,
 			);
+
+			// A tagged check is answered for that tag, as Warden does.
+			if ( isset( $query['tag'] ) ) {
+				$body['tag'] = $query['tag'];
+			}
 
 			if ( null !== $update ) {
 				$body['update'] = $update;
@@ -542,5 +549,142 @@ class Test_Warden_Updates extends WP_UnitTestCase {
 				'Even a totally failed check must leave the theme listed, so wp-admin stays coherent.'
 			);
 		}
+	}
+
+	// --- One key, two tags (Warden 0.5.0) ----------------------------------------
+
+	private function sent_query( $index = 0 ) {
+		$query = array();
+		parse_str( (string) wp_parse_url( $this->requests[ $index ], PHP_URL_QUERY ), $query );
+
+		return $query;
+	}
+
+	public function test_the_base_theme_is_checked_under_the_tag_parent_theme() {
+		$this->fake_warden();
+		$this->check();
+
+		$this->assertSame( 'parent-theme', $this->sent_query()['tag'] );
+		$this->assertSame( 'parent-theme', devbase_warden_get_state( get_template() )['response']['tag'] );
+	}
+
+	public function test_a_child_theme_is_checked_under_the_tag_child_theme_with_the_same_key() {
+		$this->fake_warden();
+
+		$result = devbase_warden_check( 'a_child_theme', self::LICENCE, '1.0.0', true );
+
+		$this->assertSame( 'child-theme', $this->sent_query()['tag'] );
+		$this->assertStringContainsString( rawurlencode( self::LICENCE ), $this->requests[0], 'The same single key.' );
+		$this->assertSame( 'child-theme', $result['tag'] );
+	}
+
+	public function test_the_tag_names_can_be_changed_by_a_filter() {
+		$this->fake_warden();
+		$renamed = function ( $tag ) { return 'site-' . $tag; };
+		add_filter( 'devbase/warden/tag', $renamed );
+
+		$this->check();
+
+		remove_filter( 'devbase/warden/tag', $renamed );
+		$this->assertSame( 'site-parent-theme', $this->sent_query()['tag'] );
+	}
+
+	public function test_an_answer_for_the_other_tag_is_rejected() {
+		$this->fake_warden( array( 'tag' => 'child-theme' ) );
+
+		$this->assertSame( array(), $this->check(), 'The child-theme app\'s verdict must never be read as the parent-theme\'s.' );
+		$this->assertStringContainsString( 'not for tag parent-theme', devbase_warden_get_state( get_template() )['last_error'] );
+	}
+
+	public function test_an_untagged_multi_app_answer_is_rejected() {
+		// What Warden returns when no tag is sent to a licence with several apps:
+		// no top-level result, and no tag.
+		$this->fake_warden( array( 'tag' => null, 'valid' => null, 'apps' => array( array( 'tag' => 'parent-theme', 'valid' => true ) ) ) );
+
+		$this->assertSame( array(), $this->check() );
+		$this->assertStringContainsString( 'not for tag', devbase_warden_get_state( get_template() )['last_error'] );
+	}
+
+	public function test_the_answers_tag_is_compared_without_regard_to_case() {
+		$this->fake_warden( array( 'tag' => 'PARENT-THEME' ) );
+
+		$this->assertTrue( $this->check()['valid'] );
+	}
+
+	public function test_a_licence_without_our_tag_says_so() {
+		$this->filter = function ( $preempt, $args, $url ) {
+			$this->requests[] = $url;
+			$json = wp_json_encode( array( 'status' => 'attachment_not_found' ) );
+
+			return array( 'response' => array( 'code' => 404 ), 'body' => $json, 'headers' => array() );
+		};
+		add_filter( 'pre_http_request', $this->filter, 10, 3 );
+
+		$this->assertSame( array(), $this->check() );
+		$this->assertSame( 'this licence has no app tagged parent-theme', devbase_warden_get_state( get_template() )['last_error'] );
+	}
+
+	// --- The two old keys (1.17.0 and earlier) keep working until replaced -------------
+
+	public function test_an_old_per_theme_key_is_checked_without_a_tag() {
+		update_field( 'warden_licence_key', '', 'option' );
+		update_option( 'options_warden_parent_licence', 'WRD-OLD-PARENT' );
+		$this->fake_warden( array( 'license_key' => 'WRD-OLD-PARENT' ) );
+
+		$result = devbase_warden_check( get_template(), devbase_warden_parent_licence(), '1.0.0', true );
+
+		$this->assertSame( 'WRD-OLD-PARENT', devbase_warden_parent_licence() );
+		$this->assertArrayNotHasKey( 'tag', $this->sent_query(), 'A single-app licence is answered without a tag.' );
+		$this->assertTrue( $result['valid'] );
+	}
+
+	public function test_the_single_key_wins_over_the_old_ones() {
+		update_option( 'options_warden_parent_licence', 'WRD-OLD-PARENT' );
+		update_option( 'options_warden_child_licence', 'WRD-OLD-CHILD' );
+
+		$this->assertSame( self::LICENCE, devbase_warden_parent_licence() );
+		$this->assertSame( self::LICENCE, devbase_warden_child_licence() );
+	}
+
+	public function test_child_themes_still_get_a_key_from_the_function_they_call() {
+		// Child themes (their kill switch) call devbase_warden_child_licence().
+		update_field( 'warden_licence_key', '', 'option' );
+		update_option( 'options_warden_child_licence', 'WRD-OLD-CHILD' );
+
+		$this->assertSame( 'WRD-OLD-CHILD', devbase_warden_child_licence() );
+
+		update_field( 'warden_licence_key', self::LICENCE, 'option' );
+		$this->assertSame( self::LICENCE, devbase_warden_child_licence() );
+	}
+
+	public function test_forgetting_the_old_keys_removes_them() {
+		update_option( 'options_warden_parent_licence', 'WRD-OLD-PARENT' );
+		update_option( 'options_warden_child_licence', 'WRD-OLD-CHILD' );
+
+		devbase_warden_forget_legacy_licences();
+
+		$this->assertSame( '', devbase_warden_legacy_licence( 'parent' ) );
+		$this->assertSame( '', devbase_warden_legacy_licence( 'child' ) );
+	}
+
+	public function test_the_old_keys_are_removed_on_the_next_admin_page_once_the_single_key_is_set() {
+		update_option( 'options_warden_parent_licence', 'WRD-OLD-PARENT' );
+
+		devbase_warden_forget_replaced_licences();
+
+		$this->assertFalse( get_option( 'options_warden_parent_licence' ) );
+	}
+
+	public function test_the_licence_page_has_one_licence_field_and_not_the_two_old_ones() {
+		$field = acf_get_field( 'field_devbase_warden_licence_key' );
+
+		$this->assertIsArray( $field );
+		$this->assertSame( 'warden_licence_key', $field['name'] );
+		$this->assertSame( 'password', $field['type'] );
+		$this->assertFalse( acf_get_field( 'field_devbase_warden_parent_licence' ) );
+		$this->assertFalse( acf_get_field( 'field_devbase_warden_child_licence' ) );
+
+		// Provisioned from Brand Relay: shown, never editable.
+		$this->assertSame( 1, apply_filters( 'acf/prepare_field', $field )['disabled'] );
 	}
 }

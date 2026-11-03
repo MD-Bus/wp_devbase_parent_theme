@@ -65,10 +65,17 @@ registered in code, so it is identical on every site running this theme.
 
 ![Licence settings](docs/screenshots/licence-connection.png)
 
-The endpoint, signing key and one licence key per theme. These four fields
-are **provisioned automatically and cannot be edited here**; contact the
-developer for any licence issue. Leave a key empty and that theme simply
-never checks for updates.
+The Warden endpoint, its signing key and **one licence key** for the whole site.
+These three fields are **provisioned automatically and cannot be edited here**;
+contact the developer for any licence issue. Leave the key empty and the site
+simply never checks for updates.
+
+The one key covers both themes. In Warden the licence has two apps attached
+under the tags **`parent-theme`** (this base theme) and **`child-theme`** (the
+site's own theme); the site checks each theme under its tag, and one key uses one site
+slot. The Status tab shows each theme's tag. (Until 1.18.0 each theme had its
+own key; a site still holding those keeps updating with them until the single
+key arrives, which then replaces them.)
 
 The only two fields to fill in are the **Brand Relay URL** and **Brand Relay
 Site Key** (the *Brand Relay* tab). Saving them pulls everything else straight
@@ -410,8 +417,7 @@ param, which is public) named exactly like the field it fills:
 
 | Param | Fills | Behaviour |
 |---|---|---|
-| `warden_parent_licence` | Base Theme Licence Key | always brought back in line |
-| `warden_child_licence` | Child Theme Licence Key | always brought back in line |
+| `warden_licence_key` | Licence Key | always brought back in line |
 | `warden_base_url` | Warden URL | **fill-only**: accepted when empty, never overwritten; `https` only |
 | `warden_public_key` | Warden Public Key | **fill-only**: accepted when empty, never overwritten; must be a base64 Ed25519 key |
 
@@ -485,7 +491,7 @@ is shared by everything behind it.
 
 | Status | Meaning |
 |---|---|
-| `200` | Verified. Body `{ "ok": true, "error": "", "changed": ["warden_parent_licence"] }` (names only, never values). `ok: false` with an `error` when Brand Relay could not be read. |
+| `200` | Verified. Body `{ "ok": true, "error": "", "changed": ["warden_licence_key"] }` (names only, never values). `ok: false` with an `error` when Brand Relay could not be read. |
 | `401` | Wrong or missing `Origin`, bad signature, stale timestamp, malformed headers or a reused nonce. |
 | `404` | Not wired to Brand Relay (no URL or site key). |
 | `429` | Too many requests from this IP (more than 10 a minute, valid or not), or a sync already ran in the last 30 seconds. |

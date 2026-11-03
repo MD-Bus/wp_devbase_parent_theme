@@ -405,12 +405,6 @@ msgstr ""
 msgid "Let WordPress install new theme releases on its own schedule, with no manual step. Switch this off while actively building a site, so the theme cannot change underneath you mid-project."
 msgstr ""
 
-msgid "Base Theme Licence Key"
-msgstr ""
-
-msgid "Child Theme Licence Key"
-msgstr ""
-
 msgid "Licence key covering this base (parent) theme. Leave empty to disable update checks for it."
 msgstr ""
 
@@ -571,4 +565,16 @@ msgid "This plugin is managed by the theme. It is updated only when the theme is
 msgstr ""
 
 msgid "Updated with the theme"
+msgstr ""
+
+msgid "Licence Key"
+msgstr ""
+
+msgid "The single Warden licence key for this site. It covers the base theme (tag parent-theme) and this site's own theme (tag child-theme). Shown as dots; leave empty to disable update checks."
+msgstr ""
+
+msgid "Tag %1$s%2$s"
+msgstr ""
+
+msgid "Old per-theme key, no tag — enter the single licence key."
 msgstr ""

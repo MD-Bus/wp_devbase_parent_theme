@@ -76,6 +76,16 @@ function devbase_licence_status_row( $stylesheet, $licence ) {
 	$valid   = ! empty( $response['valid'] );
 	$licence_cell = ( $valid ? '✓ ' : '✗ ' ) . esc_html( $status );
 
+	// Which app on the licence this row is: the tag it is checked under, and
+	// the app's name as Warden reports it. An old per-theme key has no tag.
+	$tag      = function_exists( 'devbase_warden_tag' ) ? devbase_warden_tag( $stylesheet, $licence ) : '';
+	$app_name = isset( $response['app']['name'] ) ? (string) $response['app']['name'] : '';
+
+	$licence_cell .= '<br><small>' . ( '' !== $tag
+		/* translators: 1: the tag (parent-theme or child-theme), 2: the app's name in Warden. */
+		? sprintf( esc_html__( 'Tag %1$s%2$s', 'devbase_parent_theme' ), esc_html( $tag ), '' !== $app_name ? esc_html( ' · ' . $app_name ) : '' )
+		: esc_html__( 'Old per-theme key, no tag — enter the single licence key.', 'devbase_parent_theme' ) ) . '</small>';
+
 	if ( ! empty( $response['expires_at'] ) ) {
 		/* translators: %s: an ISO-8601 expiry date, as Warden returned it. */
 		$licence_cell .= '<br><small>' . sprintf( esc_html__( 'Expires %s', 'devbase_parent_theme' ), esc_html( (string) $response['expires_at'] ) ) . '</small>';

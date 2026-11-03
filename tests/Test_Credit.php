@@ -92,7 +92,7 @@ class Test_Credit extends WP_UnitTestCase {
 
 	public function test_private_values_in_the_response_never_reach_the_stored_copy() {
 		$this->fake( 200, $this->brand( array(
-			'params' => array( 'warden_parent_licence' => 'WRD-SECRET-LICENCE-KEY', 'accent' => '#fff' ),
+			'params' => array( 'warden_licence_key' => 'WRD-SECRET-LICENCE-KEY', 'accent' => '#fff' ),
 			'site'   => array( 'name' => 'Client', 'domain' => 'client.test' ),
 			'rules'  => array( array( 'id' => 'rul_1' ) ),
 			'embed'  => array( 'html' => '<script>alert(1)</script>', 'css' => 'body{display:none}' ),
@@ -103,7 +103,7 @@ class Test_Credit extends WP_UnitTestCase {
 
 		$stored = maybe_serialize( get_option( DEVBASE_CREDIT_OPTION ) );
 
-		foreach ( array( 'WRD-', 'warden_parent_licence', 'params', 'accent', 'client.test', 'rul_1', '<script', 'display:none', 'extra' ) as $needle ) {
+		foreach ( array( 'WRD-', 'warden_licence_key', 'params', 'accent', 'client.test', 'rul_1', '<script', 'display:none', 'extra' ) as $needle ) {
 			$this->assertStringNotContainsString( $needle, $stored, "'{$needle}' leaked into the stored credit" );
 		}
 	}

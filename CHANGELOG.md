@@ -10,6 +10,40 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.18.0] — 2026-11-03
+
+Works with Warden 0.5.0 or later (one licence key for several apps, selected by tag). A site's tags in Warden
+must be `parent-theme` (this theme) and `child-theme` (the site's own theme).
+
+### Changed
+
+- **One licence key instead of two.** Theme Settings > Licence has a single **Licence Key** field
+  (`warden_licence_key`) in place of *Base Theme Licence Key* and *Child Theme Licence Key*. The base theme is
+  checked under the tag `parent-theme` and the active child theme under `child-theme`, with the same key, so one licence
+  and one site slot cover both. The checks send `?tag=`, and an answer for the other tag, or the untagged
+  `apps` list a multi-app licence gives when no tag is sent, is rejected instead of being read as this
+  theme's verdict. A licence with no app under our tag is reported by name ("this licence has no app tagged
+  parent-theme").
+- **Brand Relay provisions one param, `warden_licence_key`,** in place of `warden_parent_licence` and
+  `warden_child_licence`. The two old names are no longer read. When the new key arrives, the two old keys are
+  deleted from the site and the cached answers are dropped so the next check asks about the new key.
+- The Status tab shows each theme's tag and the app name Warden reports, or "Old per-theme key, no tag".
+
+### Compatible
+
+- **A site that still holds the two old keys keeps updating** (untagged checks, which Warden still answers for
+  a licence with one app until its 1.0) until the single key is provisioned. Nothing breaks on update.
+- `devbase_warden_parent_licence()`, `devbase_warden_child_licence()` and `devbase_warden_check( $track,
+  $licence, $version, $force )` keep their names and signatures, so child themes (their payment kill switch
+  reads the same stored answer, top-level `status`) need no change. New: `devbase_warden_licence()`,
+  `devbase_warden_tag()`, the constants `DEVBASE_WARDEN_TAG_PARENT` / `DEVBASE_WARDEN_TAG_CHILD`, and the
+  filter `devbase/warden/tag`.
+
+### Not in this release
+
+- Batch checks, per-tag update delivery changes and anything Brand Relay does beyond provisioning (health
+  reports, error events, backups) are planned separately.
+
 ## [1.17.0] — 2026-11-03
 
 ### Removed

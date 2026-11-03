@@ -12,9 +12,10 @@
 //
 // Endpoint shape (see Warden's own docs/checking.md):
 //
-//   GET {base}/check/{licence key}?domain={host}&version={installed}&nonce={random}
+//   GET {base}/check/{licence key}?tag={TAG}&domain={host}&version={installed}&nonce={random}
 //
 //   {
+//     "tag": "parent-theme", "app": { "id": "app_...", "slug": "...", "name": "..." },
 //     "valid": true, "status": "active", "message": "",
 //     "license_key": "WRD-...", "domain": "client-site.org", "nonce": "...",
 //     "expires_at": "...", "grace_ends_at": null, "checked_at": "...",
@@ -25,10 +26,15 @@
 //     }
 //   }
 //
+// ONE KEY, TWO TAGS (Warden 0.5.0). The site holds a single licence key. The
+// base theme is checked under the tag parent-theme and the active child theme
+// under child-theme; each tag selects the app attached to the licence under that name, and
+// the answer is about that app only. See devbase_warden_tag().
+//
 // The release is NESTED under update.latest and update.available says whether
 // it is newer than the version the site sent (Warden's docs, guide/releases.md).
 //
-// Three of Warden's documented rules are implemented here rather than left
+// Four of Warden's documented rules are implemented here rather than left
 // to callers, because getting any of them wrong is a security or
 // availability bug, not a style choice:
 //
@@ -40,13 +46,25 @@
 // 2. ECHO THE NONCE. We send a random nonce and reject any response that
 //    doesn't return the same one, plus any response whose license_key
 //    isn't the key we asked about. Without this, a captured old response
-//    could be replayed indefinitely.
-// 3. FAIL SOFT, NEVER CLOSED. On a timeout, a 5xx, a parse failure or a
+//    could be replayed indefinitely. A tagged answer must also name the tag we
+//    asked for: an answer for the other app (or the untagged `apps` list a
+//    multi-app licence returns when no tag is sent) is rejected, never read as
+//    this theme's verdict.
+// 4. FAIL SOFT, NEVER CLOSED. On a timeout, a 5xx, a parse failure or a
 //    signature failure we return the LAST KNOWN GOOD response instead of
 //    "invalid". A Warden outage must never lock a client out of their own
 //    site or make their theme look unlicensed.
 
 define( 'DEVBASE_WARDEN_CACHE_TTL', 12 * HOUR_IN_SECONDS );
+
+// The tags the single licence key is checked under: the app attached to the
+// licence as parent-theme is this base theme, the one attached as child-theme
+// is the site's own theme. These are Warden's own example names, and they
+// satisfy its tag rule (lowercase: ^[a-z][a-z0-9_-]{0,47}$). The licence in
+// Warden must carry exactly these two tags; the filter devbase/warden/tag
+// changes what is sent. The answer's tag is compared without regard to case.
+define( 'DEVBASE_WARDEN_TAG_PARENT', 'parent-theme' );
+define( 'DEVBASE_WARDEN_TAG_CHILD', 'child-theme' );
 
 // How long a last-known-good response may keep authorising UPDATES after
 // Warden stops answering. Fail-soft has to be bounded, or "soft" becomes
@@ -118,10 +136,34 @@ function devbase_warden_verify_signature( $signature, $body, $public_key_base64 
 }
 
 /**
+ * The tag a track is checked under.
+ *
+ * The base theme is parent-theme and anything else (the active child) is child-theme. A
+ * track checked with one of the two old per-theme keys (1.17.0 and earlier)
+ * has no tag: those licences have a single app and Warden still answers them
+ * without one.
+ *
+ * @param string $track   The theme directory name.
+ * @param string $licence The key the track is being checked with.
+ * @return string The tag, or '' for an untagged (old-key) check.
+ */
+function devbase_warden_tag( $track, $licence ) {
+	$single = devbase_warden_licence();
+
+	if ( '' === $single || ! hash_equals( $single, (string) $licence ) ) {
+		return '';
+	}
+
+	$tag = get_template() === $track ? DEVBASE_WARDEN_TAG_PARENT : DEVBASE_WARDEN_TAG_CHILD;
+
+	return (string) apply_filters( 'devbase/warden/tag', $tag, $track );
+}
+
+/**
  * Asks Warden about one track, at most once per DEVBASE_WARDEN_CACHE_TTL.
  *
  * @param string $track      The theme directory name this licence covers.
- * @param string $licence    The WRD-... licence key.
+ * @param string $licence    The WRD-... licence key (the site's single key).
  * @param string $version    The installed version, for update checking.
  * @param bool   $force      Skip the cache (used by the "Check Now" button).
  * @return array The last known good response, or array() if there has never
@@ -152,16 +194,19 @@ function devbase_warden_check( $track, $licence, $version, $force = false ) {
 	}
 
 	$nonce = bin2hex( random_bytes( 16 ) );
+	$tag   = devbase_warden_tag( $track, $licence );
 
-	$url = trailingslashit( $base_url ) . 'check/' . rawurlencode( $licence );
-	$url = add_query_arg(
-		array(
-			'domain'  => devbase_warden_domain(),
-			'version' => $version,
-			'nonce'   => $nonce,
-		),
-		$url
+	$query = array(
+		'domain'  => devbase_warden_domain(),
+		'version' => $version,
+		'nonce'   => $nonce,
 	);
+
+	if ( '' !== $tag ) {
+		$query['tag'] = $tag;
+	}
+
+	$url = add_query_arg( $query, trailingslashit( $base_url ) . 'check/' . rawurlencode( $licence ) );
 
 	$response = wp_remote_get( $url, array( 'timeout' => 10 ) );
 
@@ -186,6 +231,15 @@ function devbase_warden_check( $track, $licence, $version, $force = false ) {
 	$body = wp_remote_retrieve_body( $response );
 
 	if ( 200 !== $code ) {
+		// Say WHY when Warden did: a licence with no app under our tag answers
+		// 404 attachment_not_found, which is a setup mistake worth naming. Only
+		// words for the log and the Status tab; nothing is trusted from it.
+		$said = json_decode( $body, true );
+
+		if ( 404 === $code && '' !== $tag && is_array( $said ) && isset( $said['status'] ) && 'attachment_not_found' === $said['status'] ) {
+			return $fail( "this licence has no app tagged {$tag}" );
+		}
+
 		return $fail( "HTTP {$code}" );
 	}
 
@@ -209,6 +263,14 @@ function devbase_warden_check( $track, $licence, $version, $force = false ) {
 
 	if ( ! isset( $result['nonce'] ) || ! hash_equals( $nonce, (string) $result['nonce'] ) ) {
 		return $fail( 'nonce mismatch (possible replay)' );
+	}
+
+	// A tagged answer must be about the tag we asked for. Without this an
+	// answer for the OTHER app on the same key (valid, with its own update
+	// offer) could be taken as this theme's, and a multi-app answer with no
+	// top-level result would read as "invalid".
+	if ( '' !== $tag && ( ! isset( $result['tag'] ) || 0 !== strcasecmp( $tag, (string) $result['tag'] ) ) ) {
+		return $fail( "response was not for tag {$tag}" );
 	}
 
 	$state['response']     = $result;
