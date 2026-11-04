@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => '__root__',
-        'pretty_version' => 'dev-dependabot/composer/dependencies-e3a1720946',
-        'version' => 'dev-dependabot/composer/dependencies-e3a1720946',
-        'reference' => '6b7f314744dfce385e5fe3c84566713f03d67fba',
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => 'a189c6bdccb2345ec60a2a7f5d25e7586ebd538d',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         '__root__' => array(
-            'pretty_version' => 'dev-dependabot/composer/dependencies-e3a1720946',
-            'version' => 'dev-dependabot/composer/dependencies-e3a1720946',
-            'reference' => '6b7f314744dfce385e5fe3c84566713f03d67fba',
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => 'a189c6bdccb2345ec60a2a7f5d25e7586ebd538d',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
