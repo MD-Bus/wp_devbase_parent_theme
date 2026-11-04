@@ -10,6 +10,14 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.30.3] — 2026-11-04
+
+### Fixed
+
+- **The Backups tab no longer sticks on "Loading…".** Its script kept the address and version (`page.js?ver=1.0.0`) it had when Backups was a page of its own, so a
+  host or browser that had cached the old script went on running it, and it never fetched the tab's content (seen on ocwof.org). The script's version is now
+  the theme's version, so every release fetches a fresh copy, and the tab also loads when the page is clicked, not only when it is seen.
+
 ## [1.30.2] — 2026-11-04
 
 ### Changed

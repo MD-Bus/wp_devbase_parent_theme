@@ -65,7 +65,6 @@ document.addEventListener( 'DOMContentLoaded', function () {
 	function load() {
 		call( 'render' ).then( function ( response ) {
 			root.innerHTML = response && response.success ? response.data.html : '<p class="description">' + devbaseBackups.error + '</p>';
-			loaded = true;
 
 			var status = statusEl();
 			if ( status && '1' === status.getAttribute( 'data-active' ) ) {
@@ -108,15 +107,32 @@ document.addEventListener( 'DOMContentLoaded', function () {
 	} );
 
 	// The tab is hidden until it is chosen: load the first time it can be seen (not on every Licence page load).
+	function loadOnce() {
+		if ( ! loaded ) {
+			loaded = true;
+			load();
+		}
+	}
+
 	if ( 'IntersectionObserver' in window ) {
 		var observer = new IntersectionObserver( function ( entries ) {
-			if ( ! loaded && entries.some( function ( e ) { return e.isIntersecting; } ) ) {
+			if ( entries.some( function ( e ) { return e.isIntersecting; } ) ) {
 				observer.disconnect();
-				load();
+				loadOnce();
 			}
 		} );
 		observer.observe( root );
-	} else {
-		load();
+	}
+
+	// Fallback: any click on the page's tabs (or the tab already showing) loads it once the box is visible.
+	document.addEventListener( 'click', function () {
+		setTimeout( function () {
+			if ( root.offsetParent !== null ) {
+				loadOnce();
+			}
+		}, 100 );
+	} );
+	if ( root.offsetParent !== null ) {
+		loadOnce();
 	}
 } );

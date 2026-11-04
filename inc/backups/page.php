@@ -235,7 +235,7 @@ add_action( 'admin_enqueue_scripts', function () {
 		return;
 	}
 
-	wp_enqueue_script( 'devbase-backups', get_template_directory_uri() . '/inc/backups/page.js', array(), '1.0.0', true );
+	wp_enqueue_script( 'devbase-backups', get_template_directory_uri() . '/inc/backups/page.js', array(), wp_get_theme( get_template() )->get( 'Version' ), true );
 	wp_localize_script( 'devbase-backups', 'devbaseBackups', array(
 		'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 		'nonce'   => wp_create_nonce( 'devbase_backups' ),
