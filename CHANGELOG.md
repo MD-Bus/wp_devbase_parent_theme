@@ -10,6 +10,16 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.28.0] — 2026-11-04
+
+### Added
+
+- **Hide WPvivid Backup** (Theme Settings > Miscellaneous > Management, a switch of its own beside "Lock remote setup", off by default). When on, WPvivid
+  disappears from the admin menu, the admin bar, the Plugins list and the notices it puts on every admin screen; backups keep working. Hidden is not
+  blocked: its page still opens by its address so a restore stays possible. The Backups page links to it only while the switch is off, and otherwise
+  tells the client to ask their developer.
+- Installing WPvivid no longer sends the admin who loads the next page to its own screen (its activation redirect is cancelled).
+
 ## [1.27.0] — 2026-11-04
 
 Backups need Brand Relay 0.34.0 for its Run now buttons and work with 0.30.0 and later. Sites need 1.26.0's bundled WPvivid, which this release builds on.

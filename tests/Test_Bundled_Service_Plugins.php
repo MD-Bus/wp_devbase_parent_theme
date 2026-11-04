@@ -141,6 +141,17 @@ class Test_Bundled_Service_Plugins extends WP_UnitTestCase {
 		$this->assertSame( array(), devbase_required_plugins() );
 	}
 
+	public function test_activating_it_announces_itself_so_wpvivid_can_cancel_its_redirect() {
+		$seen = array();
+		add_action( 'devbase/bundled_plugin_activated', function ( $slug ) use ( &$seen ) {
+			$seen[] = $slug;
+		} );
+
+		$this->installed_by_us();
+
+		$this->assertSame( array( 'svcplug' ), $seen );
+	}
+
 	// --- lapsing (no grace period here: a buffer after expiry is Brand Relay's to give) -------------
 
 	public function test_when_the_service_goes_off_it_is_deactivated_and_removed_at_once() {

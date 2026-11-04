@@ -255,6 +255,7 @@ function devbase_ensure_bundled_plugin( $slug, $def ) {
 		}
 
 		$result = 'ok' === $result ? 'activated' : $result;
+		do_action( 'devbase/bundled_plugin_activated', $slug );
 	}
 
 	// A plugin tied to a plan service that was ALREADY on the site (the client's own copy) is

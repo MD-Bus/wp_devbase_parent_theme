@@ -89,9 +89,13 @@ function devbase_backup_job_summary( $job = false ) {
 
 	if ( 'done' === $job['state'] ) {
 		/* translators: %s: how long ago. */
-		return 'download' === $job['type']
-			? sprintf( __( 'Downloaded %s ago. Open WPvivid Backup, choose it under Backups & Restore and press Restore.', 'devbase_parent_theme' ), $ago )
-			: sprintf( __( 'Backed up and sent to Brand Relay %s ago.', 'devbase_parent_theme' ), $ago );
+		if ( 'download' === $job['type'] ) {
+			return devbase_wpvivid_ui_hidden()
+				? sprintf( __( 'Downloaded %s ago. It is ready to restore: ask your developer to restore it.', 'devbase_parent_theme' ), $ago )
+				: sprintf( __( 'Downloaded %s ago. Open WPvivid Backup, choose it under Backups & Restore and press Restore.', 'devbase_parent_theme' ), $ago );
+		}
+
+		return sprintf( __( 'Backed up and sent to Brand Relay %s ago.', 'devbase_parent_theme' ), $ago );
 	}
 
 	if ( 'download' === $job['type'] ) {
@@ -179,14 +183,16 @@ function devbase_backups_page_html() {
 		$html .= '</tbody></table>';
 	}
 
-	$html .= '<p class="description" style="max-width:820px;margin-top:14px;">' . wp_kses(
-		sprintf(
-			/* translators: %s: link to the WPvivid page. */
-			__( 'To restore: press <strong>Download to WPvivid</strong>, then open %s, choose that backup under <em>Backups &amp; Restore</em> and press <strong>Restore</strong>. WPvivid does the restore itself.', 'devbase_parent_theme' ),
-			'<a href="' . esc_url( admin_url( 'admin.php?page=WPvivid' ) ) . '">WPvivid Backup</a>'
-		),
-		array( 'strong' => array(), 'em' => array(), 'a' => array( 'href' => array() ) )
-	) . '</p></div>';
+	$html .= '<p class="description" style="max-width:820px;margin-top:14px;">' . ( devbase_wpvivid_ui_hidden()
+		? esc_html__( 'To restore a backup, press Download to WPvivid and ask your developer to restore it.', 'devbase_parent_theme' )
+		: wp_kses(
+			sprintf(
+				/* translators: %s: link to the WPvivid page. */
+				__( 'To restore: press <strong>Download to WPvivid</strong>, then open %s, choose that backup under <em>Backups &amp; Restore</em> and press <strong>Restore</strong>. WPvivid does the restore itself.', 'devbase_parent_theme' ),
+				'<a href="' . esc_url( admin_url( 'admin.php?page=WPvivid' ) ) . '">WPvivid Backup</a>'
+			),
+			array( 'strong' => array(), 'em' => array(), 'a' => array( 'href' => array() ) )
+		) ) . '</p></div>';
 
 	return $html;
 }

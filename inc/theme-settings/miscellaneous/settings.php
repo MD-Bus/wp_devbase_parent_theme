@@ -267,6 +267,15 @@ add_action( 'acf/init', function () {
 				'default_value' => 0,
 				'instructions'  => __( 'When on, the Remote setup tab on the Licence page is hidden. When off, it is visible.', 'devbase_parent_theme' ),
 			),
+			array(
+				'key'           => 'field_devbase_hide_wpvivid_ui',
+				'label'         => __( 'Hide WPvivid Backup', 'devbase_parent_theme' ),
+				'name'          => 'hide_wpvivid_ui',
+				'type'          => 'true_false',
+				'ui'            => 1,
+				'default_value' => 0,
+				'instructions'  => __( 'When on, WPvivid Backup is hidden from the admin menu, the admin bar, the Plugins list and its notices. Backups keep working. Hidden is not blocked: its page still opens by its address, and the Backups page keeps offering the link to whoever has this off.', 'devbase_parent_theme' ),
+			),
 		),
 		'location' => array(
 			array(
