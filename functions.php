@@ -6,6 +6,10 @@ require_once __DIR__ . '/vendor/autoload.php';
 // Loads translation files for this theme's text domain.
 require_once __DIR__ . '/languages/i18n.php';
 
+// Who counts as the developer: the settings a client has no use for are hidden from everyone else
+// once a child names the developer logins (inc/helpers/developer.php).
+require_once __DIR__ . '/inc/helpers/developer.php';
+
 // Boots Timber so Twig templates can be rendered.
 require_once __DIR__ . '/inc/timber.php';
 

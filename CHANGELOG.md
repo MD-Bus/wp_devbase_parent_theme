@@ -10,6 +10,17 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.21.0] — 2026-11-03
+
+### Added
+
+- **One place to say who the developer is.** A child theme (or `wp-config.php`) names the developer logins once,
+  with the filter `devbase/developer_logins` or the constant `DEVBASE_DEVELOPER_LOGINS`; the theme holds no logins
+  itself. Once the list has logins, the developer-only settings, the **Credit** tab and the Licence page's **Remote
+  setup** tab, are hidden from everyone else. With no list, nothing is hidden, so a fresh install still works.
+  Replaces the copy of the same rule each child kept; `devbase/credit/hide_settings` and
+  `devbase/licence/hide_remote_setup` still work and win when set.
+
 ## [1.20.0] — 2026-11-03
 
 ### Changed

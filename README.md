@@ -71,9 +71,9 @@ updates are available, plus **Check for updates now**. **Licence** holds the
 provisioned automatically and cannot be edited here, and a notice says so once.
 **Remote setup** holds the **Management server address** and **Site access key**
 that make the rest provision themselves: saving them pulls everything else straight
-away, see [Provisioning from Brand Relay](#provisioning-from-brand-relay). A child theme can hide
-that tab from clients with the filter `devbase/licence/hide_remote_setup`, and it is hidden
-by default when both values are set in code. Clients never see the product names Warden
+away, see [Provisioning from Brand Relay](#provisioning-from-brand-relay). The developer logins are named once by a child theme (`devbase/developer_logins`) or
+`DEVBASE_DEVELOPER_LOGINS` in `wp-config.php`; this tab and the Credit tab are then hidden from
+everyone else. It is also hidden when both values are set in code. Clients never see the product names Warden
 or Brand Relay.
 
 One key covers the whole site. In Warden the licence has two apps attached under the tags

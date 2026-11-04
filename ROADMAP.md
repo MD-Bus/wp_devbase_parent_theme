@@ -107,12 +107,6 @@ block allow-list for WooCommerce's blocks, what suspension does to cart and
 checkout requests, and an update on a staging store with a real checkout before
 it ships.
 
-**A setting for who sees the Credit tab.** The credit's settings are hidden
-from clients by a filter in each child (`devbase/credit/hide_settings`) that
-lists the developer logins, so every client's child repeats it. A parent
-setting holding the developer logins would leave a child needing only its
-default address.
-
 **Show Warden's message only when it applies.** The Licence status table prints
 whatever message Warden sends, so a message left on an active licence (for
 example an old "Payment overdue" from a first installation) shows to the
