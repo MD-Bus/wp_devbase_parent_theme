@@ -122,6 +122,13 @@ add_action( 'acf/init', function () {
 			'type'         => 'password',
 			'instructions' => __( 'This site\'s key from the management service (it starts with brs_). Once both fields are saved, the Licence tab fills itself in and stays up to date.', 'devbase_parent_theme' ),
 		),
+		array(
+			'key'      => 'field_devbase_heartbeat_status',
+			'label'    => __( 'Site health', 'devbase_parent_theme' ),
+			'type'     => 'message',
+			'message'  => devbase_heartbeat_status_html(),
+			'esc_html' => 0,
+		),
 	);
 
 	acf_add_local_field_group( array(
@@ -279,7 +286,7 @@ add_filter( 'acf/prepare_field', function ( $field ) {
 	}
 
 	// The Remote setup tab, for the developer only where a child says so.
-	$remote = array( 'field_devbase_licence_tab_relay', 'field_devbase_relay_base_url', 'field_devbase_relay_site_key' );
+	$remote = array( 'field_devbase_licence_tab_relay', 'field_devbase_relay_base_url', 'field_devbase_relay_site_key', 'field_devbase_heartbeat_status' );
 
 	if ( isset( $field['key'] ) && in_array( $field['key'], $remote, true ) && devbase_remote_setup_hidden() ) {
 		return false;

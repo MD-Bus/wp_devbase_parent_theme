@@ -494,6 +494,11 @@ is shared by everything behind it.
 | `404` | Not wired to Brand Relay (no URL or site key). |
 | `429` | Too many requests from this IP (more than 10 a minute, valid or not), or a sync already ran in the last 30 seconds. |
 
+**The body.** A ping may carry a JSON body, covered by the signature, naming what the site should do:
+`{ "run": ["settings", "health", "events", "backup", "uptime"] }`. An empty body, or no `run`, means `settings` (the sync above).
+Names the site does not know are ignored. The answer adds `ran`, one result per name: `ok`, `sent`, `not_in_plan`, `skipped`
+or `error`. See `inc/maintenance/AGENT.md`.
+
 Signing, in PHP:
 
 ```php
@@ -594,6 +599,12 @@ is not valid, or the site has no licence key, the theme stops managing WooCommer
 stays on the version it has, an administrator sees a notice, and the client can update it
 from the Plugins screen if they choose (it still cannot be deactivated or deleted while the
 child theme needs it). No licence means no maintenance from us.
+
+**Site health** (needs Brand Relay 0.30.0+): when Brand Relay asks, a site tells it how it is doing: versions, updates waiting,
+free disk, whether scheduled tasks run. It is a plan service, sent only while the site's plan includes it. Brand Relay is the
+clock: its signed sync ping may carry a signed JSON body such as `{ "run": ["settings", "health"] }` naming what to run (an
+empty body is the old ping, settings only); nothing runs on a website visit or on WP-Cron. The plan is pulled before anything is
+sent, so nothing goes out in the blind. Details in `inc/maintenance/AGENT.md`.
 
 Theme Settings > Miscellaneous > System Status shows the bundled versions.
 

@@ -719,3 +719,27 @@ msgstr ""
 
 msgid "When on, the Remote setup tab on the Licence page is hidden. When off, it is visible."
 msgstr ""
+
+msgid "Site health"
+msgstr ""
+
+msgid "Site health reports are off: enter the management server address and site access key first."
+msgstr ""
+
+msgid "Not included in this site's plan, so no reports are sent."
+msgstr ""
+
+msgid "The management server did not accept this site's access key."
+msgstr ""
+
+msgid "Plan last checked %s ago."
+msgstr ""
+
+msgid "Last report sent %s ago, when Brand Relay asked for it."
+msgstr ""
+
+msgid "The last report failed (%s)."
+msgstr ""
+
+msgid "No report sent yet: the management server has not asked for one."
+msgstr ""

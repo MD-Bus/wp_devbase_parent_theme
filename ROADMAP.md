@@ -41,18 +41,13 @@ params, trigger a sync, then check both themes under their tags. First find out
 which Brand Relay is deployed: `main` and its tags stop at 0.13.0 while `develop`
 is at 0.28.x, and the services below exist only from 0.18 up.
 
-**2. Heartbeat (next minor).** A daily report to `POST /v1/site/heartbeat` with
-WordPress, PHP and theme versions, waiting updates, disk, cron health and the
-last backup time, sent with the Brand Relay key the site already holds. **Waits for Brand Relay**
-to make health reports a plan service; gated like error events from the start. This
-step also brings the shared plumbing: keep the `licence` object from `/v1/site`
-next to the params, give every service one "is it in force" test, and show the
-last report and answer in a Maintenance block on the Licence page. The `theme`
-field is one version string; send the child's and keep the parent's elsewhere.
+**2. Heartbeat (done in 1.23.0).** Site health reports, sent when Brand Relay's signed ping names `health`: Brand Relay is the clock,
+because most sites get few visits and many have cron off. The plan is pulled before anything is sent. See
+`inc/maintenance/AGENT.md`. Brand Relay 0.30.0 does its part (plans' "Trigger from Brand Relay"). Open: Brand Relay could read a `parent_theme` field.
 
 **3. Error events (the minor after).** Fatals and uncaught exceptions first (warnings and
 notices flood), and failed scheduled jobs if they prove useful. Queue them, send
-at the end of a request at most once every 30 seconds, 50 events and 64 KB per
+when Brand Relay's ping names `events` (or at the end of a request, at most once every 30 seconds), 50 events and 64 KB per
 batch, within the plan's daily count. Scrub before sending, never report the
 reporter's own errors, and never put customer data in a message. Needs the
 `events` service.

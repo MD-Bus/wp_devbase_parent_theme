@@ -10,6 +10,35 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.23.0] — 2026-11-03
+
+Needs Brand Relay 0.30.0 or later: 0.29.0 made site health a plan service, and 0.30.0 is the version that asks sites to
+report (its plans' "Trigger from Brand Relay" setting, which sends the signed body). Verified end to end against 0.30.0.
+
+### Added
+
+- **Site health reports** (`inc/maintenance/`). When Brand Relay asks, a site tells it how it is doing: WordPress, PHP and theme
+  versions (the child's, and the base theme's beside it), updates waiting, free disk space, whether scheduled tasks run, and
+  the last backup when there is one. Nothing from the site's content. It is a plan service: it is sent only while the site's plan
+  includes **Site health**.
+- **Brand Relay is the clock: the ping names what to run.** The signed sync ping (`POST /wp-json/devbase/v1/sync`, the same URL
+  as before) may carry a signed JSON body such as `{ "run": ["settings", "health", "events", "backup", "uptime"] }`. An empty body
+  is the old ping and still means settings only. The site runs the names it knows, ignores the rest, and answers
+  `ran: { settings: "ok", health: "sent", events: "skipped", ... }` (`ok`, `sent`, `not_in_plan`, `skipped` or `error`). Nothing runs
+  on a website visit or on WP-Cron, since most sites get few visits and many switch cron off. Events and backups are accepted
+  and answered `skipped` until they are built; `uptime` is Brand Relay's own and is always `skipped`.
+- **Never sends in the blind.** Before a service runs, the plan is pulled (`GET /v1/site`, unless the same ping just pulled it) and
+  the service runs only if the plan says it is in force; an expired plan stops it at once. A ping flood sends nothing extra.
+- The Remote setup tab shows a **Site health** line: when the last report was sent, and whether the plan includes it.
+- New: `devbase_relay_service_in_force()`, `devbase_relay_service_limits()`, `devbase_maintenance_requested()`,
+  `devbase_maintenance_run()`, and the filters `devbase/maintenance/services`, `devbase/maintenance/report` and
+  `devbase/maintenance/last_backup_at`.
+
+### Changed
+
+- The sync reads Brand Relay's whole `/v1/site` answer (`devbase_relay_fetch_site()`), not only its params, and keeps the
+  `licence` part. The params are used exactly as before.
+
 ## [1.22.0] — 2026-11-03
 
 ### Added

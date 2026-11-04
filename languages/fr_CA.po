@@ -721,3 +721,27 @@ msgstr "Verrouiller la configuration à distance"
 
 msgid "When on, the Remote setup tab on the Licence page is hidden. When off, it is visible."
 msgstr "Activé, l’onglet Configuration à distance de la page Licence est masqué. Désactivé, il est visible."
+
+msgid "Site health"
+msgstr "Santé du site"
+
+msgid "Site health reports are off: enter the management server address and site access key first."
+msgstr "Les rapports de santé du site sont désactivés : saisissez d’abord l’adresse du serveur de gestion et la clé d’accès du site."
+
+msgid "Not included in this site's plan, so no reports are sent."
+msgstr "Non inclus dans le forfait de ce site : aucun rapport n’est envoyé."
+
+msgid "The management server did not accept this site's access key."
+msgstr "Le serveur de gestion n’a pas accepté la clé d’accès de ce site."
+
+msgid "Plan last checked %s ago."
+msgstr "Forfait vérifié pour la dernière fois il y a %s."
+
+msgid "Last report sent %s ago, when Brand Relay asked for it."
+msgstr "Dernier rapport envoyé il y a %s, à la demande de Brand Relay."
+
+msgid "The last report failed (%s)."
+msgstr "Le dernier rapport a échoué (%s)."
+
+msgid "No report sent yet: the management server has not asked for one."
+msgstr "Aucun rapport envoyé pour le moment : le serveur de gestion n’en a pas demandé."

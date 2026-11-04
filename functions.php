@@ -74,6 +74,14 @@ require_once __DIR__ . '/inc/updates/theme-updates.php';
 // Licence > Brand Relay.
 require_once __DIR__ . '/inc/updates/relay-sync.php';
 
+// The maintenance plan Brand Relay sells, and the services a site runs while its plan includes them: one global
+// check keeps the plan fresh and drives site health (error events and backups will join it).
+// plan.php keeps what the plan includes, maintenance.php is the global check, heartbeat.php is
+// the site health report. Nothing runs without a Brand Relay address and key.
+require_once __DIR__ . '/inc/maintenance/plan.php';
+require_once __DIR__ . '/inc/maintenance/maintenance.php';
+require_once __DIR__ . '/inc/maintenance/heartbeat.php';
+
 
 // Registers the (currently empty) Theme Settings options page.
 require_once __DIR__ . '/inc/theme-settings/theme-settings.php';

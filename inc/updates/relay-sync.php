@@ -44,7 +44,9 @@
 // 1. A ping: POST /wp-json/devbase/v1/sync (documented in the README). The
 //    ping carries NO licence data. It only makes the site pull, over TLS,
 //    from the configured Brand Relay address, so a forged or replayed ping can
-//    cause one rate-limited fetch and nothing else. The one endpoint that
+//    cause one rate-limited fetch and nothing else. Its signed body may also name
+//    maintenance services to run (inc/maintenance/maintenance.php): names only,
+//    from a fixed list, never values. The one endpoint that
 //    touches licences can never be used to plant one. A ping must also name
 //    the Brand Relay as its Origin (see devbase_relay_verify_ping()).
 // 2. An administrator: saving the Licence page, or "Check for Updates Now".
@@ -213,11 +215,14 @@ function devbase_relay_get_state() {
 }
 
 /**
- * Fetches this site's private params from Brand Relay.
+ * Fetches this site's whole answer from Brand Relay (`GET /v1/site`): the params
+ * and, for a site with a subscription, the `licence` object (plan, services and
+ * limits in force). Every successful pull also refreshes the plan snapshot
+ * (inc/maintenance/plan.php), since this is the one place it can change.
  *
- * @return array|string The params array, or an error message.
+ * @return array|string The decoded answer, or an error message.
  */
-function devbase_relay_fetch_params() {
+function devbase_relay_fetch_site() {
 	$response = wp_remote_get(
 		devbase_relay_url() . '/v1/site',
 		array(
@@ -244,6 +249,23 @@ function devbase_relay_fetch_params() {
 
 	if ( ! is_array( $data ) ) {
 		return 'malformed JSON';
+	}
+
+	devbase_relay_store_plan( $data );
+
+	return $data;
+}
+
+/**
+ * Fetches this site's private params from Brand Relay.
+ *
+ * @return array|string The params array, or an error message.
+ */
+function devbase_relay_fetch_params() {
+	$data = devbase_relay_fetch_site();
+
+	if ( ! is_array( $data ) ) {
+		return $data;
 	}
 
 	return isset( $data['params'] ) && is_array( $data['params'] ) ? $data['params'] : array();
@@ -476,16 +498,35 @@ add_action( 'rest_api_init', function () {
 	register_rest_route( 'devbase/v1', '/sync', array(
 		'methods'             => 'POST',
 		'permission_callback' => 'devbase_relay_verify_ping',
-		'callback'            => function () {
-			$result = devbase_relay_sync( true );
+		'callback'            => function ( WP_REST_Request $request ) {
+			// The ping's signed body says what to run (inc/maintenance/maintenance.php): an
+			// empty body is the old ping, settings only. Brand Relay is the clock.
+			$run      = devbase_maintenance_requested( $request->get_body() );
+			$services = array_values( array_diff( $run, array( 'settings' ) ) );
+			$ran      = array();
+			$result   = array(
+				'ok'      => true,
+				'error'   => '',
+				'changed' => array(),
+			);
+
+			if ( in_array( 'settings', $run, true ) ) {
+				$result          = devbase_relay_sync( true );
+				$ran['settings'] = $result['ok'] ? 'ok' : 'error';
+			}
+
+			if ( $services ) {
+				$ran = array_merge( $ran, devbase_maintenance_run( $services ) );
+			}
 
 			return new WP_REST_Response(
 				array(
 					'ok'      => $result['ok'],
 					'error'   => $result['error'],
 					'changed' => $result['changed'],
+					'ran'     => (object) $ran,
 				),
-				'rate limited' === $result['error'] ? 429 : 200
+				( 'rate limited' === $result['error'] && ! $services ) ? 429 : 200
 			);
 		},
 	) );
