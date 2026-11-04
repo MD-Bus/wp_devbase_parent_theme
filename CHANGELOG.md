@@ -10,6 +10,10 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.27.0] — 2026-11-04
+
+Backups need Brand Relay 0.34.0 for its Run now buttons and work with 0.30.0 and later. Sites need 1.26.0's bundled WPvivid, which this release builds on.
+
 ### Added
 
 - **Backups** (`inc/backups/`, needs Brand Relay 0.34.0 for "Run now"; works with 0.30.0+). When Brand Relay's signed ping names `backup`, the site
