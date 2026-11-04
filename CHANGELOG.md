@@ -10,8 +10,12 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.30.4] — 2026-11-04
+
 ### Changed
 
+- **The Backups tab has no "Back up now" button any more**, and the server no longer accepts that action: clients cannot start a backup; Brand Relay's schedule
+  (or its Run now button) does.
 - **Backups no longer contain WordPress itself.** WPvivid always adds a copy of core (`wp-admin`, `wp-includes`, about 95 MB, 23 MB zipped) to a
   "files and database" backup; a restore never needs it, so a Brand Relay backup is now the database plus `wp-content`. The leftover `upgrade-temp-backup`
   and `wpvivid_uploads` folders and `debug.log` are also skipped.

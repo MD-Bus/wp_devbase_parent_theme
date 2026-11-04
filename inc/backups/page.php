@@ -142,8 +142,7 @@ function devbase_backups_page_html() {
 	$active = devbase_backup_job_active( $job );
 	$last   = (int) get_option( DEVBASE_BACKUP_LAST, 0 );
 
-	$html .= '<p><button type="button" class="button button-primary" data-devbase-backup="start_backup"' . ( $active ? ' disabled' : '' ) . '>' . esc_html__( 'Back up now', 'devbase_parent_theme' ) . '</button> '
-		. '<button type="button" class="button" data-devbase-backup="refresh">' . esc_html__( 'Refresh the list', 'devbase_parent_theme' ) . '</button> '
+	$html .= '<p><button type="button" class="button" data-devbase-backup="refresh">' . esc_html__( 'Refresh the list', 'devbase_parent_theme' ) . '</button> '
 		. '<span id="devbase-backup-status" data-active="' . ( $active ? '1' : '0' ) . '" style="display:inline-block;vertical-align:middle;margin-left:8px;">' . esc_html( devbase_backup_job_summary( $job ) ) . '</span></p>';
 
 	$html .= '<p class="description">' . ( $last
@@ -208,13 +207,8 @@ add_action( 'wp_ajax_devbase_backups_action', function () {
 		wp_send_json_success( array( 'html' => devbase_backups_page_html() ) );
 	}
 
-	if ( 'start_backup' === $action ) {
-		$result = devbase_backup_run();
-
-		if ( 'started' !== $result['status'] ) {
-			wp_send_json_error( array( 'message' => '' !== $result['detail'] ? ucfirst( $result['detail'] ) . '.' : __( 'A backup is already running.', 'devbase_parent_theme' ) ) );
-		}
-	} elseif ( 'start_download' === $action ) {
+	// There is no "start a backup" action on purpose: clients never start one. Brand Relay's ping does.
+	if ( 'start_download' === $action ) {
 		$job = devbase_backup_start_download( isset( $_POST['id'] ) ? sanitize_text_field( wp_unslash( $_POST['id'] ) ) : '' );
 
 		if ( is_wp_error( $job ) ) {
