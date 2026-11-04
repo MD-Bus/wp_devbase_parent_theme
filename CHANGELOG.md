@@ -10,6 +10,8 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.30.1] — 2026-11-04
+
 ### Fixed
 
 - **A download that fails part way no longer leaves part of a split backup in WPvivid's folder.** WPvivid files the parts it finds together by their task id
