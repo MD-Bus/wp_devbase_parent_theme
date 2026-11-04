@@ -10,6 +10,8 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.29.0] — 2026-11-04
+
 ### Added
 
 - **Hide Secure Custom Fields** (Theme Settings > Miscellaneous > Management, on by default). The Custom Fields menu and its screens (field groups, post types,
