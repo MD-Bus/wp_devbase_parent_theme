@@ -14,7 +14,8 @@
 // already exist, and remember that we've checked so we don't re-query on
 // every admin page load.
 add_action( 'admin_init', function () {
-	if ( ! class_exists( 'ASENHA\Classes\Activation' ) ) {
+	// The site runs its own ASE plugin, whose own activation made this table.
+	if ( devbase_dependency_is_foreign( 'ase' ) || ! class_exists( 'ASENHA\Classes\Activation' ) ) {
 		return;
 	}
 

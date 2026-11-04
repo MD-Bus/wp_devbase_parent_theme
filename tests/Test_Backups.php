@@ -14,6 +14,8 @@ class Test_Backups extends WP_UnitTestCase {
 	private $spawns   = 0;
 	private $payload  = '0123456789abcdefghijklmno'; // 25 bytes: three parts of 10, 10, 5
 	private $headers  = array();   // headers the fake range download reports
+	private $fail_range_after = null; // the fake range download refuses every request after this many
+	private $range_calls      = 0;
 
 	public static function set_up_before_class() {
 		parent::set_up_before_class();
@@ -32,6 +34,8 @@ class Test_Backups extends WP_UnitTestCase {
 		$this->dir = trailingslashit( get_temp_dir() ) . 'devbase-backup-test-' . wp_generate_password( 6, false ) . '/';
 		wp_mkdir_p( $this->dir );
 		$this->api = $this->calls = $this->parts = $this->headers = array();
+		$this->fail_range_after = null;
+		$this->range_calls      = 0;
 		$this->put_code = 200;
 		$this->spawns   = 0;
 
@@ -112,6 +116,10 @@ class Test_Backups extends WP_UnitTestCase {
 	}
 
 	public function get_range( $null, $path, $handle, $from, $to ) {
+		if ( null !== $this->fail_range_after && ++$this->range_calls > $this->fail_range_after ) {
+			return 500; // refused, and nothing written
+		}
+
 		fwrite( $handle, substr( $this->payload, $from, $to - $from + 1 ) );
 
 		return 206;
@@ -489,5 +497,98 @@ class Test_Backups extends WP_UnitTestCase {
 
 		$this->assertContains( 'backups-settings', $keys );
 		$this->assertLessThan( array_search( 'backups-settings', $keys, true ), array_search( 'licence-settings', $keys, true ), 'The menu opens on the first sub-page registered.' );
+	}
+
+	// --- how many files the backup comes to ----------------------------------------------------
+
+	public function test_our_backups_split_at_the_most_the_zip_engine_can_write_not_at_the_clients_setting() {
+		$raised = devbase_backup_raise_part_size( array( 'compress_type' => 'zip', 'max_file_size' => '200', 'no_compress' => true ) );
+
+		$this->assertSame( '4080', $raised['max_file_size'], 'Under 4 GiB: PclZip has no ZIP64.' );
+		$this->assertSame( 'zip', $raised['compress_type'], 'Everything else of theirs is kept.' );
+		$this->assertSame( '4080', devbase_backup_raise_part_size( false )['max_file_size'] );
+		$this->assertLessThan( 4096, DEVBASE_BACKUP_PART_MB );
+	}
+
+	public function test_how_many_files_a_site_comes_to() {
+		$this->assertSame( 1, devbase_backup_files_needed( 0 ) );
+		$this->assertSame( 1, devbase_backup_files_needed( 185 * MB_IN_BYTES ) );
+		$this->assertSame( 2, devbase_backup_files_needed( 5 * GB_IN_BYTES ), 'A 5 GB site is two files, not twenty-five.' );
+		$this->assertSame( 10, devbase_backup_files_needed( 39 * GB_IN_BYTES ) );
+		$this->assertSame( 11, devbase_backup_files_needed( 41 * GB_IN_BYTES ), 'Past roughly 40 GB it is refused up front.' );
+	}
+
+	public function test_more_files_than_brand_relay_takes_fail_clearly_before_anything_is_sent() {
+		devbase_backup_new_job( 'backup', array( 'state' => 'declare', 'task_id' => 'task1' ) );
+		$entries = array();
+		for ( $i = 1; $i <= 11; $i++ ) {
+			$name = sprintf( 'site_part%03d.zip', $i );
+			file_put_contents( $this->dir . $name, 'x' );
+			$entries[] = array( 'file_name' => $name, 'size' => 1 );
+		}
+		update_option( 'wpvivid_backup_list', array( 'task1' => array( 'backup' => array( 'files' => $entries ) ) ) );
+
+		$job = devbase_backup_step( true );
+
+		$this->assertSame( 'failed', $job['state'] );
+		$this->assertStringContainsString( 'takes at most 10', $job['error'] );
+		$this->assertSame( 0, $this->called( 'POST', '/v1/site/backups' ), 'Nothing was declared.' );
+		$this->assertFileDoesNotExist( $this->dir . 'site_part001.zip', 'Our local files are removed.' );
+	}
+
+	public function test_a_backup_of_several_files_is_declared_and_sent_file_by_file() {
+		devbase_backup_new_job( 'backup', array( 'state' => 'declare', 'task_id' => 'task1' ) );
+		file_put_contents( $this->dir . 'a.zip', '0123456789ab' );
+		update_option( 'wpvivid_backup_list', array( 'task1' => array( 'backup' => array( 'files' => array( array( 'file_name' => 'a.zip', 'size' => 12 ) ) ) ) ) );
+
+		$this->assertSame( 'done', devbase_backup_step( true )['state'] );
+		$this->assertSame( 2, count( $this->parts ), 'A 12-byte file at a 10-byte part size is two parts.' );
+	}
+
+	// --- a backup in several files, coming back ------------------------------------------------
+
+	private function stored_split_backup( $names ) {
+		$files = array();
+		foreach ( $names as $name ) {
+			$files[] = array( 'name' => $name, 'size' => strlen( $this->payload ) );
+		}
+		$this->api['GET /v1/site/backups'] = array( 200, array( 'backups' => array( array( 'id' => 'bkp_9', 'label' => 'Split', 'status' => 'complete', 'files' => $files ) ) ) );
+	}
+
+	public function test_every_part_of_a_split_backup_comes_back_before_wpvivid_is_asked_to_look() {
+		$this->stored_split_backup( array( 'site_backup_all.part001.zip', 'site_backup_all.part002.zip', 'site_backup_all.part003.zip' ) );
+		$rescans = 0;
+		add_action( 'wpvivid_rebuild_backup_list', function () use ( &$rescans ) {
+			$rescans++;
+			// The moment WPvivid looks, ALL the parts must already be in place: it files whatever is there as the backup.
+			foreach ( array( '001', '002', '003' ) as $n ) {
+				$this->assertFileExists( $this->dir . "site_backup_all.part{$n}.zip" );
+			}
+		} );
+
+		devbase_backup_start_download( 'bkp_9' );
+		$job = devbase_backup_step( true );
+
+		$this->assertSame( 'done', $job['state'], (string) $job['error'] );
+		$this->assertSame( 1, $rescans, 'Asked once, at the end.' );
+		$this->assertSame( array( '', '', '' ), array_map( function ( $n ) {
+			return glob( $this->dir . "*{$n}.zip.part" ) ? 'half' : '';
+		}, array( '001', '002', '003' ) ) );
+	}
+
+	public function test_a_download_that_fails_part_way_leaves_no_part_of_the_backup_behind() {
+		$this->stored_split_backup( array( 'site_backup_all.part001.zip', 'site_backup_all.part002.zip' ) );
+		$this->headers          = array();
+		$this->fail_range_after = 1; // part 001 arrives; part 002 is refused, every time
+
+		devbase_backup_start_download( 'bkp_9' );
+		// Four tries is what a part gets before the job gives up.
+		for ( $i = 0; $i < 6; $i++ ) {
+			$job = devbase_backup_step( true );
+		}
+
+		$this->assertSame( 'failed', $job['state'] );
+		$this->assertFileDoesNotExist( $this->dir . 'site_backup_all.part001.zip', 'A set with a missing part must not stay where a rescan finds it.' );
+		$this->assertFileDoesNotExist( $this->dir . 'site_backup_all.part002.zip.part' );
 	}
 }

@@ -11,7 +11,8 @@
 
 /** Whether SCF's screens are hidden (a filter can decide it in code). */
 function devbase_scf_ui_hidden() {
-	return (bool) apply_filters( 'devbase/scf/hide_ui', devbase_switch_on( 'hide_scf_ui' ) );
+	// Only the theme's OWN copy: an SCF or ACF the site installed itself keeps its screens.
+	return (bool) apply_filters( 'devbase/scf/hide_ui', devbase_switch_on( 'hide_scf_ui' ) && ! devbase_dependency_is_foreign( 'scf' ) );
 }
 
 add_filter( 'acf/settings/show_admin', function ( $show ) {

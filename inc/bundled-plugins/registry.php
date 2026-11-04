@@ -35,9 +35,10 @@ function devbase_bundled_plugins() {
 
 	return apply_filters( 'devbase/bundled_plugins', array(
 		'woocommerce' => array(
-			'name' => 'WooCommerce',
-			'file' => 'woocommerce/woocommerce.php',
-			'zip'  => $dir . 'woocommerce.zip',
+			'name'        => 'WooCommerce',
+			'file'        => 'woocommerce/woocommerce.php',
+			'zip'         => $dir . 'woocommerce.zip',
+			'text_domain' => 'woocommerce',
 		),
 		// Required by the PARENT, not by a child: only while the site's Brand Relay
 		// plan has the `backup` service in force (see devbase_required_plugins()).
@@ -75,10 +76,16 @@ function devbase_required_plugins() {
 
 	// Plugins tied to a plan service are required by the parent itself, while that service is in force.
 	foreach ( $known as $slug => $def ) {
-		if ( ! empty( $def['service'] ) && devbase_relay_service_in_force( $def['service'] ) && null === devbase_bundled_plugin_blocker( $slug, $def ) ) {
+		if ( ! empty( $def['service'] ) && devbase_relay_service_in_force( $def['service'] ) ) {
 			$slugs[] = $slug;
 		}
 	}
+
+	// Whatever is required, a plugin the site already has under another folder name (or whose Pro edition is
+	// there) is never installed a second time: two copies would redeclare the same classes.
+	$slugs = array_filter( $slugs, function ( $slug ) use ( $known ) {
+		return ! isset( $known[ $slug ] ) || null === devbase_bundled_plugin_blocker( $slug, $known[ $slug ] );
+	} );
 
 	return array_values( array_unique( array_filter( $slugs, function ( $slug ) use ( $known ) {
 		return is_string( $slug ) && isset( $known[ $slug ] );

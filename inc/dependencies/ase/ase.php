@@ -7,7 +7,8 @@
 // constants (ASENHA_URL, ASENHA_PATH) before requiring it — ASE's own
 // define() calls are unconditional, but PHP keeps the first-defined value
 // and just emits a harmless warning on the second, so ours wins.
-if ( file_exists( get_template_directory() . '/vendor/admin-site-enhancements/admin-site-enhancements.php' ) ) {
+// The site already runs Admin Site Enhancements as a plugin: use that one (see ../foreign.php).
+if ( ! devbase_dependency_is_foreign( 'ase' ) && file_exists( get_template_directory() . '/vendor/admin-site-enhancements/admin-site-enhancements.php' ) ) {
 	define( 'ASENHA_URL', get_template_directory_uri() . '/vendor/admin-site-enhancements/' );
 	define( 'ASENHA_PATH', get_template_directory() . '/vendor/admin-site-enhancements/' );
 

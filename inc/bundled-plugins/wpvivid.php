@@ -37,9 +37,13 @@ function devbase_wpvivid_is_busy() {
 // (admin.php?page=WPvivid), which the Backups page offers to whoever has the switch off. It is ON by default. Nothing here
 // changes what WPvivid does.
 
-/** Whether WPvivid's screens are hidden: the switch is on (a filter can decide it in code). */
+/**
+ * Whether WPvivid's screens are hidden: the switch is on AND the site's plan includes backups, which is when
+ * the theme is the one using WPvivid. Without that it is nobody's business but the site's own: a WPvivid a
+ * client installed and uses keeps its menu. (A filter can decide it in code.)
+ */
 function devbase_wpvivid_ui_hidden() {
-	return (bool) apply_filters( 'devbase/wpvivid/hide_ui', devbase_switch_on( 'hide_wpvivid_ui' ) );
+	return (bool) apply_filters( 'devbase/wpvivid/hide_ui', devbase_switch_on( 'hide_wpvivid_ui' ) && devbase_relay_service_in_force( 'backup' ) );
 }
 
 /** WPvivid's top-level menu, and every other WPvivid page (its Snapshots page has a menu of its own). */

@@ -10,9 +10,11 @@ class Test_Hide_Switches extends WP_UnitTestCase {
 	public function set_up() {
 		parent::set_up();
 		$this->forget();
+		devbase_relay_store_plan( array( 'licence' => array( 'id' => 'sub_1', 'plan' => 'Pro', 'status' => 'active', 'services' => array( 'backup' ), 'limits' => array() ) ) );
 	}
 
 	public function tear_down() {
+		delete_option( DEVBASE_RELAY_PLAN_OPTION );
 		$this->forget();
 		parent::tear_down();
 	}

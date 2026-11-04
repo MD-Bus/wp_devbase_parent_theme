@@ -15,6 +15,7 @@
 // file_exists() guards throughout inc/dependencies/ase/ for ASE's
 // undocumented internals: degrade to "MCP features aren't available"
 // rather than a fatal error on every single page load.
-if ( file_exists( get_template_directory() . '/vendor/mcp-adapter/mcp-adapter.php' ) ) {
+// The site already runs the MCP Adapter as a plugin: use that one (see ../foreign.php).
+if ( ! devbase_dependency_is_foreign( 'mcp' ) && file_exists( get_template_directory() . '/vendor/mcp-adapter/mcp-adapter.php' ) ) {
 	require_once get_template_directory() . '/vendor/mcp-adapter/mcp-adapter.php';
 }

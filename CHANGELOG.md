@@ -10,6 +10,26 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A download that fails part way no longer leaves part of a split backup in WPvivid's folder.** WPvivid files the parts it finds together by their task id
+  and does not flag a set with missing parts as incomplete, so a later rescan could have listed a half backup as a whole one. A failed download now removes
+  the parts it had already placed, and WPvivid is asked to rescan only once every file is in place. Tried end to end with a real 6-file backup: uploaded,
+  completed at Brand Relay, downloaded byte for byte identical, listed by WPvivid as one backup.
+- **A big site no longer exceeds Brand Relay's 10 files per backup.** WPvivid splits its archive every 200 MB of source files by default (the live site's
+  backup came to 4 files), so a 5 GB site would have been 25 files and refused. Our backups now split at 4080 MB, the most WPvivid's zip engine can write
+  (no ZIP64, so no archive over 4 GiB), set only while our backup is prepared: the client's own WPvivid setting is untouched. A site too big even for
+  that (about 36 GB) is refused up front with a plain message, and a backup that still comes to more than 10 files fails before anything is sent.
+
+- **Hide WPvivid Backup only applies while the plan includes backups**, which is when the theme is the one using WPvivid. A WPvivid a client installed and
+  uses keeps its menu, admin bar entry and notices on a site whose plan has no backups.
+- **A plugin the site already had is never removed by the theme**, whichever one: WooCommerce and WPvivid alike are upgraded if older, never downgraded,
+  kept active while required, and left exactly as they are when nothing requires them any more. (Before, only WPvivid was treated this way; a hand-installed
+  WooCommerce a child later stopped asking for would have been removed.) A copy under another folder name is used and no second one is installed.
+- **A dependency the site already runs as a plugin is used, not duplicated** (`inc/dependencies/foreign.php`): Secure Custom Fields / ACF, Admin Site
+  Enhancements and the MCP Adapter. The theme's loader for that dependency does nothing, so its asset URL overrides no longer break the other copy, its ASE
+  defaults are no longer written into the site's own ASE settings, and "Hide Secure Custom Fields" leaves their SCF's screens alone.
+
 ## [1.30.0] — 2026-11-04
 
 ### Changed

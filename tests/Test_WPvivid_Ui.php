@@ -11,7 +11,15 @@ class WPvivid_Stub_Notices {
 
 class Test_WPvivid_Ui extends WP_UnitTestCase {
 
+	public function set_up() {
+		parent::set_up();
+
+		// The theme only hides WPvivid while the plan includes backups (the theme is the one using it).
+		devbase_relay_store_plan( array( 'licence' => array( 'id' => 'sub_1', 'plan' => 'Pro', 'status' => 'active', 'services' => array( 'backup' ), 'limits' => array() ) ) );
+	}
+
 	public function tear_down() {
+		delete_option( DEVBASE_RELAY_PLAN_OPTION );
 		delete_option( 'options_hide_wpvivid_ui' );
 		delete_option( 'options_lock_remote_setup' );
 		remove_all_filters( 'devbase/wpvivid/hide_ui' );
@@ -41,6 +49,18 @@ class Test_WPvivid_Ui extends WP_UnitTestCase {
 
 		add_filter( 'devbase/wpvivid/hide_ui', '__return_false' );
 		$this->assertFalse( devbase_wpvivid_ui_hidden() );
+	}
+
+	public function test_a_wpvivid_the_theme_is_not_using_is_never_hidden() {
+		update_field( 'hide_wpvivid_ui', 1, 'option' );
+		$this->assertTrue( devbase_wpvivid_ui_hidden() );
+
+		// No backups in the plan: whatever WPvivid is on the site belongs to the site (a client's own, say).
+		devbase_relay_store_plan( array( 'licence' => array( 'id' => 'sub_1', 'plan' => 'Pro', 'status' => 'active', 'services' => array( 'uptime' ), 'limits' => array() ) ) );
+		$this->assertFalse( devbase_wpvivid_ui_hidden() );
+
+		delete_option( DEVBASE_RELAY_PLAN_OPTION );
+		$this->assertFalse( devbase_wpvivid_ui_hidden(), 'No plan at all: nothing of ours to hide.' );
 	}
 
 	public function test_the_menu_entries_go_but_other_menus_stay() {

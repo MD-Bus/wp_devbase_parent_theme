@@ -21,6 +21,18 @@ const DEVBASE_BACKUP_JOB = 'devbase_backup_job';
 /** When the last backup was completed at Brand Relay (a timestamp); reported in the health report. */
 const DEVBASE_BACKUP_LAST = 'devbase_backup_last_at';
 
+/**
+ * The largest slice of the site's files, in MB, WPvivid may put in one archive file for OUR backups.
+ * Not larger: its zip engine (PclZip) has no ZIP64, so an archive cannot pass 4 GiB, and 4080 MB of
+ * source files compress to less than that (it is also WPvivid's own biggest preset). Brand Relay takes
+ * at most 10 files per backup, so this covers sites of roughly 36 GB; past that the backup is refused
+ * up front with a plain message instead of failing at the end.
+ */
+const DEVBASE_BACKUP_PART_MB = 4080;
+
+/** Brand Relay's limit on the number of files in one backup. */
+const DEVBASE_BACKUP_MAX_FILES = 10;
+
 /** The single-step lock. */
 const DEVBASE_BACKUP_LOCK = 'devbase_backup_step_lock';
 
@@ -291,16 +303,55 @@ function devbase_backup_engine_prepare() {
 
 	add_filter( 'wpvivid_need_clean_oldest_backup', '__return_false' );
 
-	$interface = new WPvivid_Public_Interface();
-	$result    = $interface->prepare_backup( array(
-		'backup_files' => 'files+db',
-		'local'        => '1',
-		'remote'       => '0',
-		'ismerge'      => '1',
-		'lock'         => '0',
-	) );
+	// The split size is read once, when the task is made, and saved in the task: raising it only while we
+	// prepare changes OUR backup and never the client's own WPvivid setting.
+	add_filter( 'option_wpvivid_compress_setting', 'devbase_backup_raise_part_size' );
 
-	return empty( $result['task_id'] ) ? new WP_Error( 'prepare', (string) ( $result['error'] ?? 'WPvivid Backup could not prepare the backup.' ) ) : (string) $result['task_id'];
+	try {
+		$interface = new WPvivid_Public_Interface();
+		$result    = $interface->prepare_backup( array(
+			'backup_files' => 'files+db',
+			'local'        => '1',
+			'remote'       => '0',
+			'ismerge'      => '1',
+			'lock'         => '0',
+		) );
+	} finally {
+		remove_filter( 'option_wpvivid_compress_setting', 'devbase_backup_raise_part_size' );
+	}
+
+	if ( empty( $result['task_id'] ) ) {
+		return new WP_Error( 'prepare', (string) ( $result['error'] ?? 'WPvivid Backup could not prepare the backup.' ) );
+	}
+
+	// How many files that makes, from WPvivid's own size estimate: refuse now, not after the work is done.
+	$bytes = (int) ( $result['check']['file_size']['sum_size'] ?? 0 );
+	if ( devbase_backup_files_needed( $bytes ) > DEVBASE_BACKUP_MAX_FILES ) {
+		if ( class_exists( 'WPvivid_taskmanager' ) ) {
+			WPvivid_taskmanager::delete_ready_task();
+		}
+
+		return new WP_Error( 'too_large', sprintf(
+			'This site (%s) would need more than %d files, which is more than Brand Relay takes in one backup.',
+			size_format( $bytes ),
+			DEVBASE_BACKUP_MAX_FILES
+		) );
+	}
+
+	return (string) $result['task_id'];
+}
+
+/** The compress setting with the split size raised to the most WPvivid's zip engine can write. */
+function devbase_backup_raise_part_size( $setting ) {
+	$setting                  = is_array( $setting ) ? $setting : array();
+	$setting['max_file_size'] = (string) DEVBASE_BACKUP_PART_MB;
+
+	return $setting;
+}
+
+/** How many archive files a site of this many source bytes comes to (the database rides in the last one). */
+function devbase_backup_files_needed( $bytes ) {
+	return max( 1, (int) ceil( (int) $bytes / ( DEVBASE_BACKUP_PART_MB * MB_IN_BYTES ) ) );
 }
 
 /**
@@ -365,6 +416,8 @@ function devbase_backup_fail( array $job, $message ) {
 
 	if ( 'backup' === $job['type'] ) {
 		devbase_backup_delete_local( $job );
+	} else {
+		devbase_backup_discard_download( $job );
 	}
 
 	$job['state'] = 'failed';
@@ -373,6 +426,23 @@ function devbase_backup_fail( array $job, $message ) {
 	devbase_backup_note( 'error', (string) $message );
 
 	return 'stop';
+}
+
+/**
+ * A download that fails removes everything it put in WPvivid's folder: the half file AND the parts that
+ * had already arrived. WPvivid files parts of one backup together by their task id and would list a set with
+ * missing parts as a backup (it does not flag it incomplete), so a later rescan must never find one.
+ */
+function devbase_backup_discard_download( array $job ) {
+	foreach ( (array) ( $job['files'] ?? array() ) as $file ) {
+		foreach ( array( $file['name'], $file['name'] . '.part' ) as $name ) {
+			$path = devbase_backup_dir() . $name;
+
+			if ( file_exists( $path ) ) {
+				@unlink( $path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.unlink_unlink
+			}
+		}
+	}
 }
 
 /** Removes OUR local copy of a backup (never anything else of WPvivid's): through WPvivid so its list stays right. */
@@ -504,6 +574,10 @@ function devbase_backup_backup_step( array $job, $deadline, $admin_request ) {
 			// Known to the job before anything can go wrong, so a failure can remove our local copy.
 			$job['files'] = $files;
 			devbase_backup_save( $job );
+
+			if ( count( $files ) > DEVBASE_BACKUP_MAX_FILES ) {
+				return devbase_backup_fail( $job, sprintf( 'WPvivid made %d files, and Brand Relay takes at most %d in one backup.', count( $files ), DEVBASE_BACKUP_MAX_FILES ) );
+			}
 
 			$declared = devbase_backup_api( 'POST', '/v1/site/backups', array(
 				'label' => 'Backup ' . gmdate( 'Y-m-d H:i' ) . ' UTC',

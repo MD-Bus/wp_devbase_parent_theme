@@ -1,5 +1,10 @@
 <?php
 
+// The site already runs SCF or ACF as a plugin: use that one and load nothing of ours (see ../foreign.php).
+if ( devbase_dependency_is_foreign( 'scf' ) ) {
+	return;
+}
+
 // SCF computes its own asset URL with plugin_dir_url(), which only resolves
 // correctly for files under wp-content/plugins/. Since SCF is loaded from
 // the theme's vendor/ folder instead, that computation returns a broken URL

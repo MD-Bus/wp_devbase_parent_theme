@@ -600,4 +600,59 @@ class Test_Bundled_Plugins extends WP_UnitTestCase {
 		$this->assertSame( devbase_bundled_plugin_version( 'woocommerce' ), trim( $match[1] ) );
 		$this->assertNotSame( '', devbase_bundled_plugin_version( 'woocommerce' ) );
 	}
+
+	public function test_a_plugin_the_site_already_had_is_never_removed_when_nothing_requires_it_any_more() {
+		$this->install_on_disk( '1.0.0' ); // the client's own copy
+		update_option( 'active_plugins', array( 'fixtureplug/fixtureplug.php' ) );
+		$this->make_zip( '2.0.0' );
+		$this->require_it();
+
+		devbase_sync_bundled_plugins();
+		$this->assertSame( '2.0.0', devbase_installed_plugin_version( 'fixtureplug' ), 'Upgraded: the zip is newer.' );
+		$this->assertSame( array(), (array) get_option( DEVBASE_BUNDLED_PLUGINS_MANAGED, array() ), 'But it is not ours, so not in the list of what we may remove.' );
+
+		$this->required = array(); // the child stops asking for it
+		$this->assertFalse( devbase_bundled_plugins_pending() );
+		$this->assertSame( array(), devbase_sync_bundled_plugins() );
+		$this->assertSame( '2.0.0', devbase_installed_plugin_version( 'fixtureplug' ) );
+		$this->assertTrue( devbase_bundled_plugin_is_active( 'fixtureplug/fixtureplug.php' ) );
+	}
+
+	public function test_a_plugin_the_theme_installed_itself_is_still_removed_when_nothing_requires_it() {
+		$this->make_zip( '2.0.0' );
+		$this->require_it();
+		devbase_sync_bundled_plugins();
+		$this->assertSame( array( 'fixtureplug' ), get_option( DEVBASE_BUNDLED_PLUGINS_MANAGED ) );
+
+		$this->required = array();
+		$this->assertSame( 'removed', devbase_sync_bundled_plugins()['fixtureplug'] );
+		$this->assertSame( '', devbase_installed_plugin_version( 'fixtureplug' ) );
+	}
+
+	public function test_woocommerce_is_recognised_under_another_folder_name_and_not_installed_twice() {
+		remove_filter( 'devbase/bundled_plugins', array( $this, 'fixture_registry' ) );
+		remove_filter( 'devbase/required_plugins', array( $this, 'fixture_required' ) );
+		add_filter( 'devbase/required_plugins', function ( $plugins ) {
+			$plugins[] = 'woocommerce';
+			return $plugins;
+		} );
+
+		$def = devbase_bundled_plugins()['woocommerce'];
+		$this->assertSame( 'woocommerce', $def['text_domain'] );
+		$this->assertSame( array( 'woocommerce' ), devbase_required_plugins(), 'Nothing else on the site: required as usual.' );
+
+		wp_mkdir_p( WP_PLUGIN_DIR . '/woocommerce-copy' );
+		file_put_contents( WP_PLUGIN_DIR . '/woocommerce-copy/woocommerce-copy.php', "<?php\n/*\nPlugin Name: WooCommerce\nVersion: 9.0.0\nText Domain: woocommerce\n*/\n" );
+		delete_transient( 'devbase_bundled_elsewhere_woocommerce' );
+		wp_clean_plugins_cache( false );
+
+		try {
+			$this->assertSame( array(), devbase_required_plugins(), 'Their copy is used; a second WooCommerce would redeclare its classes.' );
+		} finally {
+			$this->delete_dir( WP_PLUGIN_DIR . '/woocommerce-copy' );
+			delete_transient( 'devbase_bundled_elsewhere_woocommerce' );
+			wp_clean_plugins_cache( false );
+			remove_all_filters( 'devbase/required_plugins' );
+		}
+	}
 }

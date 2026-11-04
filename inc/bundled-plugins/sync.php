@@ -258,10 +258,10 @@ function devbase_ensure_bundled_plugin( $slug, $def ) {
 		do_action( 'devbase/bundled_plugin_activated', $slug );
 	}
 
-	// A plugin tied to a plan service that was ALREADY on the site (the client's own copy) is
+	// A plugin that was ALREADY on the site (the client's own copy, whichever plugin it is) is
 	// adopted for updates but never added to the managed list: only what we installed may be
-	// removed when the service lapses.
-	$adopted = devbase_bundled_plugin_is_service_bound( $def ) && $was_here && ! in_array( $slug, (array) get_option( DEVBASE_BUNDLED_PLUGINS_MANAGED, array() ), true );
+	// removed later, when nothing requires it any more or its plan service lapses.
+	$adopted = $was_here && ! in_array( $slug, (array) get_option( DEVBASE_BUNDLED_PLUGINS_MANAGED, array() ), true );
 
 	if ( ! $adopted ) {
 		devbase_bundled_plugin_manage( $slug, true );

@@ -184,6 +184,11 @@ function devbase_ase_enforced_settings() {
 }
 
 $devbase_apply_ase_defaults = function () {
+	// The site runs its own ASE plugin: its settings are theirs, never filled in or overwritten by ours.
+	if ( devbase_dependency_is_foreign( 'ase' ) ) {
+		return;
+	}
+
 	if ( ! file_exists( get_template_directory() . '/vendor/admin-site-enhancements/admin-site-enhancements.php' ) ) {
 		return;
 	}

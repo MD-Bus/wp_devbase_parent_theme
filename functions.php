@@ -9,6 +9,10 @@ require_once __DIR__ . '/languages/i18n.php';
 // Boots Timber so Twig templates can be rendered.
 require_once __DIR__ . '/inc/timber.php';
 
+// Which dependencies the site already runs as ordinary plugins. Asked FIRST, before the theme loads
+// its own copies of them below (see inc/dependencies/foreign.php).
+require_once __DIR__ . '/inc/dependencies/foreign.php';
+
 // Loads SCF (Secure Custom Fields) from vendor/ and fixes its asset URLs.
 require_once __DIR__ . '/inc/dependencies/scf/hide-ui.php';
 require_once __DIR__ . '/inc/dependencies/scf/scf.php';
