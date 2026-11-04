@@ -10,6 +10,26 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.24.0] — 2026-11-04
+
+Needs Brand Relay 0.30.0 or later. Error tracking is a plan service there; its "Ask for errors" setting makes Brand Relay ask the site for them.
+
+### Added
+
+- **Error tracking** (`inc/maintenance/events.php`). The site keeps its fatal errors and uncaught exceptions and sends them to Brand Relay when its
+  signed ping names `events` (`{"run":["events"]}`), in batches of up to 50 events and 60 KB. It collects only while the site's plan has
+  error tracking in force, so a plan without it costs nothing. Two capture points, because WordPress's own fatal-error handler ends the
+  request before a plain shutdown hook of ours would run: our shutdown function and the `wp_die_handler` filter, once per request.
+- **Scrubbed before it is kept:** first line of the message only (the stack trace, with its arguments, is never kept), server paths cut
+  to `wp-content/...` (folders with spaces in their names too), emails, tokens and URL query strings removed, the request's path
+  only, never its data. The same error again raises a `count` instead of filling the queue, which holds 100 at most.
+- The Remote setup tab shows an **Error tracking** line: errors waiting, when the last were sent, and the last failure.
+
+### Known limit
+
+- A fatal while a plugin is still loading, before the theme, cannot be seen by theme code. That is a total outage, which Brand Relay's
+  uptime check reports. Warnings and notices are not collected.
+
 ## [1.23.0] — 2026-11-03
 
 Needs Brand Relay 0.30.0 or later: 0.29.0 made site health a plan service, and 0.30.0 is the version that asks sites to

@@ -743,3 +743,23 @@ msgstr ""
 
 msgid "No report sent yet: the management server has not asked for one."
 msgstr ""
+
+msgid "Error tracking"
+msgstr ""
+
+msgid "Error tracking is off: enter the management server address and site access key first."
+msgstr ""
+
+msgid "Not included in this site's plan, so errors are not collected."
+msgstr ""
+
+msgid "Last sent %s ago."
+msgstr ""
+
+msgid "The last send failed (%s)."
+msgstr ""
+
+msgid "%d error waiting to be sent."
+msgid_plural "%d errors waiting to be sent."
+msgstr[0] ""
+msgstr[1] ""

@@ -129,6 +129,13 @@ add_action( 'acf/init', function () {
 			'message'  => devbase_heartbeat_status_html(),
 			'esc_html' => 0,
 		),
+		array(
+			'key'      => 'field_devbase_events_status',
+			'label'    => __( 'Error tracking', 'devbase_parent_theme' ),
+			'type'     => 'message',
+			'message'  => devbase_events_status_html(),
+			'esc_html' => 0,
+		),
 	);
 
 	acf_add_local_field_group( array(
@@ -286,7 +293,7 @@ add_filter( 'acf/prepare_field', function ( $field ) {
 	}
 
 	// The Remote setup tab, for the developer only where a child says so.
-	$remote = array( 'field_devbase_licence_tab_relay', 'field_devbase_relay_base_url', 'field_devbase_relay_site_key', 'field_devbase_heartbeat_status' );
+	$remote = array( 'field_devbase_licence_tab_relay', 'field_devbase_relay_base_url', 'field_devbase_relay_site_key', 'field_devbase_heartbeat_status', 'field_devbase_events_status' );
 
 	if ( isset( $field['key'] ) && in_array( $field['key'], $remote, true ) && devbase_remote_setup_hidden() ) {
 		return false;

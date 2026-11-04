@@ -45,12 +45,9 @@ is at 0.28.x, and the services below exist only from 0.18 up.
 because most sites get few visits and many have cron off. The plan is pulled before anything is sent. See
 `inc/maintenance/AGENT.md`. Brand Relay 0.30.0 does its part (plans' "Trigger from Brand Relay"). Open: Brand Relay could read a `parent_theme` field.
 
-**3. Error events (the minor after).** Fatals and uncaught exceptions first (warnings and
-notices flood), and failed scheduled jobs if they prove useful. Queue them, send
-when Brand Relay's ping names `events` (or at the end of a request, at most once every 30 seconds), 50 events and 64 KB per
-batch, within the plan's daily count. Scrub before sending, never report the
-reporter's own errors, and never put customer data in a message. Needs the
-`events` service.
+**3. Error events (done in 1.24.0).** Fatals and uncaught exceptions, scrubbed and queued, sent when the ping names `events`, only while
+the plan has error tracking. See `inc/maintenance/AGENT.md`. Open: failed scheduled jobs and, if wanted, warnings (they flood, and
+catching them means taking over PHP's error handler).
 
 **4. Backups.** The largest piece, and Brand Relay only receives files: making
 the backup is the site's job, uploaded in parts of exactly 50 MiB. Two options.

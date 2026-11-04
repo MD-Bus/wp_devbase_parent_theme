@@ -81,6 +81,7 @@ require_once __DIR__ . '/inc/updates/relay-sync.php';
 require_once __DIR__ . '/inc/maintenance/plan.php';
 require_once __DIR__ . '/inc/maintenance/maintenance.php';
 require_once __DIR__ . '/inc/maintenance/heartbeat.php';
+require_once __DIR__ . '/inc/maintenance/events.php';
 
 
 // Registers the (currently empty) Theme Settings options page.

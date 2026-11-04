@@ -745,3 +745,23 @@ msgstr "Le dernier rapport a échoué (%s)."
 
 msgid "No report sent yet: the management server has not asked for one."
 msgstr "Aucun rapport envoyé pour le moment : le serveur de gestion n’en a pas demandé."
+
+msgid "Error tracking"
+msgstr "Suivi des erreurs"
+
+msgid "Error tracking is off: enter the management server address and site access key first."
+msgstr "Le suivi des erreurs est désactivé : saisissez d’abord l’adresse du serveur de gestion et la clé d’accès du site."
+
+msgid "Not included in this site's plan, so errors are not collected."
+msgstr "Non inclus dans le forfait de ce site : les erreurs ne sont pas collectées."
+
+msgid "Last sent %s ago."
+msgstr "Dernier envoi il y a %s."
+
+msgid "The last send failed (%s)."
+msgstr "Le dernier envoi a échoué (%s)."
+
+msgid "%d error waiting to be sent."
+msgid_plural "%d errors waiting to be sent."
+msgstr[0] "%d erreur en attente d’envoi."
+msgstr[1] "%d erreurs en attente d’envoi."

@@ -39,15 +39,16 @@ function devbase_maintenance_known() {
 
 /**
  * The services this site can run: key => callback. A callback returns array(
- * 'status' => ok|error|refused|not_in_plan, 'detail' => string, 'sent_at' => int (optional),
- * 'gap' => int (optional) ). A known service with no callback (uptime, and events and
- * backup until they are built) is answered `skipped`.
+ * 'status' => ok|idle|error|refused|not_in_plan, 'detail' => string, 'sent_at' => int (optional),
+ * 'gap' => int (optional) ). `idle` (nothing to send) is answered `skipped`; so is a known service
+ * with no callback (uptime, and backup until it is built).
  *
  * @return array<string, callable>
  */
 function devbase_maintenance_services() {
 	return (array) apply_filters( 'devbase/maintenance/services', array(
 		'health' => 'devbase_heartbeat_run',
+		'events' => 'devbase_events_run',
 	) );
 }
 
@@ -162,7 +163,7 @@ function devbase_maintenance_run( array $services ) {
 					}
 				}
 
-				$ran[ $key ] = 'ok' === $status ? 'sent' : ( 'not_in_plan' === $status ? 'not_in_plan' : 'error' );
+				$ran[ $key ] = 'ok' === $status ? 'sent' : ( 'idle' === $status ? 'skipped' : ( 'not_in_plan' === $status ? 'not_in_plan' : 'error' ) );
 			}
 
 			$state['services'][ $key ] = $service;

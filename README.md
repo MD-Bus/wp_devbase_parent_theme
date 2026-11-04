@@ -606,6 +606,11 @@ clock: its signed sync ping may carry a signed JSON body such as `{ "run": ["set
 empty body is the old ping, settings only); nothing runs on a website visit or on WP-Cron. The plan is pulled before anything is
 sent, so nothing goes out in the blind. Details in `inc/maintenance/AGENT.md`.
 
+**Error tracking** (needs Brand Relay 0.30.0+): the same ping can name `events`. The site keeps its fatal errors and uncaught
+exceptions, scrubbed (first line only, paths cut to `wp-content/...`, emails, tokens and query strings removed), and sends
+them to Brand Relay in one batch when asked. It collects only while the site's plan includes error tracking. A fatal while a
+plugin is still loading, before the theme, cannot be seen; that is a total outage, which Brand Relay's uptime check reports.
+
 Theme Settings > Miscellaneous > System Status shows the bundled versions.
 
 
