@@ -203,15 +203,14 @@ add_filter( 'wp_die_handler', function ( $handler ) {
  * Sends the queued errors (one batch) and says what happened, for the maintenance check to
  * record. Runs only while the plan says error tracking is in force.
  *
- * @return array{status: string, detail: string, sent_at?: int}
+ * @return array{status: string, detail: string, sent_at?: int, checked_at?: int}
  */
 function devbase_events_run() {
 	$queue = get_option( DEVBASE_EVENTS_QUEUE );
 	$queue = is_array( $queue ) && $queue ? $queue : array();
 
-	if ( ! $queue ) {
-		return array( 'status' => 'idle', 'detail' => '' );
-	}
+	// Nothing queued is still a report: an empty batch tells Brand Relay "checked, no errors"
+	// (it answers `clear`), so a quiet site is told apart from a site that did not run.
 
 	// One batch: at most 50 events and 60 KB, oldest first.
 	$batch = array_slice( $queue, 0, DEVBASE_EVENTS_BATCH_MAX, true );
@@ -244,6 +243,10 @@ function devbase_events_run() {
 	$data = json_decode( wp_remote_retrieve_body( $response ), true );
 	$data = is_array( $data ) ? $data : array();
 
+	if ( 200 === $code && ! $batch ) {
+		return devbase_events_note( array( 'status' => 'clear', 'detail' => '', 'checked_at' => time() ) );
+	}
+
 	if ( 200 === $code ) {
 		// Taken in: off the queue, whatever was dropped for its own reasons (no message, past the 50th).
 		update_option( DEVBASE_EVENTS_QUEUE, array_diff_key( $queue, $batch ), false );
@@ -260,6 +263,11 @@ function devbase_events_run() {
 	}
 
 	// 429: too soon after the last batch, or the plan's daily count is used up. Kept for the next ask.
+	// An empty report that is too soon changes nothing: it ran moments ago, which is what `skipped` means.
+	if ( 429 === $code && ! $batch && 'daily_limit' !== ( $data['error'] ?? '' ) ) {
+		return array( 'status' => 'idle', 'detail' => '' );
+	}
+
 	if ( 429 === $code ) {
 		return devbase_events_note( array( 'status' => 'error', 'detail' => 'daily_limit' === ( $data['error'] ?? '' ) ? 'daily limit reached' : 'too soon' ) );
 	}
@@ -280,6 +288,10 @@ function devbase_events_note( array $result ) {
 	if ( ! empty( $result['sent_at'] ) ) {
 		$state['sent_at']  = (int) $result['sent_at'];
 		$state['accepted'] = (int) ( $state['accepted'] ?? 0 ) + (int) ( $result['accepted'] ?? 0 );
+	}
+
+	if ( ! empty( $result['checked_at'] ) ) {
+		$state['checked_at'] = (int) $result['checked_at'];
 	}
 
 	$state['last_error'] = 'error' === $result['status'] ? (string) $result['detail'] : '';
@@ -316,6 +328,11 @@ function devbase_events_status_html() {
 	if ( ! empty( $state['sent_at'] ) ) {
 		/* translators: %s: how long ago, e.g. "3 hours". */
 		$line .= ' ' . sprintf( esc_html__( 'Last sent %s ago.', 'devbase_parent_theme' ), esc_html( human_time_diff( (int) $state['sent_at'] ) ) );
+	}
+
+	if ( ! empty( $state['checked_at'] ) ) {
+		/* translators: %s: how long ago, e.g. "3 hours". */
+		$line .= ' ' . sprintf( esc_html__( 'Last checked, no errors, %s ago.', 'devbase_parent_theme' ), esc_html( human_time_diff( (int) $state['checked_at'] ) ) );
 	}
 
 	if ( ! empty( $state['last_error'] ) ) {

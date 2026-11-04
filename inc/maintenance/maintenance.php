@@ -12,7 +12,7 @@
 //
 // An EMPTY body is the old ping and means settings only. The site runs the names it
 // knows, ignores the rest, and answers { ok, error, changed, ran: { name: result } }
-// where a result is ok, sent, not_in_plan, skipped or error. Nothing here runs on a
+// where a result is ok, sent, clear (checked, no errors), not_in_plan, skipped or error. Nothing here runs on a
 // visit, on cron, or on a schedule.
 //
 // NEVER SEND IN THE BLIND. Before a service runs, the plan is pulled (GET /v1/site, unless
@@ -39,8 +39,8 @@ function devbase_maintenance_known() {
 
 /**
  * The services this site can run: key => callback. A callback returns array(
- * 'status' => ok|idle|error|refused|not_in_plan, 'detail' => string, 'sent_at' => int (optional),
- * 'gap' => int (optional) ). `idle` (nothing to send) is answered `skipped`; so is a known service
+ * 'status' => ok|clear|idle|error|refused|not_in_plan, 'detail' => string, 'sent_at' => int (optional),
+ * 'gap' => int (optional) ). `clear` (checked, no errors) is answered `clear`; `idle` (ran moments ago) is answered `skipped`; so is a known service
  * with no callback (uptime, and backup until it is built).
  *
  * @return array<string, callable>
@@ -101,7 +101,7 @@ function devbase_maintenance_lock() {
  * says what became of each. Safe to call directly (`wp eval 'print_r( devbase_maintenance_run( array( "health" ) ) );'`).
  *
  * @param string[] $services Names from devbase_maintenance_requested().
- * @return array<string, string> name => ok | sent | not_in_plan | skipped | error
+ * @return array<string, string> name => ok | sent | clear | not_in_plan | skipped | error
  */
 function devbase_maintenance_run( array $services ) {
 	$ran = array();
@@ -163,7 +163,7 @@ function devbase_maintenance_run( array $services ) {
 					}
 				}
 
-				$ran[ $key ] = 'ok' === $status ? 'sent' : ( 'idle' === $status ? 'skipped' : ( 'not_in_plan' === $status ? 'not_in_plan' : 'error' ) );
+				$ran[ $key ] = 'ok' === $status ? 'sent' : ( 'clear' === $status ? 'clear' : ( 'idle' === $status ? 'skipped' : ( 'not_in_plan' === $status ? 'not_in_plan' : 'error' ) ) );
 			}
 
 			$state['services'][ $key ] = $service;

@@ -239,9 +239,13 @@ class Test_Events extends WP_UnitTestCase {
 		}
 	}
 
-	public function test_nothing_queued_sends_nothing() {
-		$this->assertSame( 'idle', devbase_events_run()['status'] );
-		$this->assertCount( 0, $this->requests );
+	public function test_nothing_queued_sends_an_empty_report() {
+		$result = devbase_events_run();
+
+		$this->assertSame( 'clear', $result['status'] );
+		$this->assertCount( 1, $this->requests );
+		$this->assertSame( '{"events":[]}', $this->requests[0]['args']['body'] );
+		$this->assertNotEmpty( get_option( DEVBASE_EVENTS_STATE )['checked_at'] );
 	}
 
 	public function test_a_big_queue_is_sent_fifty_at_a_time() {
@@ -324,7 +328,17 @@ class Test_Events extends WP_UnitTestCase {
 		$this->assertCount( 0, $this->queue() );
 	}
 
-	public function test_a_ping_with_nothing_queued_says_skipped() {
+	public function test_a_ping_with_nothing_queued_sends_an_empty_report_and_says_clear() {
+		$this->assertSame( 'clear', $this->ping( '{"run":["events"]}' )->get_data()['ran']->events );
+
+		$posts = array_values( array_filter( $this->requests, function ( $r ) { return substr( $r['url'], -15 ) === '/v1/site/events'; } ) );
+		$this->assertCount( 1, $posts );
+		$this->assertSame( '{"events":[]}', $posts[0]['args']['body'] );
+	}
+
+	public function test_an_empty_report_that_is_too_soon_says_skipped() {
+		$this->events = array( 429, array( 'error' => 'rate_limited' ) );
+
 		$this->assertSame( 'skipped', $this->ping( '{"run":["events"]}' )->get_data()['ran']->events );
 	}
 
@@ -333,7 +347,7 @@ class Test_Events extends WP_UnitTestCase {
 		$this->crash( 'x' );
 
 		$this->assertSame( 'not_in_plan', $this->ping( '{"run":["events"]}' )->get_data()['ran']->events );
-		$this->assertCount( 0, array_filter( $this->requests, function ( $r ) { return substr( $r['url'], -14 ) === '/v1/site/events'; } ) );
+		$this->assertCount( 0, array_filter( $this->requests, function ( $r ) { return substr( $r['url'], -15 ) === '/v1/site/events'; } ) );
 	}
 
 	public function test_a_ping_naming_health_and_events_runs_both() {

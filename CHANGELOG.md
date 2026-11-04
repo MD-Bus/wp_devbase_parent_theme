@@ -10,6 +10,17 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.25.0] — 2026-11-04
+
+Needs Brand Relay 0.32.0 or later (older ones accept the empty report too, but show nothing for it).
+
+### Added
+
+- **"No errors" reports.** When Brand Relay's ping names `events` and nothing is queued, the site now sends an empty batch (`{"events":[]}`)
+  and answers the trigger `clear`, instead of staying silent and answering `skipped`. Brand Relay shows it as "No errors", so a quiet
+  site can be told apart from one that did not run. `skipped` now means only that it ran moments ago (Brand Relay answered 429).
+- The Error tracking line on the Remote setup tab says when the site last checked and found no errors.
+
 ## [1.24.0] — 2026-11-04
 
 Needs Brand Relay 0.30.0 or later. Error tracking is a plan service there; its "Ask for errors" setting makes Brand Relay ask the site for them.

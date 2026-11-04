@@ -289,7 +289,7 @@ class Test_Maintenance extends WP_UnitTestCase {
 
 		$ran = devbase_maintenance_run( array( 'health', 'events', 'backup', 'uptime' ) );
 
-		$this->assertSame( array( 'health' => 'sent', 'events' => 'skipped', 'backup' => 'skipped', 'uptime' => 'skipped' ), $ran );
+		$this->assertSame( array( 'health' => 'sent', 'events' => 'clear', 'backup' => 'skipped', 'uptime' => 'skipped' ), $ran );
 	}
 
 	public function test_a_flood_of_pings_sends_nothing_extra() {
@@ -350,7 +350,7 @@ class Test_Maintenance extends WP_UnitTestCase {
 
 		$this->assertSame( 'ok', $ran->settings );
 		$this->assertSame( 'sent', $ran->health );
-		$this->assertSame( 'skipped', $ran->events );
+		$this->assertSame( 'clear', $ran->events );
 		$this->assertSame( 'skipped', $ran->backup );
 		$this->assertSame( 'skipped', $ran->uptime );
 	}
