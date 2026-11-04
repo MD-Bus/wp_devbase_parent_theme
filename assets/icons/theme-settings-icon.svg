@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
+	<!-- Theme Settings: three sliders, each knob in a different place. Fills only, no strokes and no style
+	     attribute: WordPress recolours an admin menu icon by rewriting every fill="..." to the admin colour
+	     scheme (wp-admin/js/svg-painter.js), so this one colour becomes whatever the scheme asks for. -->
+	<g fill="#a7aaad">
+		<rect x="2" y="3" width="8.2" height="2" rx="1"/>
+		<circle cx="14" cy="4" r="2.6"/>
+
+		<circle cx="6" cy="10" r="2.6"/>
+		<rect x="9.8" y="9" width="8.2" height="2" rx="1"/>
+
+		<rect x="2" y="15" width="5.2" height="2" rx="1"/>
+		<circle cx="11" cy="16" r="2.6"/>
+		<rect x="14.8" y="15" width="3.2" height="2" rx="1"/>
+	</g>
+</svg>

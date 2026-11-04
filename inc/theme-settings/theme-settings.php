@@ -14,9 +14,11 @@ add_action( 'acf/init', function () {
 		return;
 	}
 
-	$icon_path = get_template_directory() . '/assets/icons/devbase-b-icon.svg';
+	$icon_path = get_template_directory() . '/assets/icons/theme-settings-icon.svg';
 	$icon_url  = '';
 
+	// The icon is fills only on purpose: WordPress recolours an admin menu icon by rewriting every fill="..." to the
+	// colour scheme's (wp-admin/js/svg-painter.js), and does not touch strokes or style attributes.
 	// WP admin menu icons take an inline data: URI (not a plain file URL) so
 	// the browser doesn't need an extra request just for a tiny sidebar icon.
 	if ( file_exists( $icon_path ) ) {

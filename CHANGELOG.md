@@ -10,6 +10,13 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.30.0] — 2026-11-04
+
+### Changed
+
+- **A new Theme Settings menu icon**: three sliders, drawn for the WordPress admin menu (fills only, so WordPress recolours it for every admin colour
+  scheme and for hover and current states). It replaces the "B" of an older company's logo, whose file is removed.
+
 ## [1.29.0] — 2026-11-04
 
 ### Added
