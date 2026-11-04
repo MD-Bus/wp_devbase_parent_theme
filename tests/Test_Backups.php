@@ -36,6 +36,7 @@ class Test_Backups extends WP_UnitTestCase {
 		$this->spawns   = 0;
 
 		$this->reset_options();
+		update_option( 'options_hide_wpvivid_ui', '0' ); // these tests are about the page with WPvivid reachable; the hidden wording is in Test_WPvivid_Ui
 		devbase_relay_store_plan( array( 'licence' => array( 'id' => 'sub_1', 'plan' => 'Pro', 'status' => 'active', 'services' => array( 'backup' ), 'limits' => array() ) ) );
 
 		add_filter( 'devbase/backup/dir', array( $this, 'dir' ) );
@@ -60,6 +61,7 @@ class Test_Backups extends WP_UnitTestCase {
 		remove_filter( 'devbase/backup/get_range_headers', array( $this, 'range_headers' ) );
 		remove_filter( 'pre_http_request', array( $this, 'http' ), 10 );
 		$this->reset_options();
+		delete_option( 'options_hide_wpvivid_ui' );
 		$this->delete_dir( $this->dir );
 		wp_clear_scheduled_hook( DEVBASE_BACKUP_CRON );
 
@@ -480,5 +482,12 @@ class Test_Backups extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'sent to Brand Relay', devbase_backup_job_summary( $job ) );
 		$job['type'] = 'download';
 		$this->assertStringContainsString( 'press Restore', devbase_backup_job_summary( $job ) );
+	}
+
+	public function test_the_backups_page_does_not_become_the_landing_page_of_theme_settings() {
+		$keys = array_keys( acf_get_options_pages() );
+
+		$this->assertContains( 'backups-settings', $keys );
+		$this->assertLessThan( array_search( 'backups-settings', $keys, true ), array_search( 'licence-settings', $keys, true ), 'The menu opens on the first sub-page registered.' );
 	}
 }

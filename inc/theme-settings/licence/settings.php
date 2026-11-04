@@ -247,15 +247,13 @@ function devbase_warden_forget_replaced_licences() {
 add_action( 'admin_init', 'devbase_warden_forget_replaced_licences' );
 
 /**
- * Whether the Remote setup tab is hidden. Off by default (visible); switched on
+ * Whether the Remote setup tab is hidden. On by default (hidden, owner's decision 2026-11-04); switched off
  * with "Lock remote setup" on Theme Settings > Miscellaneous > Management, which
  * is out of the way enough that a client does not come across it. A filter can
  * still decide it in code.
  */
 function devbase_remote_setup_hidden() {
-	$locked = function_exists( 'get_field' ) && (bool) get_field( 'lock_remote_setup', 'option' );
-
-	return (bool) apply_filters( 'devbase/licence/hide_remote_setup', $locked );
+	return (bool) apply_filters( 'devbase/licence/hide_remote_setup', devbase_switch_on( 'lock_remote_setup' ) );
 }
 
 // The three licence values are provisioned remotely (inc/updates/relay-sync.php),

@@ -768,7 +768,8 @@ class Test_Warden_Updates extends WP_UnitTestCase {
 	}
 
 	public function test_the_lock_remote_setup_switch_hides_the_tab() {
-		$this->assertFalse( devbase_remote_setup_hidden(), 'Off by default: visible.' );
+		delete_option( 'options_lock_remote_setup' );
+		$this->assertTrue( devbase_remote_setup_hidden(), 'On by default: hidden until someone switches it off.' );
 
 		update_field( 'lock_remote_setup', 1, 'option' );
 		$this->assertTrue( devbase_remote_setup_hidden() );
@@ -778,6 +779,7 @@ class Test_Warden_Updates extends WP_UnitTestCase {
 		update_field( 'lock_remote_setup', 0, 'option' );
 		$this->assertFalse( devbase_remote_setup_hidden() );
 		$this->assertIsArray( apply_filters( 'acf/prepare_field', acf_get_field( 'field_devbase_relay_site_key' ) ) );
+		delete_option( 'options_lock_remote_setup' );
 	}
 
 	public function test_the_switch_lives_on_the_miscellaneous_page() {

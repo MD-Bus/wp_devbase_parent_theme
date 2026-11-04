@@ -264,8 +264,8 @@ add_action( 'acf/init', function () {
 				'name'          => 'lock_remote_setup',
 				'type'          => 'true_false',
 				'ui'            => 1,
-				'default_value' => 0,
-				'instructions'  => __( 'When on, the Remote setup tab on the Licence page is hidden. When off, it is visible.', 'devbase_parent_theme' ),
+				'default_value' => 1,
+				'instructions'  => __( 'When on (the default), the Remote setup tab on the Licence page is hidden. When off, it is visible.', 'devbase_parent_theme' ),
 			),
 			array(
 				'key'           => 'field_devbase_hide_wpvivid_ui',
@@ -273,8 +273,17 @@ add_action( 'acf/init', function () {
 				'name'          => 'hide_wpvivid_ui',
 				'type'          => 'true_false',
 				'ui'            => 1,
-				'default_value' => 0,
-				'instructions'  => __( 'When on, WPvivid Backup is hidden from the admin menu, the admin bar, the Plugins list and its notices. Backups keep working. Hidden is not blocked: its page still opens by its address, and the Backups page keeps offering the link to whoever has this off.', 'devbase_parent_theme' ),
+				'default_value' => 1,
+				'instructions'  => __( 'When on (the default), WPvivid Backup is hidden from the admin menu, the admin bar, the Plugins list and its notices. Backups keep working. Hidden is not blocked: its page still opens by its address, and the Backups page keeps offering the link to whoever has this off.', 'devbase_parent_theme' ),
+			),
+			array(
+				'key'           => 'field_devbase_hide_scf_ui',
+				'label'         => __( 'Hide Secure Custom Fields', 'devbase_parent_theme' ),
+				'name'          => 'hide_scf_ui',
+				'type'          => 'true_false',
+				'ui'            => 1,
+				'default_value' => 1,
+				'instructions'  => __( 'When on (the default), the Custom Fields menu and its screens (field groups, post types, taxonomies, options pages, tools) are hidden and closed, so nobody changes the site\'s structure by accident. Everything the theme built keeps working, and the Theme Settings pages stay. Turn it off here to edit field groups.', 'devbase_parent_theme' ),
 			),
 		),
 		'location' => array(
@@ -355,3 +364,16 @@ add_action( 'admin_enqueue_scripts', function ( $hook ) {
 		'errorText'   => __( 'Something went wrong. Please try again.', 'devbase_parent_theme' ),
 	) );
 } );
+
+/**
+ * A Management switch that is ON until someone saves it off. It reads the saved option itself, not
+ * get_field(): the Secure Custom Fields menu is decided before any field is registered, when get_field()
+ * would find nothing and the default would not apply. An explicit "off" saved earlier stays off.
+ *
+ * @param string $name The field name (lock_remote_setup, hide_wpvivid_ui, hide_scf_ui).
+ */
+function devbase_switch_on( $name ) {
+	$raw = get_option( 'options_' . $name, null );
+
+	return null === $raw || false === $raw || '' === $raw ? true : (bool) (int) $raw;
+}

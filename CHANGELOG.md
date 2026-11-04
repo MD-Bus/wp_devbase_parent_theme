@@ -10,6 +10,26 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+### Added
+
+- **Hide Secure Custom Fields** (Theme Settings > Miscellaneous > Management, on by default). The Custom Fields menu and its screens (field groups, post types,
+  taxonomies, options pages, tools) are hidden and closed, so nobody changes the site's structure by accident. It uses SCF's own `acf/settings/show_admin`.
+  Field groups, Theme Settings, blocks and the abilities keep working (checked on a real site: 35 field groups, 68 abilities, unchanged). To edit field
+  groups, switch it off first.
+
+### Changed
+
+- **All three Management switches are on by default**: Lock remote setup, Hide WPvivid Backup and Hide Secure Custom Fields. A site where nobody has
+  saved them is locked down; one where somebody saved a switch off keeps it off. They are read from the saved option itself (`devbase_switch_on()`),
+  so the default also holds early in the load, before any field is registered.
+- Dependencies: Secure Custom Fields 6.9.7 -> 6.9.8 and WooCommerce 11.2.1 -> 11.2.2 (Dependabot pull requests 4 and 5, merged; SCF's registrations were
+  compared before and after on a real site and are identical).
+
+### Fixed
+
+- The Backups page had become the page Theme Settings opens on (the first sub-page registered wins). It now loads after the others, so the menu opens on
+  Licence again.
+
 ## [1.28.0] — 2026-11-04
 
 ### Added

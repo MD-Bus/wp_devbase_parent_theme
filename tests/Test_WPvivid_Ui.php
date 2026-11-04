@@ -12,8 +12,8 @@ class WPvivid_Stub_Notices {
 class Test_WPvivid_Ui extends WP_UnitTestCase {
 
 	public function tear_down() {
-		update_field( 'hide_wpvivid_ui', 0, 'option' );
-		update_field( 'lock_remote_setup', 0, 'option' );
+		delete_option( 'options_hide_wpvivid_ui' );
+		delete_option( 'options_lock_remote_setup' );
 		remove_all_filters( 'devbase/wpvivid/hide_ui' );
 
 		parent::tear_down();
@@ -24,6 +24,7 @@ class Test_WPvivid_Ui extends WP_UnitTestCase {
 	}
 
 	public function test_the_remote_setup_lock_does_not_hide_it_the_switch_of_its_own_does() {
+		update_field( 'hide_wpvivid_ui', 0, 'option' );
 		update_field( 'lock_remote_setup', 1, 'option' );
 		$this->assertFalse( devbase_wpvivid_ui_hidden() );
 
