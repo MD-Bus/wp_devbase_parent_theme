@@ -365,6 +365,8 @@ if ( ! class_exists( 'acf_revisions' ) ) :
 		 * Modifies the $post_id to allow loading values from a revision.
 		 *
 		 * @since ACF 5.5.10
+		 * @since SCF 6.9.8 Requires the preview query arg, since WordPress also flags
+		 *                  an editor viewing a draft or pending post as a preview.
 		 *
 		 * @param mixed $post_id  The post ID after being processed by acf_get_valid_post_id().
 		 * @param mixed $_post_id The post ID before being processed by acf_get_valid_post_id().
@@ -372,7 +374,7 @@ if ( ! class_exists( 'acf_revisions' ) ) :
 		 */
 		public function acf_validate_post_id( $post_id, $_post_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Required by the acf/validate_post_id filter signature.
 			// Bail early if not a well-formed WordPress preview context.
-			if ( ! is_preview() ) {
+			if ( ! is_preview() || ! isset( $_GET['preview'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only check of the preview query arg.
 				return $post_id;
 			}
 

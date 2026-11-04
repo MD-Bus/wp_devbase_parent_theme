@@ -5109,7 +5109,8 @@ __webpack_require__.r(__webpack_exports__);
       'keypress .choices-list .acf-rel-item': 'onKeypressFilter',
       'keypress .values-list .acf-rel-item': 'onKeypressFilter',
       'click [data-name="remove_item"]': 'onClickRemove',
-      'touchstart .values-list .acf-rel-item': 'onTouchStartValues'
+      'touchstart .values-list .acf-rel-item': 'onTouchStartValues',
+      showField: 'maybeFetchMore'
     },
     $control: function () {
       return this.$('.acf-relationship');
@@ -5187,13 +5188,28 @@ __webpack_require__.r(__webpack_exports__);
       acf.onceInView(this.$el, delayed);
     },
     onScrollChoices: function (e) {
+      this.maybeFetchMore();
+    },
+    maybeFetchMore: function () {
       // bail early if no more results
       if (this.get('loading') || !this.get('more')) {
         return;
       }
 
+      // Wait until the list can be scrolled
+      const $list = this.$list('choices');
+      if (!$list.is(':visible')) {
+        if (!this.get('waitingForView')) {
+          this.set('waitingForView', true);
+          acf.onceInView($list, this.proxy(function () {
+            this.set('waitingForView', false);
+            this.maybeFetchMore();
+          }));
+        }
+        return;
+      }
+
       // Scrolled to bottom
-      var $list = this.$list('choices');
       var scrollTop = Math.ceil($list.scrollTop());
       var scrollHeight = Math.ceil($list[0].scrollHeight);
       var innerHeight = Math.ceil($list.innerHeight());
@@ -5352,7 +5368,8 @@ __webpack_require__.r(__webpack_exports__);
       }
 
       // add to this.o
-      var ajaxData = this.getAjaxData();
+      const ajaxData = this.getAjaxData();
+      const ajaxDataJson = JSON.stringify(ajaxData);
 
       // clear html if is new query
       var $choiceslist = this.$list('choices');
@@ -5366,18 +5383,29 @@ __webpack_require__.r(__webpack_exports__);
       this.set('loading', true);
 
       // callback
-      var onComplete = function () {
+      var onComplete = function (jqXHR, status) {
         this.set('loading', false);
         $loading.remove();
+
+        // Keep loading while the list doesn't fill up, unless the query has changed
+        if ('success' === status && JSON.stringify(this.getAjaxData()) === ajaxDataJson) {
+          this.maybeFetchMore();
+        }
       };
       var onSuccess = function (json) {
+        // This page's posts were all left out, but later pages may have more
+        if (json && json.more && !(json.results && json.results.length)) {
+          this.set('more', true);
+          return;
+        }
+
         // no results
         if (!json || !json.results || !json.results.length) {
           // prevent pagination
           this.set('more', false);
 
           // add message
-          if (this.get('paged') == 1) {
+          if (!$choiceslist.find('.acf-rel-item').length) {
             this.$list('choices').append('<li>' + acf.__('No matches found') + '</li>');
           }
 
@@ -9988,6 +10016,12 @@ __webpack_require__.r(__webpack_exports__);
         $prevOptions = $options;
         $prevGroup = $group;
       });
+
+      // Remove the "No results" message once a later page has added options
+      const $results = $('.select2-container--open .select2-results__options').first();
+      if ($results.children('.select2-results__option:not(.select2-results__message):not(.loading-results)').length) {
+        $results.children('.select2-results__message').remove();
+      }
     }
   });
 
