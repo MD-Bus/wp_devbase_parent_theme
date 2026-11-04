@@ -23,8 +23,10 @@ validity by itself.
   with no extra request. It turns a service on only while that service is in
   force, checks `expires_at` itself even when the cached answer is fresh, stops
   on `401` and `403`, backs off on `429`, and keeps the last good answer through
-  an outage. The heartbeat is the one exception: any site with a key may send
-  it, with no plan.
+  an outage. The heartbeat is the one thing Brand Relay does not gate today (any
+  site with a key may send it), but it is meant to become a plan service of its own,
+  not a free one (owner's decision): build it behind the same "is it in force" test as
+  the others once Brand Relay offers the service.
 
 **When the licence lapses (done in 1.19.0).** No licence, no maintenance from us: the theme
 stops managing the bundled WooCommerce (the update locks lift; it stays installed
@@ -41,7 +43,8 @@ is at 0.28.x, and the services below exist only from 0.18 up.
 
 **2. Heartbeat (next minor).** A daily report to `POST /v1/site/heartbeat` with
 WordPress, PHP and theme versions, waiting updates, disk, cron health and the
-last backup time, sent with the Brand Relay key the site already holds. This
+last backup time, sent with the Brand Relay key the site already holds. **Waits for Brand Relay**
+to make health reports a plan service; gated like error events from the start. This
 step also brings the shared plumbing: keep the `licence` object from `/v1/site`
 next to the params, give every service one "is it in force" test, and show the
 last report and answer in a Maintenance block on the Licence page. The `theme`
