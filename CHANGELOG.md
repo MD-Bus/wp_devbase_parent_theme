@@ -10,6 +10,26 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.20.0] — 2026-11-03
+
+### Changed
+
+- **The Licence page is rewritten in plain words.** Theme Settings > Licence now has three tabs, opening on
+  **Status** (the table of each theme's licence and updates, and **Check for updates now**), then **Licence**
+  (**Licence key**, **Update server**, **Verification key**, read-only, with one calm notice that your developer
+  manages them instead of the same line under every field), then **Remote setup** (**Management server
+  address**, **Site access key**). The product names Warden and Brand Relay no longer appear anywhere a client
+  sees, nor the tags. The status reads "Active", "Valid until 30 July 2027", "Version 1.4.0 available",
+  "Paused: no active licence". The messages of the check button are plainer too. French translations included.
+  The fields, their values and the way they are provisioned are unchanged.
+
+### Added
+
+- **The Remote setup tab can be hidden from clients**: the filter `devbase/licence/hide_remote_setup` (a child
+  returns true for everyone but the developer, as the Credit tab does with `devbase/credit/hide_settings`). It is
+  hidden by default when both `DEVBASE_RELAY_URL` and `DEVBASE_RELAY_SITE_KEY` are set in code. The developer
+  still sees, on the Status tab, each theme's tag and app name and the time of the last remote update.
+
 ## [1.19.0] — 2026-11-03
 
 ### Changed

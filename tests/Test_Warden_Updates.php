@@ -680,12 +680,90 @@ class Test_Warden_Updates extends WP_UnitTestCase {
 
 		$this->assertIsArray( $field );
 		$this->assertSame( 'warden_licence_key', $field['name'] );
-		$this->assertSame( __( 'Theme Update Licence Key', 'devbase_parent_theme' ), $field['label'] );
+		$this->assertSame( __( 'Licence key', 'devbase_parent_theme' ), $field['label'] );
 		$this->assertSame( 'password', $field['type'] );
 		$this->assertFalse( acf_get_field( 'field_devbase_warden_parent_licence' ) );
 		$this->assertFalse( acf_get_field( 'field_devbase_warden_child_licence' ) );
 
 		// Provisioned from Brand Relay: shown, never editable.
 		$this->assertSame( 1, apply_filters( 'acf/prepare_field', $field )['disabled'] );
+	}
+
+	// --- The Licence page: plain words, Status first, the developer's tab hidden on request ---
+
+	public function test_the_licence_page_opens_on_status_and_the_developer_tab_is_last() {
+		$group = acf_get_field_group( 'group_devbase_licence' );
+		$tabs  = array_values( array_filter( acf_get_fields( $group ), function ( $f ) { return 'tab' === $f['type']; } ) );
+
+		$this->assertSame(
+			array( __( 'Status', 'devbase_parent_theme' ), __( 'Licence', 'devbase_parent_theme' ), __( 'Remote setup', 'devbase_parent_theme' ) ),
+			array_map( function ( $t ) { return $t['label']; }, $tabs ),
+			'The page opens on the first tab: Status for a client, then the Licence details, then the developer\'s tab.'
+		);
+	}
+
+	public function test_a_client_never_sees_the_product_names_on_the_licence_page() {
+		// The developer's view is the default; a child hides the Remote setup tab for clients.
+		add_filter( 'devbase/licence/hide_remote_setup', '__return_true' );
+		update_option( devbase_warden_state_option( get_template() ), array(
+			'response' => array( 'valid' => true, 'status' => 'active', 'tag' => 'parent-theme', 'app' => array( 'name' => 'Some App' ), 'expires_at' => '2027-07-30T23:59:59.999Z' ),
+			'succeeded_at' => time(),
+			'checked_at'   => time(),
+		), false );
+
+		$html = devbase_licence_status_html();
+		remove_filter( 'devbase/licence/hide_remote_setup', '__return_true' );
+
+		foreach ( array( 'Warden', 'Brand Relay', 'parent-theme', 'Some App', 'Old per-theme key' ) as $internal ) {
+			$this->assertStringNotContainsString( $internal, $html, "'$internal' is for the developer, not the client." );
+		}
+		$this->assertStringContainsString( 'Active', $html );
+		$this->assertStringContainsString( trim( explode( '%s', __( 'Valid until %s', 'devbase_parent_theme' ) )[0] ), $html, 'The expiry reads as a date, in the site\'s language.' );
+	}
+
+	public function test_the_developer_sees_the_tag_and_the_app() {
+		add_filter( 'devbase/licence/hide_remote_setup', '__return_false' );
+		update_option( devbase_warden_state_option( get_template() ), array(
+			'response' => array( 'valid' => true, 'status' => 'active', 'tag' => 'parent-theme', 'app' => array( 'name' => 'Some App' ) ),
+			'succeeded_at' => time(),
+			'checked_at'   => time(),
+		), false );
+
+		$html = devbase_licence_status_html();
+		remove_filter( 'devbase/licence/hide_remote_setup', '__return_false' );
+
+		$this->assertStringContainsString( 'parent-theme', $html );
+		$this->assertStringContainsString( 'Some App', $html );
+	}
+
+	public function test_the_remote_setup_tab_is_shown_by_default_and_hidden_on_request() {
+		$keys = array( 'field_devbase_licence_tab_relay', 'field_devbase_relay_base_url', 'field_devbase_relay_site_key' );
+
+		// (Other tests in this run define the relay constants, which hides the tab by itself:
+		// nothing to edit when both are set in code. So the filter is explicit here.)
+		add_filter( 'devbase/licence/hide_remote_setup', '__return_false' );
+		foreach ( $keys as $key ) {
+			$this->assertIsArray( apply_filters( 'acf/prepare_field', acf_get_field( $key ) ), "$key is shown when not hidden." );
+		}
+		remove_filter( 'devbase/licence/hide_remote_setup', '__return_false' );
+
+		add_filter( 'devbase/licence/hide_remote_setup', '__return_true' );
+		foreach ( $keys as $key ) {
+			$this->assertFalse( apply_filters( 'acf/prepare_field', acf_get_field( $key ) ), "$key is hidden when asked." );
+		}
+		remove_filter( 'devbase/licence/hide_remote_setup', '__return_true' );
+
+		// The licence tab is never hidden.
+		$this->assertIsArray( apply_filters( 'acf/prepare_field', acf_get_field( 'field_devbase_warden_licence_key' ) ) );
+	}
+
+	public function test_each_licence_field_has_its_own_help_and_is_read_only() {
+		foreach ( array( 'field_devbase_warden_licence_key', 'field_devbase_warden_base_url', 'field_devbase_warden_public_key' ) as $key ) {
+			$field = apply_filters( 'acf/prepare_field', acf_get_field( $key ) );
+
+			$this->assertSame( 1, $field['disabled'] );
+			$this->assertNotSame( '', $field['instructions'] );
+			$this->assertStringNotContainsString( 'Provisioned automatically', $field['instructions'], 'One notice says it; the fields do not repeat it.' );
+		}
 	}
 }

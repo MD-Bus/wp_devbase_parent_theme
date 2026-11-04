@@ -65,29 +65,29 @@ registered in code, so it is identical on every site running this theme.
 
 ![Licence settings](docs/screenshots/licence-connection.png)
 
-The Warden endpoint, its signing key and **one licence key** for the whole site.
-These three fields are **provisioned automatically and cannot be edited here**;
-contact the developer for any licence issue. Leave the key empty and the site
-simply never checks for updates.
+The page has three tabs and opens on **Status**: each theme's licence and whether
+updates are available, plus **Check for updates now**. **Licence** holds the
+**Licence key**, the **Update server** and the **Verification key**; they are
+provisioned automatically and cannot be edited here, and a notice says so once.
+**Remote setup** holds the **Management server address** and **Site access key**
+that make the rest provision themselves: saving them pulls everything else straight
+away, see [Provisioning from Brand Relay](#provisioning-from-brand-relay). A child theme can hide
+that tab from clients with the filter `devbase/licence/hide_remote_setup`, and it is hidden
+by default when both values are set in code. Clients never see the product names Warden
+or Brand Relay.
 
-The one key covers both themes. In Warden the licence has two apps attached
-under the tags **`parent-theme`** (this base theme) and **`child-theme`** (the
-site's own theme); the site checks each theme under its tag, and one key uses one site
-slot. The Status tab shows each theme's tag. (Until 1.18.0 each theme had its
-own key; a site still holding those keeps updating with them until the single
-key arrives, which then replaces them.)
-
-The only two fields to fill in are the **Brand Relay URL** and **Brand Relay
-Site Key** (the *Brand Relay* tab). Saving them pulls everything else straight
-away; see
-[Provisioning from Brand Relay](#provisioning-from-brand-relay).
+One key covers the whole site. In Warden the licence has two apps attached under the tags
+**`parent-theme`** (this base theme) and **`child-theme`** (the site's own theme); the site
+checks each theme under its tag, and one key uses one site slot. The developer's view of the
+Status tab shows each theme's tag. (Until 1.18.0 each theme had its own key; a site still
+holding those keeps updating with them until the single key arrives, which then replaces them.)
 
 ![Licence status](docs/screenshots/licence-status.png)
 
 The Status tab answers "is this site actually receiving updates" — a
 question that otherwise has half a dozen indistinguishable failure modes.
-**Check for Updates Now** forces the Warden check immediately rather than
-waiting for the cached answer to expire.
+**Check for updates now** forces the check immediately rather than waiting for
+the cached answer to expire.
 
 ### SMTP
 

@@ -595,3 +595,120 @@ msgstr "Les mises à jour du thème sont suspendues : ce site n’a aucune licen
 
 msgid "%s stays at the version this theme shipped and will not be updated by the theme. You can update it from the Plugins screen when you choose, which also means taking any security fix yourself."
 msgstr "%s reste à la version fournie par ce thème et ne sera pas mise à jour par le thème. Vous pouvez la mettre à jour depuis l’écran des extensions quand vous le décidez, ce qui signifie aussi appliquer vous-même tout correctif de sécurité."
+
+msgid "Licence and updates"
+msgstr "Licence et mises à jour"
+
+msgid "Check for updates"
+msgstr "Vérifier les mises à jour"
+
+msgid "Check for updates now"
+msgstr "Vérifier les mises à jour maintenant"
+
+msgid "Checks for updates immediately. Save any changes first."
+msgstr "Vérifie les mises à jour immédiatement. Enregistrez d’abord vos modifications."
+
+msgid "Your licence is managed by your developer. These details are set automatically and cannot be edited here. Please contact your developer for any licence question."
+msgstr "Votre licence est gérée par votre développeur. Ces informations sont définies automatiquement et ne peuvent pas être modifiées ici. Pour toute question sur la licence, veuillez contacter votre développeur."
+
+msgid "Licence key"
+msgstr "Clé de licence"
+
+msgid "Update server"
+msgstr "Serveur de mises à jour"
+
+msgid "Verification key"
+msgstr "Clé de vérification"
+
+msgid "Remote setup"
+msgstr "Configuration à distance"
+
+msgid "Management server address"
+msgstr "Adresse du serveur de gestion"
+
+msgid "The address of the management service, with no trailing path, e.g. https://relay.example.com. The Licence tab is filled in from there, and requests to this site are only accepted from this address."
+msgstr "L’adresse du service de gestion, sans chemin à la fin, p. ex. https://relay.example.com. L’onglet Licence est rempli à partir de là, et les requêtes adressées à ce site ne sont acceptées que depuis cette adresse."
+
+msgid "Site access key"
+msgstr "Clé d’accès du site"
+
+msgid "This site's key from the management service (it starts with brs_). Once both fields are saved, the Licence tab fills itself in and stays up to date."
+msgstr "La clé de ce site fournie par le service de gestion (elle commence par brs_). Une fois les deux champs enregistrés, l’onglet Licence se remplit seul et reste à jour."
+
+msgid "Used to check for updates to this site's themes."
+msgstr "Sert à vérifier les mises à jour des thèmes de ce site."
+
+msgid "Where this site checks for theme updates."
+msgstr "L’endroit où ce site vérifie les mises à jour des thèmes."
+
+msgid "Used to check that updates really come from your developer."
+msgstr "Sert à vérifier que les mises à jour proviennent bien de votre développeur."
+
+msgid "The check could not be completed."
+msgstr "La vérification n’a pas pu être effectuée."
+
+msgid "No themes are set up for updates."
+msgstr "Aucun thème n’est configuré pour les mises à jour."
+
+msgid "Installed version"
+msgstr "Version installée"
+
+msgid "Updates"
+msgstr "Mises à jour"
+
+msgid "No licence on this site, so updates are off."
+msgstr "Aucune licence sur ce site : les mises à jour sont désactivées."
+
+msgid "Not checked yet. The last attempt failed: %s"
+msgstr "Pas encore vérifié. La dernière tentative a échoué : %s"
+
+msgid "Valid until %s"
+msgstr "Valide jusqu’au %s"
+
+msgid "Version %s available"
+msgstr "Version %s disponible"
+
+msgid "Paused: no active licence."
+msgstr "Suspendues : aucune licence active."
+
+msgid "The last check failed (%s); showing the previous result."
+msgstr "La dernière vérification a échoué (%s) ; le résultat précédent est affiché."
+
+msgid "Remote setup is not complete: enter the management server address and site access key (Remote setup tab) to receive settings automatically."
+msgstr "La configuration à distance n’est pas terminée : saisissez l’adresse du serveur de gestion et la clé d’accès du site (onglet Configuration à distance) pour recevoir les réglages automatiquement."
+
+msgid "Settings are managed remotely. Last updated %s ago."
+msgstr "Les réglages sont gérés à distance. Dernière mise à jour il y a %s."
+
+msgid "Settings are managed remotely. Not updated yet."
+msgstr "Les réglages sont gérés à distance. Pas encore mis à jour."
+
+msgid "The last update failed (%s); keeping the current values."
+msgstr "La dernière mise à jour a échoué (%s) ; les valeurs actuelles sont conservées."
+
+msgid "Remote settings: updated."
+msgstr "Réglages à distance : mis à jour."
+
+msgid "Remote settings: update failed (%s)."
+msgstr "Réglages à distance : échec de la mise à jour (%s)."
+
+msgid "%s: no licence, so updates are off."
+msgstr "%s : aucune licence, les mises à jour sont désactivées."
+
+msgid "%s: could not read the installed version."
+msgstr "%s : impossible de lire la version installée."
+
+msgid "%1$s: the check failed (%2$s)."
+msgstr "%1$s : la vérification a échoué (%2$s)."
+
+msgid "%1$s: version %3$s available (you have %2$s)."
+msgstr "%1$s : version %3$s disponible (vous avez la %2$s)."
+
+msgid "%1$s: no active licence (%2$s), so updates are paused."
+msgstr "%1$s : aucune licence active (%2$s), les mises à jour sont suspendues."
+
+msgid "%1$s: up to date (version %2$s)."
+msgstr "%1$s : à jour (version %2$s)."
+
+msgid "Set in the site's code and managed by the developer."
+msgstr "Défini dans le code du site et géré par le développeur."

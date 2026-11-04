@@ -27,7 +27,7 @@ function devbase_licence_status_html() {
 	$tracks = function_exists( 'devbase_update_tracks' ) ? devbase_update_tracks() : array();
 
 	if ( empty( $tracks ) ) {
-		return '<p>' . esc_html__( 'No theme tracks are configured.', 'devbase_parent_theme' ) . '</p>';
+		return '<p>' . esc_html__( 'No themes are set up for updates.', 'devbase_parent_theme' ) . '</p>';
 	}
 
 	$rows = '';
@@ -38,9 +38,9 @@ function devbase_licence_status_html() {
 
 	return devbase_relay_status_html() . '<table class="widefat striped"><thead><tr>'
 		. '<th>' . esc_html__( 'Theme', 'devbase_parent_theme' ) . '</th>'
-		. '<th>' . esc_html__( 'Installed', 'devbase_parent_theme' ) . '</th>'
+		. '<th>' . esc_html__( 'Installed version', 'devbase_parent_theme' ) . '</th>'
 		. '<th>' . esc_html__( 'Licence', 'devbase_parent_theme' ) . '</th>'
-		. '<th>' . esc_html__( 'Update', 'devbase_parent_theme' ) . '</th>'
+		. '<th>' . esc_html__( 'Updates', 'devbase_parent_theme' ) . '</th>'
 		. '</tr></thead><tbody>' . $rows . '</tbody></table>';
 }
 
@@ -54,7 +54,7 @@ function devbase_licence_status_row( $stylesheet, $licence ) {
 	if ( '' === trim( (string) $licence ) ) {
 		return '<tr><td><strong>' . esc_html( $name ) . '</strong></td>'
 			. '<td>' . esc_html( (string) $installed ) . '</td>'
-			. '<td colspan="2"><em>' . esc_html__( 'No licence key entered — update checks are off for this theme.', 'devbase_parent_theme' ) . '</em></td></tr>';
+			. '<td colspan="2"><em>' . esc_html__( 'No licence on this site, so updates are off.', 'devbase_parent_theme' ) . '</em></td></tr>';
 	}
 
 	$state    = devbase_warden_get_state( $stylesheet );
@@ -64,7 +64,7 @@ function devbase_licence_status_row( $stylesheet, $licence ) {
 	if ( empty( $response ) ) {
 		$detail = '' !== $error
 			/* translators: %s: the error Warden's last check returned. */
-			? sprintf( esc_html__( 'Never checked successfully. Last error: %s', 'devbase_parent_theme' ), esc_html( $error ) )
+			? sprintf( esc_html__( 'Not checked yet. The last attempt failed: %s', 'devbase_parent_theme' ), esc_html( $error ) )
 			: esc_html__( 'Not checked yet.', 'devbase_parent_theme' );
 
 		return '<tr><td><strong>' . esc_html( $name ) . '</strong></td>'
@@ -72,23 +72,26 @@ function devbase_licence_status_row( $stylesheet, $licence ) {
 			. '<td colspan="2">' . $detail . '</td></tr>';
 	}
 
-	$status  = ! empty( $response['status'] ) ? (string) $response['status'] : '—';
+	$status  = ! empty( $response['status'] ) ? ucfirst( (string) $response['status'] ) : '—';
 	$valid   = ! empty( $response['valid'] );
 	$licence_cell = ( $valid ? '✓ ' : '✗ ' ) . esc_html( $status );
 
-	// Which app on the licence this row is: the tag it is checked under, and
-	// the app's name as Warden reports it. An old per-theme key has no tag.
-	$tag      = function_exists( 'devbase_warden_tag' ) ? devbase_warden_tag( $stylesheet, $licence ) : '';
-	$app_name = isset( $response['app']['name'] ) ? (string) $response['app']['name'] : '';
+	// For the developer only (the clients do not need the tag or the app's name):
+	// which app on the licence this row is, and the app's name as it is kept.
+	if ( ! devbase_remote_setup_hidden() ) {
+		$tag      = function_exists( 'devbase_warden_tag' ) ? devbase_warden_tag( $stylesheet, $licence ) : '';
+		$app_name = isset( $response['app']['name'] ) ? (string) $response['app']['name'] : '';
 
-	$licence_cell .= '<br><small>' . ( '' !== $tag
-		/* translators: 1: the tag (parent-theme or child-theme), 2: the app's name in Warden. */
-		? sprintf( esc_html__( 'Tag %1$s%2$s', 'devbase_parent_theme' ), esc_html( $tag ), '' !== $app_name ? esc_html( ' · ' . $app_name ) : '' )
-		: esc_html__( 'Old per-theme key, no tag — enter the single licence key.', 'devbase_parent_theme' ) ) . '</small>';
+		$licence_cell .= '<br><small>' . ( '' !== $tag
+			/* translators: 1: the tag (parent-theme or child-theme), 2: the app's name. */
+			? sprintf( esc_html__( 'Tag %1$s%2$s', 'devbase_parent_theme' ), esc_html( $tag ), '' !== $app_name ? esc_html( ' · ' . $app_name ) : '' )
+			: esc_html__( 'Old per-theme key, no tag — enter the single licence key.', 'devbase_parent_theme' ) ) . '</small>';
+	}
 
 	if ( ! empty( $response['expires_at'] ) ) {
-		/* translators: %s: an ISO-8601 expiry date, as Warden returned it. */
-		$licence_cell .= '<br><small>' . sprintf( esc_html__( 'Expires %s', 'devbase_parent_theme' ), esc_html( (string) $response['expires_at'] ) ) . '</small>';
+		$expires = strtotime( (string) $response['expires_at'] );
+		/* translators: %s: a date, e.g. 30 July 2027. */
+		$licence_cell .= '<br><small>' . sprintf( esc_html__( 'Valid until %s', 'devbase_parent_theme' ), esc_html( $expires ? wp_date( get_option( 'date_format' ), $expires ) : (string) $response['expires_at'] ) ) . '</small>';
 	}
 
 	if ( ! empty( $response['message'] ) ) {
@@ -101,9 +104,9 @@ function devbase_licence_status_row( $stylesheet, $licence ) {
 
 	if ( null !== $update ) {
 		/* translators: %s: the new version number available. */
-		$update_cell = sprintf( esc_html__( '%s available', 'devbase_parent_theme' ), esc_html( (string) $update['version'] ) );
+		$update_cell = sprintf( esc_html__( 'Version %s available', 'devbase_parent_theme' ), esc_html( (string) $update['version'] ) );
 	} elseif ( ! $valid ) {
-		$update_cell = esc_html__( 'Blocked — licence is not valid.', 'devbase_parent_theme' );
+		$update_cell = esc_html__( 'Paused: no active licence.', 'devbase_parent_theme' );
 	} else {
 		$update_cell = esc_html__( 'Up to date.', 'devbase_parent_theme' );
 	}
@@ -112,7 +115,7 @@ function devbase_licence_status_row( $stylesheet, $licence ) {
 	// means we're running on a last-known-good answer, not a fresh one.
 	if ( '' !== $error ) {
 		/* translators: %s: the error the most recent check returned. */
-		$update_cell .= '<br><small>' . sprintf( esc_html__( 'Last check failed (%s) — showing the previous result.', 'devbase_parent_theme' ), esc_html( $error ) ) . '</small>';
+		$update_cell .= '<br><small>' . sprintf( esc_html__( 'The last check failed (%s); showing the previous result.', 'devbase_parent_theme' ), esc_html( $error ) ) . '</small>';
 	}
 
 	return '<tr><td><strong>' . esc_html( $name ) . '</strong></td>'
@@ -122,31 +125,32 @@ function devbase_licence_status_row( $stylesheet, $licence ) {
 }
 
 /**
- * One line above the table saying where the licence settings come from, so a
- * key that changed by itself isn't a mystery.
+ * One line above the table, for the developer only (the Remote setup tab's
+ * audience): whether this site receives its licence settings remotely, and how
+ * recently. Clients see nothing here.
  */
 function devbase_relay_status_html() {
-	if ( ! function_exists( 'devbase_relay_enabled' ) ) {
+	if ( ! function_exists( 'devbase_relay_enabled' ) || devbase_remote_setup_hidden() ) {
 		return '';
 	}
 
 	if ( ! devbase_relay_enabled() ) {
-		return '<p><strong>' . esc_html__( 'The Brand Relay URL and site key are not both entered, so nothing is being provisioned.', 'devbase_parent_theme' ) . '</strong></p>';
+		return '<p><strong>' . esc_html__( 'Remote setup is not complete: enter the management server address and site access key (Remote setup tab) to receive settings automatically.', 'devbase_parent_theme' ) . '</strong></p>';
 	}
 
 	$state = devbase_relay_get_state();
 	$error = ! empty( $state['last_error'] ) ? (string) $state['last_error'] : '';
 
 	if ( ! empty( $state['succeeded_at'] ) ) {
-		/* translators: %s: how long ago the last successful sync was, e.g. "3 hours". */
-		$line = sprintf( esc_html__( 'Licence settings are provisioned from Brand Relay. Last synced %s ago.', 'devbase_parent_theme' ), esc_html( human_time_diff( (int) $state['succeeded_at'] ) ) );
+		/* translators: %s: how long ago the last successful update was, e.g. "3 hours". */
+		$line = sprintf( esc_html__( 'Settings are managed remotely. Last updated %s ago.', 'devbase_parent_theme' ), esc_html( human_time_diff( (int) $state['succeeded_at'] ) ) );
 	} else {
-		$line = esc_html__( 'Licence settings are provisioned from Brand Relay. Not synced yet.', 'devbase_parent_theme' );
+		$line = esc_html__( 'Settings are managed remotely. Not updated yet.', 'devbase_parent_theme' );
 	}
 
 	if ( '' !== $error ) {
-		/* translators: %s: the error the last sync returned. */
-		$line .= ' ' . sprintf( esc_html__( 'Last sync failed (%s); keeping the current values.', 'devbase_parent_theme' ), esc_html( $error ) );
+		/* translators: %s: the error the last update returned. */
+		$line .= ' ' . sprintf( esc_html__( 'The last update failed (%s); keeping the current values.', 'devbase_parent_theme' ), esc_html( $error ) );
 	}
 
 	return '<p><strong>' . $line . '</strong></p>';

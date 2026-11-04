@@ -34,103 +34,99 @@ add_action( 'acf/init', function () {
 	) );
 
 	$fields = array(
-		array(
-			'key'       => 'field_devbase_licence_warning',
-			'label'     => '',
-			'name'      => '',
-			'type'      => 'message',
-			'message'   => '<p style="margin:0;padding:12px 14px;border:2px solid #d63638;border-radius:4px;background:#fcf0f1;color:#d63638;font-size:14px;font-weight:700;">'
-				. esc_html__( 'These fields are provisioned automatically. Please contact the developer for any licence-related issue.', 'devbase_parent_theme' )
-				. '</p>',
-			'new_lines' => '',
-			'esc_html'  => 0,
-		),
-		array(
-			'key'   => 'field_devbase_licence_tab_relay',
-			'label' => __( 'Brand Relay', 'devbase_parent_theme' ),
-			'type'  => 'tab',
-		),
-		array(
-			'key'          => 'field_devbase_relay_base_url',
-			'label'        => __( 'Brand Relay URL', 'devbase_parent_theme' ),
-			'name'         => 'relay_base_url',
-			'type'         => 'url',
-			'instructions' => __( 'The two fields on this tab are the only ones to fill in. Address of the Brand Relay, with no trailing path, e.g. https://relay.example.com. Pings to this site are only accepted from this address.', 'devbase_parent_theme' ),
-		),
-		array(
-			'key'          => 'field_devbase_relay_site_key',
-			'label'        => __( 'Brand Relay Site Key', 'devbase_parent_theme' ),
-			'name'         => 'relay_site_key',
-			'type'         => 'password',
-			'instructions' => __( 'This site\'s key from Brand Relay (it starts with brs_). Once both fields are saved, the Warden address, signing key and licence keys on the next tab are provisioned automatically and kept up to date.', 'devbase_parent_theme' ),
-		),
-		array(
-			'key'   => 'field_devbase_licence_tab_connection',
-			'label' => __( 'Connection', 'devbase_parent_theme' ),
-			'type'  => 'tab',
-		),
-		array(
-			'key'          => 'field_devbase_warden_base_url',
-			'label'        => __( 'Warden URL', 'devbase_parent_theme' ),
-			'name'         => 'warden_base_url',
-			'type'         => 'url',
-			'instructions' => __( 'Base URL of the Warden deployment, with no trailing path — e.g. https://warden.example.workers.dev', 'devbase_parent_theme' ),
-		),
-		array(
-			'key'          => 'field_devbase_warden_public_key',
-			'label'        => __( 'Warden Public Key', 'devbase_parent_theme' ),
-			'name'         => 'warden_public_key',
-			'type'         => 'textarea',
-			'rows'         => 2,
-			'instructions' => __( 'Base64 Ed25519 public key, copied from the licence page in Warden. Every response is verified against this before it is trusted; without it, update checks are skipped entirely rather than trusted unverified.', 'devbase_parent_theme' ),
-		),
-		array(
-			'key'   => 'field_devbase_licence_tab_keys',
-			'label' => __( 'Licence Key', 'devbase_parent_theme' ),
-			'type'  => 'tab',
-		),
-		array(
-			'key'          => 'field_devbase_warden_licence_key',
-			'label'        => __( 'Theme Update Licence Key', 'devbase_parent_theme' ),
-			'name'         => 'warden_licence_key',
-			'type'         => 'password',
-			'instructions' => __( 'The single Warden licence key for this site. It covers the base theme (tag parent-theme) and this site\'s own theme (tag child-theme). Shown as dots; leave empty to disable update checks.', 'devbase_parent_theme' ),
-		),
+		// STATUS: what a client administrator comes here for. First, so it opens first.
 		array(
 			'key'   => 'field_devbase_licence_tab_status',
 			'label' => __( 'Status', 'devbase_parent_theme' ),
 			'type'  => 'tab',
 		),
 		array(
-			'key'     => 'field_devbase_licence_status',
-			'label'   => __( 'Current Status', 'devbase_parent_theme' ),
-			'type'    => 'message',
-			'message' => devbase_licence_status_html(),
+			'key'      => 'field_devbase_licence_status',
+			'label'    => __( 'Licence and updates', 'devbase_parent_theme' ),
+			'type'     => 'message',
+			'message'  => devbase_licence_status_html(),
 			'esc_html' => 0,
 		),
-		// Manual trigger. Nothing on a client site needs this — every check
-		// it runs is already on a daily WP-Cron schedule that fires on any
-		// front-end request. It exists so WE can verify a licence or a
-		// freshly-published release immediately instead of waiting up to a
-		// day (or 12 hours, for Warden's own cache). Same framing as SMTP
-		// Settings' "Send Test Email" and Retention Policy's "Run Purge
-		// Now", and it calls exactly the same functions the cron jobs do —
-		// see check-ajax.php.
+		// Manual trigger. Nothing on a client site needs this: every check it
+		// runs is already on a schedule. It exists so a licence or a freshly
+		// published release can be verified immediately instead of waiting up to
+		// 12 hours. It calls exactly the functions the schedule does; see
+		// check-ajax.php.
 		array(
-			'key'     => 'field_devbase_licence_check_now',
-			'label'   => __( 'Check for Updates Now', 'devbase_parent_theme' ),
-			'type'    => 'message',
-			'message' => '<button type="button" id="devbase-check-updates-now" class="button">'
-				. esc_html__( 'Check for Updates Now', 'devbase_parent_theme' )
+			'key'          => 'field_devbase_licence_check_now',
+			'label'        => __( 'Check for updates', 'devbase_parent_theme' ),
+			'type'         => 'message',
+			'message'      => '<button type="button" id="devbase-check-updates-now" class="button">'
+				. esc_html__( 'Check for updates now', 'devbase_parent_theme' )
 				. '</button> <span id="devbase-check-updates-result" style="white-space:pre-line;display:inline-block;vertical-align:top;"></span>',
-			'esc_html' => 0,
-			'instructions' => __( 'Runs every update check immediately, bypassing the usual schedule and Warden\'s 12-hour cache. Uses saved settings — save first, then check.', 'devbase_parent_theme' ),
+			'esc_html'     => 0,
+			'instructions' => __( 'Checks for updates immediately. Save any changes first.', 'devbase_parent_theme' ),
+		),
+
+		// LICENCE: read-only. Set automatically, so one calm notice says so,
+		// rather than the same line under every field.
+		array(
+			'key'   => 'field_devbase_licence_tab_keys',
+			'label' => __( 'Licence', 'devbase_parent_theme' ),
+			'type'  => 'tab',
+		),
+		array(
+			'key'       => 'field_devbase_licence_warning',
+			'label'     => '',
+			'name'      => '',
+			'type'      => 'message',
+			'message'   => '<div class="notice notice-info inline" style="margin:0;"><p>'
+				. esc_html__( 'Your licence is managed by your developer. These details are set automatically and cannot be edited here. Please contact your developer for any licence question.', 'devbase_parent_theme' )
+				. '</p></div>',
+			'new_lines' => '',
+			'esc_html'  => 0,
+		),
+		array(
+			'key'   => 'field_devbase_warden_licence_key',
+			'label' => __( 'Licence key', 'devbase_parent_theme' ),
+			'name'  => 'warden_licence_key',
+			'type'  => 'password',
+		),
+		array(
+			'key'   => 'field_devbase_warden_base_url',
+			'label' => __( 'Update server', 'devbase_parent_theme' ),
+			'name'  => 'warden_base_url',
+			'type'  => 'url',
+		),
+		array(
+			'key'   => 'field_devbase_warden_public_key',
+			'label' => __( 'Verification key', 'devbase_parent_theme' ),
+			'name'  => 'warden_public_key',
+			'type'  => 'textarea',
+			'rows'  => 2,
+		),
+
+		// REMOTE SETUP: the developer's tab. Hidden from clients where a child
+		// asks (devbase_remote_setup_hidden()).
+		array(
+			'key'   => 'field_devbase_licence_tab_relay',
+			'label' => __( 'Remote setup', 'devbase_parent_theme' ),
+			'type'  => 'tab',
+		),
+		array(
+			'key'          => 'field_devbase_relay_base_url',
+			'label'        => __( 'Management server address', 'devbase_parent_theme' ),
+			'name'         => 'relay_base_url',
+			'type'         => 'url',
+			'instructions' => __( 'The address of the management service, with no trailing path, e.g. https://relay.example.com. The Licence tab is filled in from there, and requests to this site are only accepted from this address.', 'devbase_parent_theme' ),
+		),
+		array(
+			'key'          => 'field_devbase_relay_site_key',
+			'label'        => __( 'Site access key', 'devbase_parent_theme' ),
+			'name'         => 'relay_site_key',
+			'type'         => 'password',
+			'instructions' => __( 'This site\'s key from the management service (it starts with brs_). Once both fields are saved, the Licence tab fills itself in and stays up to date.', 'devbase_parent_theme' ),
 		),
 	);
 
 	acf_add_local_field_group( array(
 		'key'      => 'group_devbase_licence',
-		'title'    => __( 'Licence & Updates', 'devbase_parent_theme' ),
+		'title'    => __( 'Licence and updates', 'devbase_parent_theme' ),
 		'fields'   => $fields,
 		'location' => array(
 			array(
@@ -236,24 +232,36 @@ function devbase_warden_forget_replaced_licences() {
 }
 add_action( 'admin_init', 'devbase_warden_forget_replaced_licences' );
 
-// These three values are provisioned from Brand Relay (inc/updates/relay-sync.php),
+/**
+ * Whether the Remote setup tab is hidden from the admin. A client has no use for
+ * the management address and key, so a child can hide the tab from everyone but
+ * the developer, the way the Credit tab is hidden (see devbase_credit_settings_hidden()).
+ * It is hidden by default when both values are set in code, since there is then
+ * nothing to edit.
+ */
+function devbase_remote_setup_hidden() {
+	return (bool) apply_filters( 'devbase/licence/hide_remote_setup', defined( 'DEVBASE_RELAY_URL' ) && defined( 'DEVBASE_RELAY_SITE_KEY' ) );
+}
+
+// The three licence values are provisioned remotely (inc/updates/relay-sync.php),
 // so they are always shown but never editable. `disabled` rather than `readonly`:
 // a disabled input is not submitted, so saving this page can never rewrite them,
-// and browsers grey it out.
+// and browsers grey it out. Each gets its own short help, because the one notice
+// at the top already says they are set automatically.
 //
 // Matched on the field KEY, not its name: acf_prepare_field() overwrites
 // $field['name'] with the key (and an acf[...] prefix) before this filter runs,
 // so a name check silently never matches.
 add_filter( 'acf/prepare_field', function ( $field ) {
 	$provisioned = array(
-		'field_devbase_warden_base_url',
-		'field_devbase_warden_public_key',
-		'field_devbase_warden_licence_key',
+		'field_devbase_warden_licence_key' => __( 'Used to check for updates to this site\'s themes.', 'devbase_parent_theme' ),
+		'field_devbase_warden_base_url'    => __( 'Where this site checks for theme updates.', 'devbase_parent_theme' ),
+		'field_devbase_warden_public_key'  => __( 'Used to check that updates really come from your developer.', 'devbase_parent_theme' ),
 	);
 
-	if ( isset( $field['key'] ) && in_array( $field['key'], $provisioned, true ) ) {
+	if ( isset( $field['key'] ) && isset( $provisioned[ $field['key'] ] ) ) {
 		$field['disabled']     = 1;
-		$field['instructions'] = __( 'Provisioned automatically. Contact the developer to change it.', 'devbase_parent_theme' );
+		$field['instructions'] = $provisioned[ $field['key'] ];
 	}
 
 	// A value baked in as a constant wins over its field (see relay-sync.php),
@@ -269,10 +277,17 @@ add_filter( 'acf/prepare_field', function ( $field ) {
 		$field['instructions'] = __( 'Set in the site\'s code and managed by the developer.', 'devbase_parent_theme' );
 	}
 
+	// The Remote setup tab, for the developer only where a child says so.
+	$remote = array( 'field_devbase_licence_tab_relay', 'field_devbase_relay_base_url', 'field_devbase_relay_site_key' );
+
+	if ( isset( $field['key'] ) && in_array( $field['key'], $remote, true ) && devbase_remote_setup_hidden() ) {
+		return false;
+	}
+
 	return $field;
 } );
 
-// Loads the "Check for Updates Now" button's JS only on this specific admin
+// Loads the "Check for updates now" button's JS only on this specific admin
 // page — same narrow enqueue as SMTP Settings' test.js and Miscellaneous's
 // purge.js, since there's no reason to ship it site-wide.
 add_action( 'admin_enqueue_scripts', function () {
@@ -292,6 +307,6 @@ add_action( 'admin_enqueue_scripts', function () {
 		'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
 		'nonce'       => wp_create_nonce( 'devbase_check_updates' ),
 		'runningText' => __( 'Checking…', 'devbase_parent_theme' ),
-		'errorText'   => __( 'Request failed.', 'devbase_parent_theme' ),
+		'errorText'   => __( 'The check could not be completed.', 'devbase_parent_theme' ),
 	) );
 } );

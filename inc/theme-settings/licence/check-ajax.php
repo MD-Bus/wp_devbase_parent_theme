@@ -30,9 +30,9 @@ add_action( 'wp_ajax_devbase_check_updates', function () {
 	if ( devbase_relay_enabled() ) {
 		$sync    = devbase_relay_sync( false );
 		$lines[] = $sync['ok']
-			? esc_html__( 'Brand Relay: synced.', 'devbase_parent_theme' )
+			? esc_html__( 'Remote settings: updated.', 'devbase_parent_theme' )
 			/* translators: %s: the error the sync returned. */
-			: sprintf( esc_html__( 'Brand Relay: sync failed (%s).', 'devbase_parent_theme' ), $sync['error'] );
+			: sprintf( esc_html__( 'Remote settings: update failed (%s).', 'devbase_parent_theme' ), $sync['error'] );
 	}
 
 	// 1. Warden, per theme track, FORCED past the 12-hour cache. A "check
@@ -45,7 +45,7 @@ add_action( 'wp_ajax_devbase_check_updates', function () {
 
 		if ( '' === trim( (string) $licence ) ) {
 			/* translators: %s: theme name */
-			$lines[] = sprintf( esc_html__( '%s: no licence key entered.', 'devbase_parent_theme' ), $name );
+			$lines[] = sprintf( esc_html__( '%s: no licence, so updates are off.', 'devbase_parent_theme' ), $name );
 			continue;
 		}
 
@@ -53,7 +53,7 @@ add_action( 'wp_ajax_devbase_check_updates', function () {
 
 		if ( null === $installed ) {
 			/* translators: %s: theme name */
-			$lines[] = sprintf( esc_html__( '%s: could not read an installed version.', 'devbase_parent_theme' ), $name );
+			$lines[] = sprintf( esc_html__( '%s: could not read the installed version.', 'devbase_parent_theme' ), $name );
 			continue;
 		}
 
@@ -64,7 +64,7 @@ add_action( 'wp_ajax_devbase_check_updates', function () {
 			$error = ! empty( $state['last_error'] ) ? $state['last_error'] : __( 'no response', 'devbase_parent_theme' );
 
 			/* translators: 1: theme name, 2: the error returned */
-			$lines[] = sprintf( esc_html__( '%1$s: check failed — %2$s', 'devbase_parent_theme' ), $name, $error );
+			$lines[] = sprintf( esc_html__( '%1$s: the check failed (%2$s).', 'devbase_parent_theme' ), $name, $error );
 			continue;
 		}
 
@@ -73,7 +73,7 @@ add_action( 'wp_ajax_devbase_check_updates', function () {
 		if ( null !== $update ) {
 			/* translators: 1: theme name, 2: installed version, 3: available version */
 			$lines[] = sprintf(
-				esc_html__( '%1$s: %3$s available (installed %2$s).', 'devbase_parent_theme' ),
+				esc_html__( '%1$s: version %3$s available (you have %2$s).', 'devbase_parent_theme' ),
 				$name,
 				$installed,
 				$update['version']
@@ -81,13 +81,13 @@ add_action( 'wp_ajax_devbase_check_updates', function () {
 		} elseif ( empty( $response['valid'] ) ) {
 			/* translators: 1: theme name, 2: licence status reported by Warden */
 			$lines[] = sprintf(
-				esc_html__( '%1$s: licence not valid (%2$s) — updates blocked.', 'devbase_parent_theme' ),
+				esc_html__( '%1$s: no active licence (%2$s), so updates are paused.', 'devbase_parent_theme' ),
 				$name,
 				! empty( $response['status'] ) ? $response['status'] : '—'
 			);
 		} else {
 			/* translators: 1: theme name, 2: installed version */
-			$lines[] = sprintf( esc_html__( '%1$s: up to date (%2$s).', 'devbase_parent_theme' ), $name, $installed );
+			$lines[] = sprintf( esc_html__( '%1$s: up to date (version %2$s).', 'devbase_parent_theme' ), $name, $installed );
 		}
 	}
 
