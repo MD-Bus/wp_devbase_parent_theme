@@ -6,7 +6,7 @@
         }
     ],
     "require": {
-        "wpackagist-plugin/woocommerce": "11.2.1",
+        "wpackagist-plugin/woocommerce": "11.2.2",
         "wpackagist-plugin/wpvivid-backuprestore": "0.9.138"
     },
     "extra": {
