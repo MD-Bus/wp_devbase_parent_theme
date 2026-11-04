@@ -623,4 +623,47 @@ class Test_Backups extends WP_UnitTestCase {
 		$this->assertStringContainsString( wp_date( get_option( 'date_format' ), 1793823581 ), $html );
 		$this->assertStringNotContainsString( '<td>—</td>', $html );
 	}
+
+	public function test_the_backup_leaves_out_wordpress_core_and_keeps_the_rest() {
+		$options = array( 'backup' => array(
+			'backup_db'      => array( 'key' => 'backup_db' ),
+			'backup_themes'  => array( 'key' => 'backup_themes' ),
+			'backup_plugin'  => array( 'key' => 'backup_plugin' ),
+			'backup_uploads' => array( 'key' => 'backup_uploads' ),
+			'backup_content' => array( 'key' => 'backup_content' ),
+			'backup_core'    => array( 'key' => 'backup_core' ),
+		), 'dir' => 'wpvividbackups' );
+
+		$result = devbase_backup_without_core( $options );
+
+		$this->assertSame( array( 'backup_db', 'backup_themes', 'backup_plugin', 'backup_uploads', 'backup_content' ), array_keys( $result['backup'] ) );
+		$this->assertSame( 'wpvividbackups', $result['dir'] );
+		$this->assertSame( $result, devbase_backup_without_core( $result ), 'Nothing to remove is not an error.' );
+	}
+
+	public function test_the_content_part_skips_leftovers_but_other_parts_are_untouched() {
+		$kept = array( '#^already$#' );
+
+		$content = devbase_backup_exclude_content( $kept, 'backup_content' );
+
+		$skipped = function ( $path ) use ( $content ) {
+			foreach ( array_slice( $content, 1 ) as $regex ) {
+				if ( preg_match( $regex, $path ) ) {
+					return true;
+				}
+			}
+			return false;
+		};
+
+		$this->assertSame( '#^already$#', $content[0] );
+		foreach ( array( 'upgrade-temp-backup/x/y.php', 'wpvivid_uploads/z', 'debug.log' ) as $name ) {
+			$this->assertTrue( $skipped( WP_CONTENT_DIR . '/' . $name ), $name );
+		}
+		foreach ( array( 'mu-plugins/a.php', 'languages/x.mo', 'object-cache.php' ) as $name ) {
+			$this->assertFalse( $skipped( WP_CONTENT_DIR . '/' . $name ), $name );
+		}
+
+		$this->assertSame( $kept, devbase_backup_exclude_content( $kept, 'backup_uploads' ) );
+		$this->assertSame( $kept, devbase_backup_exclude_content( $kept, 'backup_themes' ) );
+	}
 }
