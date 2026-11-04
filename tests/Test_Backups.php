@@ -512,21 +512,8 @@ class Test_Backups extends WP_UnitTestCase {
 
 	// --- how many files the backup comes to ----------------------------------------------------
 
-	public function test_our_backups_split_at_the_most_the_zip_engine_can_write_not_at_the_clients_setting() {
-		$raised = devbase_backup_raise_part_size( array( 'compress_type' => 'zip', 'max_file_size' => '200', 'no_compress' => true ) );
-
-		$this->assertSame( '4080', $raised['max_file_size'], 'Under 4 GiB: PclZip has no ZIP64.' );
-		$this->assertSame( 'zip', $raised['compress_type'], 'Everything else of theirs is kept.' );
-		$this->assertSame( '4080', devbase_backup_raise_part_size( false )['max_file_size'] );
+	public function test_our_part_size_stays_under_four_gib() {
 		$this->assertLessThan( 4096, DEVBASE_BACKUP_PART_MB );
-	}
-
-	public function test_how_many_files_a_site_comes_to() {
-		$this->assertSame( 1, devbase_backup_files_needed( 0 ) );
-		$this->assertSame( 1, devbase_backup_files_needed( 185 * MB_IN_BYTES ) );
-		$this->assertSame( 2, devbase_backup_files_needed( 5 * GB_IN_BYTES ), 'A 5 GB site is two files, not twenty-five.' );
-		$this->assertSame( 10, devbase_backup_files_needed( 39 * GB_IN_BYTES ) );
-		$this->assertSame( 11, devbase_backup_files_needed( 41 * GB_IN_BYTES ), 'Past roughly 40 GB it is refused up front.' );
 	}
 
 	public function test_more_files_than_brand_relay_takes_fail_clearly_before_anything_is_sent() {
@@ -625,45 +612,30 @@ class Test_Backups extends WP_UnitTestCase {
 	}
 
 	public function test_the_backup_leaves_out_wordpress_core_and_keeps_the_rest() {
-		$options = array( 'backup' => array(
-			'backup_db'      => array( 'key' => 'backup_db' ),
-			'backup_themes'  => array( 'key' => 'backup_themes' ),
-			'backup_plugin'  => array( 'key' => 'backup_plugin' ),
-			'backup_uploads' => array( 'key' => 'backup_uploads' ),
-			'backup_content' => array( 'key' => 'backup_content' ),
-			'backup_core'    => array( 'key' => 'backup_core' ),
-		), 'dir' => 'wpvividbackups' );
+		$task = array( 'id' => 'wpvivid-x', 'jobs' => array(
+			array( 'backup_type' => 'backup_db' ),
+			array( 'backup_type' => 'backup_themes' ),
+			array( 'backup_type' => 'backup_plugin' ),
+			array( 'backup_type' => 'backup_uploads' ),
+			array( 'backup_type' => 'backup_content' ),
+			array( 'backup_type' => 'backup_core' ),
+			array( 'backup_type' => 'backup_merge' ),
+		) );
 
-		$result = devbase_backup_without_core( $options );
+		$result = devbase_backup_without_core( $task );
 
-		$this->assertSame( array( 'backup_db', 'backup_themes', 'backup_plugin', 'backup_uploads', 'backup_content' ), array_keys( $result['backup'] ) );
-		$this->assertSame( 'wpvividbackups', $result['dir'] );
+		$this->assertSame( array( 'backup_db', 'backup_themes', 'backup_plugin', 'backup_uploads', 'backup_content', 'backup_merge' ), array_column( $result['jobs'], 'backup_type' ) );
+		$this->assertSame( array( 0, 1, 2, 3, 4, 5 ), array_keys( $result['jobs'] ), 'The jobs stay a plain list.' );
+		$this->assertSame( 'wpvivid-x', $result['id'] );
 		$this->assertSame( $result, devbase_backup_without_core( $result ), 'Nothing to remove is not an error.' );
 	}
 
-	public function test_the_content_part_skips_leftovers_but_other_parts_are_untouched() {
-		$kept = array( '#^already$#' );
+	public function test_a_task_still_waiting_to_resume_counts_as_running() {
+		update_option( 'wpvivid_task_list', array( 'wpvivid-w' => array( 'id' => 'wpvivid-w', 'status' => array( 'str' => 'wait_resume' ) ) ) );
 
-		$content = devbase_backup_exclude_content( $kept, 'backup_content' );
+		$this->assertSame( 'running', devbase_backup_engine_status( 'wpvivid-w' ) );
+		$this->assertTrue( devbase_wpvivid_is_busy() );
 
-		$skipped = function ( $path ) use ( $content ) {
-			foreach ( array_slice( $content, 1 ) as $regex ) {
-				if ( preg_match( $regex, $path ) ) {
-					return true;
-				}
-			}
-			return false;
-		};
-
-		$this->assertSame( '#^already$#', $content[0] );
-		foreach ( array( 'upgrade-temp-backup/x/y.php', 'wpvivid_uploads/z', 'debug.log' ) as $name ) {
-			$this->assertTrue( $skipped( WP_CONTENT_DIR . '/' . $name ), $name );
-		}
-		foreach ( array( 'mu-plugins/a.php', 'languages/x.mo', 'object-cache.php' ) as $name ) {
-			$this->assertFalse( $skipped( WP_CONTENT_DIR . '/' . $name ), $name );
-		}
-
-		$this->assertSame( $kept, devbase_backup_exclude_content( $kept, 'backup_uploads' ) );
-		$this->assertSame( $kept, devbase_backup_exclude_content( $kept, 'backup_themes' ) );
+		delete_option( 'wpvivid_task_list' );
 	}
 }

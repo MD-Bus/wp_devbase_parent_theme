@@ -17,7 +17,7 @@ function devbase_wpvivid_is_busy() {
 	foreach ( (array) get_option( 'wpvivid_task_list', array() ) as $task ) {
 		$status = is_array( $task ) && isset( $task['status']['str'] ) ? (string) $task['status']['str'] : '';
 
-		if ( in_array( $status, array( 'running', 'no_responds' ), true ) ) {
+		if ( in_array( $status, array( 'running', 'no_responds', 'wait_resume' ), true ) ) {
 			return true;
 		}
 	}

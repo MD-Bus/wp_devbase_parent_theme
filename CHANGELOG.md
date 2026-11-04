@@ -10,6 +10,16 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.30.5] — 2026-11-04
+
+### Changed
+
+- **Backups are made by WPvivid's newer engine, the one its own dashboard uses.** The older engine we called follows symlinked folders; the newer one does
+  not. On WordPress.com Jetpack, Akismet and the mu-plugins are symlinks to shared host copies, so a backup of ocwof.org came to 157 MB (about 311 MB of host files
+  inside) against 68 MB from WPvivid's dashboard. The backup is still the database plus `wp-content` without WordPress core, and `upgrade-temp-backup` and
+  `debug.log` are still skipped. The newer engine has no size estimate, so a site too large for Brand Relay's 10 files is now refused after the backup is made
+  (it was refused before), not before it.
+
 ## [1.30.4] — 2026-11-04
 
 ### Changed

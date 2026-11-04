@@ -23,7 +23,8 @@ const DEVBASE_BACKUP_LAST = 'devbase_backup_last_at';
 
 /**
  * The largest slice of the site's files, in MB, WPvivid may put in one archive file for OUR backups.
- * Not larger: its zip engine (PclZip) has no ZIP64, so an archive cannot pass 4 GiB, and 4080 MB of
+ * Not larger: when it has no ZipArchive it falls back to PclZip, which has no ZIP64, so an archive
+ * cannot pass 4 GiB, and 4080 MB of
  * source files compress to less than that (it is also WPvivid's own biggest preset). Brand Relay takes
  * at most 10 files per backup, so this covers sites of roughly 36 GB; past that the backup is refused
  * up front with a plain message instead of failing at the end.
@@ -288,116 +289,104 @@ function devbase_backup_after_engine() {
 }
 
 /**
- * Makes WPvivid prepare a backup task: files and database, kept on this site only (never sent to
- * ITS remote storage), merged into one archive, and without running ITS retention (their local
- * backups are not ours to delete).
+ * Makes WPvivid prepare a backup task with ITS NEWER ENGINE (the one its own dashboard uses): the database
+ * and everything under wp-content, kept on this site only (never sent to ITS remote storage), merged into
+ * one archive.
+ *
+ * Why the newer engine: it does not follow symlinked folders (hosts like WordPress.com provide Jetpack,
+ * Akismet and the mu-plugins as symlinks to shared copies; the older engine put 311 MB of them into a
+ * backup of ocwof.org, 157 MB against 68 MB), it skips the usual leftovers by default, and it is the code
+ * WPvivid itself maintains and restores.
+ *
+ * WordPress core is not part of OUR backup (a restore never needs wp-admin and wp-includes, 23 MB zipped),
+ * and the engine always lists it for "files+db", so its job is dropped from the task.
  *
  * @return string|WP_Error The task id.
  */
 function devbase_backup_engine_prepare() {
 	global $wpvivid_plugin;
 
-	if ( ! class_exists( 'WPvivid_Public_Interface' ) || ! is_object( $wpvivid_plugin ) ) {
+	if ( ! class_exists( 'WPvivid_Backup_Task_2' ) || ! is_object( $wpvivid_plugin ) || ! is_object( $wpvivid_plugin->backup2 ?? null ) ) {
 		return new WP_Error( 'engine', 'WPvivid Backup did not load in this request.' );
 	}
 
-	add_filter( 'wpvivid_need_clean_oldest_backup', '__return_false' );
-
-	// The split size is read once, when the task is made, and saved in the task: raising it only while we
-	// prepare changes OUR backup and never the client's own WPvivid setting.
-	add_filter( 'option_wpvivid_compress_setting', 'devbase_backup_raise_part_size' );
-	add_filter( 'wpvivid_get_backup_exclude_regex', 'devbase_backup_exclude_content', 20, 2 );
-
-	try {
-		$interface = new WPvivid_Public_Interface();
-		$result    = $interface->prepare_backup( array(
-			'backup_files' => 'files+db',
-			'local'        => '1',
-			'remote'       => '0',
-			'ismerge'      => '1',
-			'lock'         => '0',
-		) );
-	} finally {
-		remove_filter( 'option_wpvivid_compress_setting', 'devbase_backup_raise_part_size' );
-		remove_filter( 'wpvivid_get_backup_exclude_regex', 'devbase_backup_exclude_content', 20 );
+	if ( $wpvivid_plugin->backup2->is_tasks_backup_running() ) {
+		return new WP_Error( 'busy', 'WPvivid Backup is already running a backup.' );
 	}
+
+	$options = array(
+		'type'          => 'Manual',
+		'backup_files'  => 'files+db',
+		'local'         => '1',
+		'remote'        => '0',
+		'lock'          => '0',
+		// Not in WPvivid's own list: the leftover of a failed update, and the debug log (it only grows).
+		'exclude_files' => array(
+			array( 'type' => 'folder', 'path' => WP_CONTENT_DIR . '/upgrade-temp-backup' ),
+			array( 'type' => 'file', 'path' => WP_CONTENT_DIR . '/debug.log' ),
+		),
+	);
+
+	// The settings are WPvivid's own (the client's choices) except the ones that make OUR backup what it is.
+	$settings                          = $wpvivid_plugin->backup2->get_backup_settings( $options );
+	$settings['is_merge']              = true;
+	$settings['save_local']            = true;
+	$settings['backup_symlink_folder'] = false;
+	$settings['max_file_size']         = DEVBASE_BACKUP_PART_MB;
+
+	$task   = new WPvivid_Backup_Task_2();
+	$result = $task->new_backup_task( $options, $settings );
 
 	if ( empty( $result['task_id'] ) ) {
 		return new WP_Error( 'prepare', (string) ( $result['error'] ?? 'WPvivid Backup could not prepare the backup.' ) );
 	}
 
-	// WPvivid's "files+db" always adds a copy of WordPress itself (wp-admin, wp-includes, about 95 MB raw,
-	// 23 MB zipped). A restore never needs it, so take that part out of the task before it runs.
-	if ( class_exists( 'WPvivid_taskmanager' ) ) {
-		$task = WPvivid_taskmanager::get_task( $result['task_id'] );
-		if ( is_array( $task ) && isset( $task['options']['backup_options'] ) ) {
-			WPvivid_taskmanager::update_task_options( $result['task_id'], 'backup_options', devbase_backup_without_core( $task['options']['backup_options'] ) );
-		}
-	}
-
-	// How many files that makes, from WPvivid's own size estimate: refuse now, not after the work is done.
-	$bytes = (int) ( $result['check']['file_size']['sum_size'] ?? 0 );
-	if ( devbase_backup_files_needed( $bytes ) > DEVBASE_BACKUP_MAX_FILES ) {
-		if ( class_exists( 'WPvivid_taskmanager' ) ) {
-			WPvivid_taskmanager::delete_ready_task();
-		}
-
-		return new WP_Error( 'too_large', sprintf(
-			'This site (%s) would need more than %d files, which is more than Brand Relay takes in one backup.',
-			size_format( $bytes ),
-			DEVBASE_BACKUP_MAX_FILES
-		) );
+	$stored = WPvivid_Setting::get_tasks()[ $result['task_id'] ] ?? null;
+	if ( is_array( $stored ) ) {
+		WPvivid_Setting::update_task( $result['task_id'], devbase_backup_without_core( $stored ) );
 	}
 
 	return (string) $result['task_id'];
 }
 
 /**
- * What our backup is: the database and wp-content (themes, plugins, uploads and the rest). WordPress core
- * is not part of it, so the part WPvivid adds for it is removed.
+ * A WPvivid task without its WordPress core job.
  *
- * @param array $options A WPvivid task's backup_options.
+ * @param array $task A task of WPvivid's newer engine.
  * @return array
  */
-function devbase_backup_without_core( $options ) {
-	unset( $options['backup']['backup_core'] );
+function devbase_backup_without_core( $task ) {
+	$task['jobs'] = array_values( array_filter(
+		(array) ( $task['jobs'] ?? array() ),
+		function ( $job ) {
+			return 'backup_core' !== ( $job['backup_type'] ?? '' );
+		}
+	) );
 
-	return $options;
+	return $task;
 }
 
 /**
- * Folders of wp-content that are never worth keeping. WPvivid's own list for the "content" part skips other
- * backup plugins' folders, the cache and `upgrade`, but not these: a leftover of a failed update, WPvivid's
- * own working folder and the debug log (which only ever grows).
- *
- * @param array  $exclude Regexes WPvivid already excludes.
- * @param string $type    The part being listed.
- * @return array
+ * Runs a prepared task: WPvivid's own "backup now" handler, which ends the request with die(). It is an
+ * admin-ajax handler (nonce and manage_options), so this request, which is already authenticated by the
+ * job token, is made an administrator for its one call.
  */
-function devbase_backup_exclude_content( $exclude, $type ) {
-	if ( 'backup_content' !== $type ) {
-		return $exclude;
+function devbase_backup_engine_run( $task_id ) {
+	global $wpvivid_plugin;
+
+	$admins = get_users( array( 'role' => 'administrator', 'number' => 1, 'fields' => 'ID' ) );
+	if ( ! $admins ) {
+		return new WP_Error( 'no_admin', 'This site has no administrator for WPvivid Backup to run as.' );
 	}
 
-	$root = str_replace( '\\', '/', WP_CONTENT_DIR ) . '/';
-	foreach ( array( 'upgrade-temp-backup', 'wpvivid_uploads', 'debug.log' ) as $name ) {
-		$exclude[] = '#^' . preg_quote( $root . $name, '/' ) . '#';
-	}
+	wp_set_current_user( (int) $admins[0] );
 
-	return $exclude;
-}
+	$_POST['nonce']   = $_REQUEST['nonce'] = wp_create_nonce( 'wpvivid_ajax' ); // phpcs:ignore WordPress.Security.NonceVerification
+	$_POST['task_id'] = $_REQUEST['task_id'] = $task_id;                          // phpcs:ignore WordPress.Security.NonceVerification
 
-/** The compress setting with the split size raised to the most WPvivid's zip engine can write. */
-function devbase_backup_raise_part_size( $setting ) {
-	$setting                  = is_array( $setting ) ? $setting : array();
-	$setting['max_file_size'] = (string) DEVBASE_BACKUP_PART_MB;
+	$wpvivid_plugin->backup2->backup_now_2();
 
-	return $setting;
-}
-
-/** How many archive files a site of this many source bytes comes to (the database rides in the last one). */
-function devbase_backup_files_needed( $bytes ) {
-	return max( 1, (int) ceil( (int) $bytes / ( DEVBASE_BACKUP_PART_MB * MB_IN_BYTES ) ) );
+	return true;
 }
 
 /**
@@ -418,7 +407,7 @@ function devbase_backup_engine_status( $task_id ) {
 		return 'completed';
 	}
 
-	if ( in_array( $status, array( 'running', 'no_responds', 'ready', 'waiting' ), true ) ) {
+	if ( in_array( $status, array( 'running', 'no_responds', 'wait_resume', 'ready', 'waiting' ), true ) ) {
 		return 'running';
 	}
 
@@ -583,8 +572,10 @@ function devbase_backup_backup_step( array $job, $deadline, $admin_request ) {
 				devbase_backup_unlock();
 				register_shutdown_function( 'devbase_backup_after_engine' );
 
-				global $wpvivid_plugin;
-				$wpvivid_plugin->backup( $task );
+				$ran = devbase_backup_engine_run( $task );
+				if ( is_wp_error( $ran ) ) {
+					return devbase_backup_fail( $job, $ran->get_error_message() );
+				}
 			}
 
 			return 'next';
