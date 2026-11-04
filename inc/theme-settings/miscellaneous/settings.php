@@ -251,6 +251,22 @@ add_action( 'acf/init', function () {
 				'type'         => 'url',
 				'instructions' => __( 'The public address of the brand in Brand Relay, for example https://relay.example.com/v1/brand/yourbrand. It is downloaded when you save this page and then once a day, and the credit is built from the saved copy. Leave it empty for no credit.', 'devbase_parent_theme' ),
 			),
+			// Tab: Management. One switch for the Licence page's Remote setup tab.
+			array(
+				'key'   => 'field_devbase_misc_management_tab',
+				'label' => __( 'Management', 'devbase_parent_theme' ),
+				'name'  => '',
+				'type'  => 'tab',
+			),
+			array(
+				'key'           => 'field_devbase_lock_remote_setup',
+				'label'         => __( 'Lock remote setup', 'devbase_parent_theme' ),
+				'name'          => 'lock_remote_setup',
+				'type'          => 'true_false',
+				'ui'            => 1,
+				'default_value' => 0,
+				'instructions'  => __( 'When on, the Remote setup tab on the Licence page is hidden. When off, it is visible.', 'devbase_parent_theme' ),
+			),
 		),
 		'location' => array(
 			array(

@@ -10,6 +10,21 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.22.0] — 2026-11-03
+
+### Added
+
+- **A switch for the Remote setup tab**: Theme Settings > Miscellaneous > **Management** > **Lock remote setup**. On,
+  the Licence page's Remote setup tab is hidden; off (the default), it is visible. Tucked away on a page a client does
+  not go to, which is enough. `devbase/licence/hide_remote_setup` can still decide it in code.
+
+### Removed
+
+- **The developer-logins list of 1.21.0** (`devbase/developer_logins`, `DEVBASE_DEVELOPER_LOGINS`, `inc/helpers/developer.php`)
+  is gone, replaced by the switch above. The **Credit** tab goes back to being shown unless `DEVBASE_CREDIT_BRAND_URL` is
+  set in code or `devbase/credit/hide_settings` says otherwise. A child that still registers `devbase/developer_logins`
+  can remove that line; nothing reads it.
+
 ## [1.21.0] — 2026-11-03
 
 ### Added

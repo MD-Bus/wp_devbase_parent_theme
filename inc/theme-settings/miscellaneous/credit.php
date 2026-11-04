@@ -99,7 +99,7 @@ function devbase_credit_brand_url() {
  * wonder about.
  */
 function devbase_credit_settings_hidden() {
-	return (bool) apply_filters( 'devbase/credit/hide_settings', defined( 'DEVBASE_CREDIT_BRAND_URL' ) || devbase_hide_from_non_developers() );
+	return (bool) apply_filters( 'devbase/credit/hide_settings', defined( 'DEVBASE_CREDIT_BRAND_URL' ) );
 }
 
 // Removes the Credit tab's three fields from the page. Matched on the field KEY:

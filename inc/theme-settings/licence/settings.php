@@ -233,14 +233,15 @@ function devbase_warden_forget_replaced_licences() {
 add_action( 'admin_init', 'devbase_warden_forget_replaced_licences' );
 
 /**
- * Whether the Remote setup tab is hidden from the admin. A client has no use for
- * the management address and key, so a child can hide the tab from everyone but
- * the developer, the way the Credit tab is hidden (see devbase_credit_settings_hidden()).
- * It is hidden by default when both values are set in code (nothing to edit), and
- * from everyone but the developer logins once a child names them (devbase_developer_logins()).
+ * Whether the Remote setup tab is hidden. Off by default (visible); switched on
+ * with "Lock remote setup" on Theme Settings > Miscellaneous > Management, which
+ * is out of the way enough that a client does not come across it. A filter can
+ * still decide it in code.
  */
 function devbase_remote_setup_hidden() {
-	return (bool) apply_filters( 'devbase/licence/hide_remote_setup', ( defined( 'DEVBASE_RELAY_URL' ) && defined( 'DEVBASE_RELAY_SITE_KEY' ) ) || devbase_hide_from_non_developers() );
+	$locked = function_exists( 'get_field' ) && (bool) get_field( 'lock_remote_setup', 'option' );
+
+	return (bool) apply_filters( 'devbase/licence/hide_remote_setup', $locked );
 }
 
 // The three licence values are provisioned remotely (inc/updates/relay-sync.php),

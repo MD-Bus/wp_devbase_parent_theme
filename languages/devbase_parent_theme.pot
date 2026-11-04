@@ -710,3 +710,12 @@ msgstr ""
 
 msgid "Set in the site's code and managed by the developer."
 msgstr ""
+
+msgid "Management"
+msgstr ""
+
+msgid "Lock remote setup"
+msgstr ""
+
+msgid "When on, the Remote setup tab on the Licence page is hidden. When off, it is visible."
+msgstr ""

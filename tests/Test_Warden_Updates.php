@@ -766,4 +766,25 @@ class Test_Warden_Updates extends WP_UnitTestCase {
 			$this->assertStringNotContainsString( 'Provisioned automatically', $field['instructions'], 'One notice says it; the fields do not repeat it.' );
 		}
 	}
+
+	public function test_the_lock_remote_setup_switch_hides_the_tab() {
+		$this->assertFalse( devbase_remote_setup_hidden(), 'Off by default: visible.' );
+
+		update_field( 'lock_remote_setup', 1, 'option' );
+		$this->assertTrue( devbase_remote_setup_hidden() );
+		$this->assertFalse( apply_filters( 'acf/prepare_field', acf_get_field( 'field_devbase_licence_tab_relay' ) ) );
+		$this->assertFalse( apply_filters( 'acf/prepare_field', acf_get_field( 'field_devbase_relay_site_key' ) ) );
+
+		update_field( 'lock_remote_setup', 0, 'option' );
+		$this->assertFalse( devbase_remote_setup_hidden() );
+		$this->assertIsArray( apply_filters( 'acf/prepare_field', acf_get_field( 'field_devbase_relay_site_key' ) ) );
+	}
+
+	public function test_the_switch_lives_on_the_miscellaneous_page() {
+		$field = acf_get_field( 'field_devbase_lock_remote_setup' );
+
+		$this->assertIsArray( $field );
+		$this->assertSame( 'true_false', $field['type'] );
+		$this->assertSame( 'lock_remote_setup', $field['name'] );
+	}
 }

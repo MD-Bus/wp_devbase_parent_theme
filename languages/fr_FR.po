@@ -712,3 +712,12 @@ msgstr "%1$s : à jour (version %2$s)."
 
 msgid "Set in the site's code and managed by the developer."
 msgstr "Défini dans le code du site et géré par le développeur."
+
+msgid "Management"
+msgstr "Gestion"
+
+msgid "Lock remote setup"
+msgstr "Verrouiller la configuration à distance"
+
+msgid "When on, the Remote setup tab on the Licence page is hidden. When off, it is visible."
+msgstr "Activé, l’onglet Configuration à distance de la page Licence est masqué. Désactivé, il est visible."
