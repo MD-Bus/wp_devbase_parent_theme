@@ -36,8 +36,10 @@ updates:
     commit-message:
       prefix: "Dependencies"
 
-  # The plugins installed into wp-content/plugins/ (WooCommerce). Same rule as
-  # above: an exact pin, moved by a pull request, shipped only in a release.
+  # The plugins installed into wp-content/plugins/ (WooCommerce, and WPvivid Backup,
+  # which the theme installs only while a site's Brand Relay plan includes backups).
+  # Same rule as above: an exact pin, moved by a pull request, shipped only in a
+  # release. Each plugin gets its own pull request.
   # The PR edits composer.json/lock only; the zip a release ships is built from
   # the lock by bin/bundle-plugins.sh (dependabot-vendor.yml runs it on the PR).
   - package-ecosystem: "composer"

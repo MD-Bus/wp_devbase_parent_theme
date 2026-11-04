@@ -56,6 +56,7 @@ while IFS='|' read -r SLUG MAIN_FILE; do
 	echo "==> $SLUG $VERSION -> bundled-plugins/$SLUG.zip ($(du -h "$ZIP" | cut -f1))"
 done <<-PLUGINS
 	woocommerce|woocommerce.php
+	wpvivid-backuprestore|wpvivid-backuprestore.php
 PLUGINS
 
 rm -rf "$BUILD"

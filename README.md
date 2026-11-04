@@ -66,7 +66,7 @@ registered in code, so it is identical on every site running this theme.
 ![Licence settings](docs/screenshots/licence-connection.png)
 
 The page has three tabs and opens on **Status**: each theme's licence and whether
-updates are available, plus **Check for updates now**. **Licence** holds the
+updates are available, plus **Check licence and updates now**. **Licence** holds the
 **Licence key**, the **Update server** and the **Verification key**; they are
 provisioned automatically and cannot be edited here, and a notice says so once.
 **Remote setup** holds the **Management server address** and **Site access key**
@@ -84,7 +84,7 @@ holding those keeps updating with them until the single key arrives, which then 
 
 The Status tab answers "is this site actually receiving updates" — a
 question that otherwise has half a dozen indistinguishable failure modes.
-**Check for updates now** forces the check immediately rather than waiting for
+**Check licence and updates now** forces the check immediately rather than waiting for
 the cached answer to expire.
 
 ### SMTP

@@ -10,6 +10,22 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.26.0] — 2026-11-04
+
+Needs nothing new from Brand Relay. This is the first piece of backups: the plugin itself. The backup driver and the Brand Relay page follow.
+
+### Added
+
+- **WPvivid Backup is bundled**, the first piece of backups (the rest follows in later releases). It ships as a zip in `bundled-plugins/` like WooCommerce
+  (pinned in `bundled-plugins/composer.json`, so Dependabot's existing `/bundled-plugins` entry proposes new versions and `dependabot-vendor.yml`
+  rebuilds the zip), but the PARENT requires it, and only while the site's Brand Relay plan has the Backups service in force:
+  installed and activated then; deactivated and its files deleted at once when the service goes off (a buffer after expiry is Brand Relay's to give); never
+  while a backup or restore is running. A WPvivid already on the site is adopted for updates and never removed; a copy under another folder name is used and not
+  doubled; the Pro edition blocks the install with a notice. See `inc/bundled-plugins/AGENT.md`.
+- **Check licence and updates now** (Theme Settings > Licence > Status; was "Check for updates now"): besides the Warden check it now also applies the
+  plan right away: it installs, activates, deactivates or removes the plugins the plan decides (WPvivid Backup) and says what it did, instead of
+  waiting for the next wp-admin page load.
+
 ## [1.25.0] — 2026-11-04
 
 Needs Brand Relay 0.32.0 or later (older ones accept the empty report too, but show nothing for it).

@@ -53,6 +53,14 @@ function devbase_bundled_plugins_pending() {
 		}
 	}
 
+	// A service in force but a conflicting edition installed: say so once.
+	foreach ( $plugins as $slug => $def ) {
+		if ( devbase_bundled_plugin_is_service_bound( $def ) && ! isset( ( (array) get_option( DEVBASE_BUNDLED_PLUGINS_ERRORS, array() ) )[ $slug ] )
+			&& devbase_relay_service_in_force( $def['service'] ) && 'conflict' === ( devbase_bundled_plugin_blocker( $slug, $def )['reason'] ?? '' ) ) {
+			return true;
+		}
+	}
+
 	return false;
 }
 
@@ -82,6 +90,18 @@ function devbase_sync_bundled_plugins() {
 	foreach ( array_diff( (array) get_option( DEVBASE_BUNDLED_PLUGINS_MANAGED, array() ), $required ) as $slug ) {
 		if ( isset( $plugins[ $slug ] ) ) {
 			$results[ $slug ] = devbase_remove_bundled_plugin( $slug, $plugins[ $slug ] );
+		}
+	}
+
+	// A service in force but its plugin cannot be installed (the Pro edition is there).
+	foreach ( $plugins as $slug => $def ) {
+		if ( ! devbase_bundled_plugin_is_service_bound( $def ) || ! devbase_relay_service_in_force( $def['service'] ) ) {
+			continue;
+		}
+
+		$blocker = devbase_bundled_plugin_blocker( $slug, $def );
+		if ( $blocker && 'conflict' === $blocker['reason'] ) {
+			$results[ $slug ] = devbase_bundled_plugin_problem( $slug, new WP_Error( 'conflict', $blocker['message'] ) );
 		}
 	}
 
@@ -237,7 +257,14 @@ function devbase_ensure_bundled_plugin( $slug, $def ) {
 		$result = 'ok' === $result ? 'activated' : $result;
 	}
 
-	devbase_bundled_plugin_manage( $slug, true );
+	// A plugin tied to a plan service that was ALREADY on the site (the client's own copy) is
+	// adopted for updates but never added to the managed list: only what we installed may be
+	// removed when the service lapses.
+	$adopted = devbase_bundled_plugin_is_service_bound( $def ) && $was_here && ! in_array( $slug, (array) get_option( DEVBASE_BUNDLED_PLUGINS_MANAGED, array() ), true );
+
+	if ( ! $adopted ) {
+		devbase_bundled_plugin_manage( $slug, true );
+	}
 	devbase_bundled_plugin_problem( $slug );
 
 	return $result;
@@ -349,6 +376,10 @@ function devbase_install_bundled_plugin_files( $slug, $def ) {
 		wp_opcache_invalidate_directory( WP_PLUGIN_DIR . '/' . $folder );
 	}
 
+	// WordPress remembers the plugin list for the request; activating needs to see the new files.
+	wp_clean_plugins_cache( false );
+	delete_transient( 'devbase_bundled_elsewhere_' . $slug );
+
 	return true;
 }
 
@@ -359,6 +390,10 @@ function devbase_install_bundled_plugin_files( $slug, $def ) {
  * @return string|WP_Error
  */
 function devbase_remove_bundled_plugin( $slug, $def ) {
+	if ( devbase_bundled_plugin_is_service_bound( $def ) && devbase_bundled_plugin_busy( $slug, $def ) ) {
+		return 'busy'; // Never pull a plugin out from under its own running task.
+	}
+
 	if ( devbase_bundled_plugin_is_active( $def['file'] ) ) {
 		devbase_bundled_plugins_unlocked( true );
 		deactivate_plugins( $def['file'] );

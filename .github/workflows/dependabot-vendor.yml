@@ -20,7 +20,7 @@
 # (composer/installers, which places the WordPress plugins in vendor/) must
 # stay enabled, so that one comes from composer.lock as the PR proposes it.
 #
-# A PR that changes bundled-plugins/composer.lock (WooCommerce) also gets the
+# A PR that changes bundled-plugins/composer.lock (WooCommerce, WPvivid Backup) also gets the
 # zip rebuilt by bin/bundle-plugins.sh and committed: that zip is what a tag ships.
 #
 # Only the theme's own composer.lock (the `paths` filter matches the root
@@ -74,7 +74,7 @@ jobs:
       - name: Install the locked dependencies into vendor/
         run: composer install --no-dev --no-scripts --no-interaction --no-progress
 
-      - name: Rebuild the bundled plugin zips (WooCommerce) from their lock
+      - name: Rebuild the bundled plugin zips (WooCommerce, WPvivid Backup) from their lock
         env:
           BASE: ${{ github.event.pull_request.base.ref }}
         run: |

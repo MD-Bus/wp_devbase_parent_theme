@@ -55,6 +55,7 @@ require_once __DIR__ . '/inc/dependencies/bundled-versions.php';
 require_once __DIR__ . '/inc/bundled-plugins/registry.php';
 require_once __DIR__ . '/inc/bundled-plugins/sync.php';
 require_once __DIR__ . '/inc/bundled-plugins/lock.php';
+require_once __DIR__ . '/inc/bundled-plugins/wpvivid.php';
 
 // Clears the data the removed MCP sign-in left on sites that ran 1.11.0 or 1.13.0.
 require_once __DIR__ . '/inc/legacy-mcp-oauth-cleanup.php';

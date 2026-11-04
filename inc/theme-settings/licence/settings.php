@@ -54,13 +54,13 @@ add_action( 'acf/init', function () {
 		// check-ajax.php.
 		array(
 			'key'          => 'field_devbase_licence_check_now',
-			'label'        => __( 'Check for updates', 'devbase_parent_theme' ),
+			'label'        => __( 'Check licence and updates', 'devbase_parent_theme' ),
 			'type'         => 'message',
 			'message'      => '<button type="button" id="devbase-check-updates-now" class="button">'
-				. esc_html__( 'Check for updates now', 'devbase_parent_theme' )
+				. esc_html__( 'Check licence and updates now', 'devbase_parent_theme' )
 				. '</button> <span id="devbase-check-updates-result" style="white-space:pre-line;display:inline-block;vertical-align:top;"></span>',
 			'esc_html'     => 0,
-			'instructions' => __( 'Checks for updates immediately. Save any changes first.', 'devbase_parent_theme' ),
+			'instructions' => __( 'Pulls this site\'s plan from the management server, checks for theme updates and installs or removes the plugins the plan decides (such as backups), all immediately. Save any changes first.', 'devbase_parent_theme' ),
 		),
 
 		// LICENCE: read-only. Set automatically, so one calm notice says so,

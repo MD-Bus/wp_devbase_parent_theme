@@ -90,7 +90,7 @@ if ! php -r '
 fi
 
 # The plugins installed into wp-content/plugins/ instead of loaded from vendor/
-# (WooCommerce, see inc/bundled-plugins/AGENT.md). What a tag ships is the
+# (WooCommerce and WPvivid, see inc/bundled-plugins/AGENT.md). What a tag ships is the
 # COMMITTED bundled-plugins/<slug>.zip, so the version inside that zip must be
 # the one bundled-plugins/composer.lock pins; otherwise sites would be sent a
 # different version than the one that was tested. Fix: ./bin/bundle-plugins.sh
@@ -123,6 +123,7 @@ while IFS='|' read -r SLUG MAIN_FILE; do
 	fi
 done <<-ZIPS
 	woocommerce|woocommerce.php
+	wpvivid-backuprestore|wpvivid-backuprestore.php
 ZIPS
 
 exit "$DRIFT"

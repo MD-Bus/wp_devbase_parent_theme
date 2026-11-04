@@ -49,7 +49,7 @@
 //    from a fixed list, never values. The one endpoint that
 //    touches licences can never be used to plant one. A ping must also name
 //    the Brand Relay as its Origin (see devbase_relay_verify_ping()).
-// 2. An administrator: saving the Licence page, or "Check for Updates Now".
+// 2. An administrator: saving the Licence page, or "Check licence and updates now".
 //
 // So a value changed or removed on the site is put back by the next ping, not
 // before; send a ping whenever a licence is changed in Brand Relay.
