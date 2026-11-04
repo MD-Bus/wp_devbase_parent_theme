@@ -9,6 +9,11 @@
  * cleaned up. While this is true the theme neither deactivates nor deletes the plugin.
  */
 function devbase_wpvivid_is_busy() {
+	// Our own backup or download job counts too: it uses WPvivid's folder and its delete function.
+	if ( devbase_backup_job_active() ) {
+		return true;
+	}
+
 	foreach ( (array) get_option( 'wpvivid_task_list', array() ) as $task ) {
 		$status = is_array( $task ) && isset( $task['status']['str'] ) ? (string) $task['status']['str'] : '';
 

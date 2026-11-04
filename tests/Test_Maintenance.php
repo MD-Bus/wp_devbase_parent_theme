@@ -22,8 +22,15 @@ class Test_Maintenance extends WP_UnitTestCase {
 		}
 	}
 
+	public function no_engine() {
+		return 'no engine in this test';
+	}
+
 	public function set_up() {
 		parent::set_up();
+
+		// The backup service would otherwise try to install WPvivid Backup into the test site.
+		add_filter( 'devbase/backup/engine_ready', array( $this, 'no_engine' ) );
 
 		static $n = 0;
 		$_SERVER['REMOTE_ADDR'] = '198.51.100.' . ( ++$n % 250 + 1 ); // each test its own IP for the ping limit
@@ -41,6 +48,7 @@ class Test_Maintenance extends WP_UnitTestCase {
 	}
 
 	public function tear_down() {
+		remove_filter( 'devbase/backup/engine_ready', array( $this, 'no_engine' ) );
 		if ( null !== $this->filter ) {
 			remove_filter( 'pre_http_request', $this->filter, 10 );
 			$this->filter = null;
@@ -289,14 +297,28 @@ class Test_Maintenance extends WP_UnitTestCase {
 
 		$ran = devbase_maintenance_run( array( 'health', 'events', 'backup', 'uptime' ) );
 
-		$this->assertSame( array( 'health' => 'sent', 'events' => 'clear', 'backup' => 'skipped', 'uptime' => 'skipped' ), $ran );
+		$this->assertSame( array( 'health' => 'sent', 'events' => 'clear', 'backup' => 'error', 'uptime' => 'skipped' ), $ran );
 	}
 
-	public function test_a_flood_of_pings_sends_nothing_extra() {
+	public function test_the_site_has_no_delay_of_its_own_so_run_now_always_runs() {
 		$this->assertSame( array( 'health' => 'sent' ), devbase_maintenance_run( array( 'health' ) ) );
 
-		$this->assertSame( array( 'health' => 'skipped' ), devbase_maintenance_run( array( 'health' ) ), 'Within the gap: skipped.' );
-		$this->assertSame( 1, $this->count_requests( '/v1/site/heartbeat' ) );
+		// Brand Relay owns the schedule (and its Run now buttons): a second ask a moment later runs and reports.
+		$this->assertSame( array( 'health' => 'sent' ), devbase_maintenance_run( array( 'health' ) ) );
+		$this->assertSame( 2, $this->count_requests( '/v1/site/heartbeat' ) );
+	}
+
+	public function test_a_plan_changed_in_brand_relay_is_pulled_again_before_a_run() {
+		$this->in_force( array( 'health' ) );
+		devbase_maintenance_run( array( 'health' ) );
+		$before = $this->count_requests( '/v1/site' );
+
+		$plan               = devbase_relay_plan();
+		$plan['fetched_at'] = time() - 30;
+		update_option( DEVBASE_RELAY_PLAN_OPTION, $plan, false );
+		devbase_maintenance_run( array( 'health' ) );
+
+		$this->assertSame( $before + 1, $this->count_requests( '/v1/site' ), 'An older plan is pulled again, so Run now acts on the plan as it is now.' );
 	}
 
 	public function test_only_one_run_at_a_time() {
@@ -351,7 +373,7 @@ class Test_Maintenance extends WP_UnitTestCase {
 		$this->assertSame( 'ok', $ran->settings );
 		$this->assertSame( 'sent', $ran->health );
 		$this->assertSame( 'clear', $ran->events );
-		$this->assertSame( 'skipped', $ran->backup );
+		$this->assertSame( 'error', $ran->backup, 'The backup service is built; here it has no engine to run.' );
 		$this->assertSame( 'skipped', $ran->uptime );
 	}
 

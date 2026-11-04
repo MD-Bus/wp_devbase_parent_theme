@@ -12,7 +12,7 @@
 //
 // An EMPTY body is the old ping and means settings only. The site runs the names it
 // knows, ignores the rest, and answers { ok, error, changed, ran: { name: result } }
-// where a result is ok, sent, clear (checked, no errors), not_in_plan, skipped or error. Nothing here runs on a
+// where a result is ok, sent, started (a backup is under way), clear (checked, no errors), not_in_plan, skipped or error. Nothing here runs on a
 // visit, on cron, or on a schedule.
 //
 // NEVER SEND IN THE BLIND. Before a service runs, the plan is pulled (GET /v1/site, unless
@@ -26,11 +26,12 @@ const DEVBASE_MAINTENANCE_STATE = 'devbase_maintenance_state';
 /** The single-run lock (two pings at once must not both send). */
 const DEVBASE_MAINTENANCE_LOCK = 'devbase_maintenance_lock';
 
-/** Seconds between two runs of the services: a ping flood sends nothing extra. */
-const DEVBASE_MAINTENANCE_MIN_GAP = 30;
-
-/** A plan pulled this recently is used as it is. */
-const DEVBASE_MAINTENANCE_PLAN_FRESH = 60;
+/**
+ * A plan pulled this many seconds ago or less is used as it is (a ping that also ran `settings`
+ * has just pulled it). Anything older is pulled again first, so a plan changed in Brand Relay
+ * is what "Run now" acts on.
+ */
+const DEVBASE_MAINTENANCE_PLAN_FRESH = 10;
 
 /** The services Brand Relay can name (its own keys). `uptime` is done by Brand Relay itself. */
 function devbase_maintenance_known() {
@@ -39,7 +40,7 @@ function devbase_maintenance_known() {
 
 /**
  * The services this site can run: key => callback. A callback returns array(
- * 'status' => ok|clear|idle|error|refused|not_in_plan, 'detail' => string, 'sent_at' => int (optional),
+ * 'status' => ok|started|clear|idle|error|refused|not_in_plan, 'detail' => string, 'sent_at' => int (optional),
  * 'gap' => int (optional) ). `clear` (checked, no errors) is answered `clear`; `idle` (ran moments ago) is answered `skipped`; so is a known service
  * with no callback (uptime, and backup until it is built).
  *
@@ -49,6 +50,7 @@ function devbase_maintenance_services() {
 	return (array) apply_filters( 'devbase/maintenance/services', array(
 		'health' => 'devbase_heartbeat_run',
 		'events' => 'devbase_events_run',
+		'backup' => 'devbase_backup_run',
 	) );
 }
 
@@ -113,8 +115,10 @@ function devbase_maintenance_run( array $services ) {
 	$state = devbase_maintenance_state();
 	$now   = time();
 
-	// Too soon after the last run, or another run is under way: send nothing extra.
-	if ( $now - (int) ( $state['attempted_at'] ?? 0 ) < DEVBASE_MAINTENANCE_MIN_GAP || ! devbase_maintenance_lock() ) {
+	// NO DELAY OF OUR OWN: when Brand Relay asks, the site runs and reports. How often it asks is
+	// Brand Relay's to manage from the plan (and its "Run now" buttons). The only refusal left
+	// is that two pings cannot run at once: one is under way right now, which is what `skipped` says.
+	if ( ! devbase_maintenance_lock() ) {
 		return array_fill_keys( $services, 'skipped' );
 	}
 
@@ -163,7 +167,7 @@ function devbase_maintenance_run( array $services ) {
 					}
 				}
 
-				$ran[ $key ] = 'ok' === $status ? 'sent' : ( 'clear' === $status ? 'clear' : ( 'idle' === $status ? 'skipped' : ( 'not_in_plan' === $status ? 'not_in_plan' : 'error' ) ) );
+				$ran[ $key ] = 'ok' === $status ? 'sent' : ( 'clear' === $status ? 'clear' : ( 'started' === $status ? 'started' : ( 'idle' === $status ? 'skipped' : ( 'not_in_plan' === $status ? 'not_in_plan' : 'error' ) ) ) );
 			}
 
 			$state['services'][ $key ] = $service;

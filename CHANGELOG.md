@@ -10,6 +10,24 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+### Added
+
+- **Backups** (`inc/backups/`, needs Brand Relay 0.34.0 for "Run now"; works with 0.30.0+). When Brand Relay's signed ping names `backup`, the site
+  starts a job: WPvivid Backup (bundled since 1.26.0) makes ONE merged archive of the files and the database, kept on the site only and without
+  touching WPvivid's own remote storage, schedule or retention; the job declares it to Brand Relay, sends it in parts of exactly 50 MiB streamed
+  from the file (flat memory, a 5 GB backup is fine), completes it, reports `last_backup_at` in the health report and deletes the local copy.
+  It works in time-limited steps run by signed loopback requests (WPvivid only sets itself up in an admin request), resumes after a failed part,
+  and is aborted at Brand Relay after repeated failures. The answer to the ping is `started`.
+- **Theme Settings > Backups**: what Brand Relay holds for this site (also after a reinstall with the same site key), **Back up now**, and
+  **Download to WPvivid** per backup: a resumable, checksum-checked download into WPvivid's folder, then WPvivid rescans it, so the owner only
+  presses Restore in WPvivid. Restore itself is deliberately manual.
+
+### Changed
+
+- **The site has no delay of its own for Brand Relay's services.** The 30-second minimum gap between two runs is gone: when Brand Relay asks (its
+  plan schedule or its **Run now** buttons), the site runs and reports. The only refusal left is another ping running at that moment (`skipped`).
+  A plan pulled more than 10 seconds ago (was 60) is pulled again before a service runs.
+
 ## [1.26.0] — 2026-11-04
 
 Needs nothing new from Brand Relay. This is the first piece of backups: the plugin itself. The backup driver and the Brand Relay page follow.
