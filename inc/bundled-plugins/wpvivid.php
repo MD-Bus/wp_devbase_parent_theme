@@ -34,7 +34,7 @@ function devbase_wpvivid_is_busy() {
 // "Hide WPvivid Backup" is on (Theme Settings > Miscellaneous > Management, a switch of its own beside
 // "Lock remote setup"), WPvivid disappears from the menu, the admin bar, the Plugins list and the
 // notices it puts on every admin screen. Hidden is not blocked: its page still opens by its address
-// (admin.php?page=WPvivid), which the Backups page offers to whoever has the switch off. It is ON by default. Nothing here
+// (admin.php?page=WPvivid), which the Backups tab offers to whoever has the switch off. It is ON by default. Nothing here
 // changes what WPvivid does.
 
 /**

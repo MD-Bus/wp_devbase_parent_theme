@@ -1,13 +1,14 @@
-// The Backups page's buttons: start a backup, download one, refresh the list, and follow the job.
+// The Backups tab of the Licence page: loads its content the first time the tab is shown, then handles the
+// buttons (start a backup, download one, refresh the list) and follows the job in progress.
 document.addEventListener( 'DOMContentLoaded', function () {
-	var root = document.getElementById( 'devbase-backups' );
-	var status = document.getElementById( 'devbase-backup-status' );
+	var root = document.getElementById( 'devbase-backups-tab' );
 
-	if ( ! root || ! status ) {
+	if ( ! root ) {
 		return;
 	}
 
 	var timer = null;
+	var loaded = false;
 
 	function call( action, id ) {
 		var data = new FormData();
@@ -23,10 +24,26 @@ document.addEventListener( 'DOMContentLoaded', function () {
 		} );
 	}
 
+	function buttons() {
+		return root.querySelectorAll( '[data-devbase-backup]' );
+	}
+
+	function setDisabled( value ) {
+		buttons().forEach( function ( b ) { b.disabled = value; } );
+	}
+
+	function statusEl() {
+		return document.getElementById( 'devbase-backup-status' );
+	}
+
 	function show( response ) {
+		var status = statusEl();
 		var message = response && response.data && response.data.message ? response.data.message : devbaseBackups.error;
-		status.textContent = message;
-		status.style.color = response && response.success ? '' : '#d63638';
+
+		if ( status ) {
+			status.textContent = message;
+			status.style.color = response && response.success ? '' : '#d63638';
+		}
 
 		return response && response.success && response.data.active;
 	}
@@ -38,11 +55,26 @@ document.addEventListener( 'DOMContentLoaded', function () {
 				if ( show( response ) ) {
 					follow();
 				} else {
-					// Finished (or failed): redraw the page so the list and the buttons are current.
-					setTimeout( function () { window.location.reload(); }, 1500 );
+					// Finished (or failed): draw the tab again so the list and the buttons are current.
+					setTimeout( load, 1500 );
 				}
 			} ).catch( follow );
 		}, 3000 );
+	}
+
+	function load() {
+		call( 'render' ).then( function ( response ) {
+			root.innerHTML = response && response.success ? response.data.html : '<p class="description">' + devbaseBackups.error + '</p>';
+			loaded = true;
+
+			var status = statusEl();
+			if ( status && '1' === status.getAttribute( 'data-active' ) ) {
+				setDisabled( true );
+				follow();
+			}
+		} ).catch( function () {
+			root.innerHTML = '<p class="description">' + devbaseBackups.error + '</p>';
+		} );
 	}
 
 	root.addEventListener( 'click', function ( event ) {
@@ -53,28 +85,38 @@ document.addEventListener( 'DOMContentLoaded', function () {
 		}
 
 		var action = button.getAttribute( 'data-devbase-backup' );
-		root.querySelectorAll( '[data-devbase-backup]' ).forEach( function ( b ) { b.disabled = true; } );
-		status.textContent = '…';
+		setDisabled( true );
+		if ( statusEl() ) {
+			statusEl().textContent = '…';
+		}
 
 		call( action, button.getAttribute( 'data-id' ) ).then( function ( response ) {
 			if ( 'refresh' === action ) {
-				window.location.reload();
+				load();
 				return;
 			}
 
 			if ( show( response ) ) {
 				follow();
 			} else {
-				root.querySelectorAll( '[data-devbase-backup]' ).forEach( function ( b ) { b.disabled = false; } );
+				setDisabled( false );
 			}
 		} ).catch( function () {
 			show( null );
-			root.querySelectorAll( '[data-devbase-backup]' ).forEach( function ( b ) { b.disabled = false; } );
+			setDisabled( false );
 		} );
 	} );
 
-	if ( '1' === status.getAttribute( 'data-active' ) ) {
-		root.querySelectorAll( '[data-devbase-backup]' ).forEach( function ( b ) { b.disabled = true; } );
-		follow();
+	// The tab is hidden until it is chosen: load the first time it can be seen (not on every Licence page load).
+	if ( 'IntersectionObserver' in window ) {
+		var observer = new IntersectionObserver( function ( entries ) {
+			if ( ! loaded && entries.some( function ( e ) { return e.isIntersecting; } ) ) {
+				observer.disconnect();
+				load();
+			}
+		} );
+		observer.observe( root );
+	} else {
+		load();
 	}
 } );

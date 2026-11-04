@@ -433,7 +433,12 @@ class Test_Backups extends WP_UnitTestCase {
 	public function test_the_page_says_so_when_the_plan_has_no_backups() {
 		devbase_relay_store_plan( array( 'licence' => array( 'status' => 'active', 'services' => array( 'uptime' ), 'limits' => array() ) ) );
 
-		$this->assertStringContainsString( 'not included', devbase_backups_page_html() );
+		$html = devbase_backups_page_html();
+
+		$this->assertStringContainsString( 'are not part of this site', $html );
+		$this->assertStringContainsString( 'plan at the moment', $html );
+		$this->assertStringContainsString( 'get in touch with your developer', $html, 'Calm, and a way forward.' );
+		$this->assertStringNotContainsString( 'data-devbase-backup', $html, 'No buttons for something the plan does not have.' );
 		$this->assertSame( array(), $this->calls, 'No call to Brand Relay for a plan without backups.' );
 	}
 
@@ -492,11 +497,17 @@ class Test_Backups extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'press Restore', devbase_backup_job_summary( $job ) );
 	}
 
-	public function test_the_backups_page_does_not_become_the_landing_page_of_theme_settings() {
-		$keys = array_keys( acf_get_options_pages() );
+	public function test_backups_is_a_tab_of_the_licence_page_not_a_page_of_its_own() {
+		$this->assertEmpty( acf_get_options_page( 'backups-settings' ), 'No separate page, no extra menu entry.' );
 
-		$this->assertContains( 'backups-settings', $keys );
-		$this->assertLessThan( array_search( 'backups-settings', $keys, true ), array_search( 'licence-settings', $keys, true ), 'The menu opens on the first sub-page registered.' );
+		$this->assertSame( 'tab', acf_get_field( 'field_devbase_licence_tab_backups' )['type'] );
+
+		$keys = array_column( acf_get_fields( 'group_devbase_licence' ), 'key' );
+		$this->assertLessThan( array_search( 'field_devbase_licence_tab_keys', $keys, true ), array_search( 'field_devbase_licence_tab_backups', $keys, true ), 'Second tab, right after Status.' );
+
+		// The tab does not call Brand Relay when the Licence page is drawn: it only holds a placeholder.
+		$this->assertStringContainsString( 'devbase-backups-tab', acf_get_field( 'field_devbase_licence_backups' )['message'] );
+		$this->assertSame( array(), $this->calls );
 	}
 
 	// --- how many files the backup comes to ----------------------------------------------------
@@ -590,5 +601,26 @@ class Test_Backups extends WP_UnitTestCase {
 		$this->assertSame( 'failed', $job['state'] );
 		$this->assertFileDoesNotExist( $this->dir . 'site_backup_all.part001.zip', 'A set with a missing part must not stay where a rescan finds it.' );
 		$this->assertFileDoesNotExist( $this->dir . 'site_backup_all.part002.zip.part' );
+	}
+
+	public function test_brand_relays_times_in_milliseconds_are_understood_as_well_as_dates() {
+		$this->assertSame( 1793823581, devbase_backup_time( 1793823581156 ), 'Epoch milliseconds, as Brand Relay really sends them.' );
+		$this->assertSame( 1793823581, devbase_backup_time( '1793823581156' ) );
+		$this->assertSame( 1793823581, devbase_backup_time( 1793823581 ), 'Plain seconds.' );
+		$this->assertSame( strtotime( '2026-11-01T03:00:00Z' ), devbase_backup_time( '2026-11-01T03:00:00.000Z' ) );
+		$this->assertFalse( devbase_backup_time( '' ) );
+		$this->assertFalse( devbase_backup_time( null ) );
+	}
+
+	public function test_the_list_shows_a_date_for_a_backup_whose_times_are_milliseconds() {
+		$this->api['GET /v1/site/backups'] = array( 200, array( 'backups' => array(
+			array( 'id' => 'bkp_1', 'label' => 'Real shape', 'status' => 'complete', 'size' => 1048576, 'created_at' => 1793823580262, 'completed_at' => 1793823581156, 'files' => array() ),
+		) ) );
+		delete_transient( 'devbase_backups_remote_list' );
+
+		$html = devbase_backups_page_html();
+
+		$this->assertStringContainsString( wp_date( get_option( 'date_format' ), 1793823581 ), $html );
+		$this->assertStringNotContainsString( '<td>—</td>', $html );
 	}
 }

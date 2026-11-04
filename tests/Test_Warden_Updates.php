@@ -696,9 +696,9 @@ class Test_Warden_Updates extends WP_UnitTestCase {
 		$tabs  = array_values( array_filter( acf_get_fields( $group ), function ( $f ) { return 'tab' === $f['type']; } ) );
 
 		$this->assertSame(
-			array( __( 'Status', 'devbase_parent_theme' ), __( 'Licence', 'devbase_parent_theme' ), __( 'Remote setup', 'devbase_parent_theme' ) ),
+			array( __( 'Status', 'devbase_parent_theme' ), __( 'Backups', 'devbase_parent_theme' ), __( 'Licence', 'devbase_parent_theme' ), __( 'Remote setup', 'devbase_parent_theme' ) ),
 			array_map( function ( $t ) { return $t['label']; }, $tabs ),
-			'The page opens on the first tab: Status for a client, then the Licence details, then the developer\'s tab.'
+			'The page opens on the first tab: Status for a client, then Backups, then the Licence details, then the developer\'s tab.'
 		);
 	}
 

@@ -1,7 +1,7 @@
 <?php
 // Covers hiding WPvivid Backup's own screens (inc/bundled-plugins/wpvivid.php): hidden when "Hide WPvivid Backup"
 // is on, from the menu, the admin bar, the Plugins list and the notices it puts everywhere; shown when it is off;
-// the activation redirect that would throw an admin onto its page; and what the Backups page says either way.
+// the activation redirect that would throw an admin onto its page; and what the Backups tab says either way.
 
 class WPvivid_Stub_Notices {
 	public function show() {

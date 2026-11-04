@@ -1,49 +1,28 @@
 <?php
 
-// Theme Settings > Backups: what Brand Relay holds for this site, a button to back up now, and a
-// Download button per backup that brings it back into WPvivid Backup's folder so it can be restored
-// from WPvivid's own screen. Same self-registering sub-page pattern as the Licence page.
+// The Backups tab of Theme Settings > Licence: what Brand Relay holds for this site, a button to back up
+// now, and a Download button per backup that brings it back into WPvivid Backup's folder so it can be
+// restored from WPvivid's own screen. (It was a page of its own in 1.27.0 to 1.30.1; the old address
+// redirects here.)
 //
 // It also answers the disaster-recovery case: a brand-new install that connects with the same site
 // key lists the backups Brand Relay already holds for it, because the list lives at Brand Relay and
 // is read with the key.
 //
-// The page reads Brand Relay only when it is opened (and a minute at most is cached), never on other
-// admin pages.
+// The tab's content is NOT built when the Licence page is drawn. Reading Brand Relay takes a network call,
+// and the page's other tabs should not wait for it, so inc/backups/page.js asks for it (the `render` action
+// below) the first time the tab is shown. A minute at most is cached.
 
-add_action( 'acf/init', function () {
-	if ( ! function_exists( 'acf_add_options_sub_page' ) || ! function_exists( 'acf_add_local_field_group' ) ) {
-		return;
+/**
+ * The old page's address, now a tab: send a bookmark there. It must happen on `admin_menu`, not `admin_init`:
+ * WordPress refuses an unregistered page ("not allowed to access this page") right after `admin_menu`
+ * and before `admin_init` ever runs.
+ */
+add_action( 'admin_menu', function () {
+	if ( isset( $_GET['page'] ) && 'backups-settings' === sanitize_key( wp_unslash( $_GET['page'] ) ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		wp_safe_redirect( admin_url( 'admin.php?page=licence-settings' ) );
+		exit;
 	}
-
-	acf_add_options_sub_page( array(
-		'page_title'  => __( 'Backups', 'devbase_parent_theme' ),
-		'menu_title'  => __( 'Backups', 'devbase_parent_theme' ),
-		'menu_slug'   => 'backups-settings',
-		'parent_slug' => 'theme-settings',
-	) );
-
-	acf_add_local_field_group( array(
-		'key'      => 'group_devbase_backups',
-		'title'    => __( 'Backups', 'devbase_parent_theme' ),
-		'fields'   => array(
-			array(
-				'key'      => 'field_devbase_backups_page',
-				'label'    => '',
-				'type'     => 'message',
-				'message'  => '',
-				'esc_html' => 0,
-			),
-		),
-		'location' => array( array( array( 'param' => 'options_page', 'operator' => '==', 'value' => 'backups-settings' ) ) ),
-	) );
-} );
-
-// The HTML is built when the page is drawn, not when the field group is registered (that runs on every admin request).
-add_filter( 'acf/prepare_field/key=field_devbase_backups_page', function ( $field ) {
-	$field['message'] = devbase_backups_page_html();
-
-	return $field;
 } );
 
 /** Brand Relay's list of this site's backups, newest first, kept a minute. WP_Error with a plain-words reason when it cannot be read. */
@@ -70,6 +49,23 @@ function devbase_backups_remote_list( $force = false ) {
 	set_transient( 'devbase_backups_remote_list', $backups, MINUTE_IN_SECONDS );
 
 	return $backups;
+}
+
+/**
+ * A time from Brand Relay as a timestamp in seconds, or false. It sends epoch MILLISECONDS (1793823580262); an
+ * ISO date and plain seconds are understood too.
+ *
+ * @param mixed $value
+ * @return int|false
+ */
+function devbase_backup_time( $value ) {
+	if ( is_numeric( $value ) ) {
+		$number = (float) $value;
+
+		return $number > 100000000000 ? (int) floor( $number / 1000 ) : (int) $number;
+	}
+
+	return is_string( $value ) && '' !== $value ? strtotime( $value ) : false;
 }
 
 /** One plain sentence about the job in progress or the last one. */
@@ -127,11 +123,12 @@ function devbase_backup_job_summary( $job = false ) {
 /** The page. */
 function devbase_backups_page_html() {
 	if ( ! devbase_relay_enabled() ) {
-		return '<p>' . esc_html__( 'This site is not connected to the management server, so there are no backups to show.', 'devbase_parent_theme' ) . '</p>';
+		return '<div class="notice notice-info inline"><p>' . esc_html__( 'This site is not connected to the management service yet, so there are no backups to show. Your developer can set that up.', 'devbase_parent_theme' ) . '</p></div>';
 	}
 
 	if ( ! devbase_relay_service_in_force( 'backup' ) ) {
-		return '<p>' . esc_html__( 'Backups are not included in this site\'s plan. Ask your developer to add them.', 'devbase_parent_theme' ) . '</p>';
+		// Calm and plain: nothing is wrong, it is simply not part of the plan, and there is a way forward.
+		return '<div class="notice notice-info inline"><p>' . esc_html__( 'Automatic backups are not part of this site\'s plan at the moment. If you would like this site backed up regularly, please get in touch with your developer and they will set it up.', 'devbase_parent_theme' ) . '</p></div>';
 	}
 
 	$html = '<div id="devbase-backups">';
@@ -172,7 +169,7 @@ function devbase_backups_page_html() {
 		foreach ( $list as $backup ) {
 			$done = devbase_backup_is_complete( $backup );
 			$when = ! empty( $backup['completed_at'] ) ? $backup['completed_at'] : ( $backup['created_at'] ?? '' );
-			$time = $when ? strtotime( (string) $when ) : false;
+			$time = devbase_backup_time( $when );
 
 			$html .= '<tr><td>' . esc_html( (string) ( $backup['label'] ?? $backup['id'] ) ) . ( $done ? '' : ' <em>(' . esc_html( (string) ( $backup['status'] ?? '' ) ) . ')</em>' ) . '</td>'
 				. '<td>' . esc_html( $time ? wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $time ) : '—' ) . '</td>'
@@ -207,6 +204,10 @@ add_action( 'wp_ajax_devbase_backups_action', function () {
 
 	$action = isset( $_POST['do'] ) ? sanitize_key( wp_unslash( $_POST['do'] ) ) : '';
 
+	if ( 'render' === $action ) {
+		wp_send_json_success( array( 'html' => devbase_backups_page_html() ) );
+	}
+
 	if ( 'start_backup' === $action ) {
 		$result = devbase_backup_run();
 
@@ -230,7 +231,7 @@ add_action( 'wp_ajax_devbase_backups_action', function () {
 } );
 
 add_action( 'admin_enqueue_scripts', function () {
-	if ( ! isset( $_GET['page'] ) || 'backups-settings' !== $_GET['page'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	if ( ! isset( $_GET['page'] ) || 'licence-settings' !== $_GET['page'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		return;
 	}
 

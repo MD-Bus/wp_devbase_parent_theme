@@ -183,8 +183,7 @@ require_once __DIR__ . '/inc/forms/dispatch/status.php';
 // Status (SMTP/dispatch/retention health in one place).
 require_once __DIR__ . '/inc/theme-settings/miscellaneous/settings.php';
 
-// The Backups sub-page: loaded AFTER the other Theme Settings pages on purpose. The Theme Settings menu opens on the
-// sub-page registered first, and that must stay Licence, not a page most sites have nothing to show on.
+// The Backups tab of the Licence page (its content and buttons).
 require_once __DIR__ . '/inc/backups/page.php';
 require_once __DIR__ . '/inc/theme-settings/miscellaneous/purge-ajax.php';
 

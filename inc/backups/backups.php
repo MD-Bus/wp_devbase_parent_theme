@@ -120,7 +120,7 @@ function devbase_backup_engine_ready() {
 
 /**
  * The `backup` service of a Brand Relay ping: start a backup job and say so. The work happens after
- * the answer, in loopback requests; the answer is `started`, and how it ends is on the Backups page,
+ * the answer, in loopback requests; the answer is `started`, and how it ends is in the Backups tab (Licence page),
  * in Brand Relay's own backup list and in the health report's `last_backup_at`.
  *
  * @return array{status: string, detail: string}

@@ -274,7 +274,7 @@ add_action( 'acf/init', function () {
 				'type'          => 'true_false',
 				'ui'            => 1,
 				'default_value' => 1,
-				'instructions'  => __( 'When on (the default), WPvivid Backup is hidden from the admin menu, the admin bar, the Plugins list and its notices. Backups keep working. Hidden is not blocked: its page still opens by its address, and the Backups page keeps offering the link to whoever has this off.', 'devbase_parent_theme' ),
+				'instructions'  => __( 'When on (the default), WPvivid Backup is hidden from the admin menu, the admin bar, the Plugins list and its notices. Backups keep working. Hidden is not blocked: its page still opens by its address, and the Backups tab on the Licence page keeps offering the link to whoever has this off.', 'devbase_parent_theme' ),
 			),
 			array(
 				'key'           => 'field_devbase_hide_scf_ui',

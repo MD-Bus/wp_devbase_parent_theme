@@ -10,6 +10,19 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.30.2] — 2026-11-04
+
+### Changed
+
+- **Backups is now a tab of Theme Settings > Licence** (second, after Status), no longer a page of its own; the old address redirects there. Its content loads
+  the first time the tab is opened, so the Licence page never waits on Brand Relay.
+- **A plan without backups gets a calm message** in that tab instead of buttons: backups are not part of the plan at the moment, and the client is invited to
+  get in touch with their developer.
+
+### Fixed
+
+- **The backup list showed no date** for real backups: Brand Relay sends its times as epoch milliseconds, which the list did not understand.
+
 ## [1.30.1] — 2026-11-04
 
 ### Fixed

@@ -63,6 +63,22 @@ add_action( 'acf/init', function () {
 			'instructions' => __( 'Pulls this site\'s plan from the management server, checks for theme updates and installs or removes the plugins the plan decides (such as backups), all immediately. Save any changes first.', 'devbase_parent_theme' ),
 		),
 
+		// BACKUPS: what Brand Relay holds for this site, and the buttons. The list is NOT built here (that would
+		// call Brand Relay every time the Licence page opens): inc/backups/page.js asks for it the first time
+		// the tab is shown, through the devbase_backups_action AJAX handler (inc/backups/page.php).
+		array(
+			'key'   => 'field_devbase_licence_tab_backups',
+			'label' => __( 'Backups', 'devbase_parent_theme' ),
+			'type'  => 'tab',
+		),
+		array(
+			'key'      => 'field_devbase_licence_backups',
+			'label'    => '',
+			'type'     => 'message',
+			'message'  => '<div id="devbase-backups-tab"><p class="description">' . esc_html__( 'Loading…', 'devbase_parent_theme' ) . '</p></div>',
+			'esc_html' => 0,
+		),
+
 		// LICENCE: read-only. Set automatically, so one calm notice says so,
 		// rather than the same line under every field.
 		array(
