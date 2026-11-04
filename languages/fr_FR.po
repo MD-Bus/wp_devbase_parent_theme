@@ -583,3 +583,15 @@ msgstr "Ancienne clé par thème, sans étiquette — saisissez la clé de licen
 
 msgid "Theme Update Licence Key"
 msgstr "Clé de licence des mises à jour du thème"
+
+msgid "This plugin is part of this site's theme and must stay installed and active."
+msgstr "Cette extension fait partie du thème de ce site et doit rester installée et activée."
+
+msgid "Updates are no longer provided by the theme (no active licence). You manage this plugin's updates."
+msgstr "Les mises à jour ne sont plus fournies par le thème (aucune licence active). Vous gérez les mises à jour de cette extension."
+
+msgid "Theme updates are paused: this site has no active licence."
+msgstr "Les mises à jour du thème sont suspendues : ce site n’a aucune licence active."
+
+msgid "%s stays at the version this theme shipped and will not be updated by the theme. You can update it from the Plugins screen when you choose, which also means taking any security fix yourself."
+msgstr "%s reste à la version fournie par ce thème et ne sera pas mise à jour par le thème. Vous pouvez la mettre à jour depuis l’écran des extensions quand vous le décidez, ce qui signifie aussi appliquer vous-même tout correctif de sécurité."

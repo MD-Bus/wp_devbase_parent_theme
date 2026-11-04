@@ -591,6 +591,12 @@ it removes the files and leaves the shop's data. The version is pinned in
 `bundled-plugins/composer.json`; `bin/bundle-plugins.sh` builds the zip, which is
 committed (Warden ships what is committed).
 
+The update lock holds only while the site's Warden licence is valid. When Warden says it
+is not valid, or the site has no licence key, the theme stops managing WooCommerce: it
+stays on the version it has, an administrator sees a notice, and the client can update it
+from the Plugins screen if they choose (it still cannot be deactivated or deleted while the
+child theme needs it). No licence means no maintenance from us.
+
 Theme Settings > Miscellaneous > System Status shows the bundled versions.
 
 

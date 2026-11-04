@@ -24,6 +24,8 @@ class Test_Bundled_Plugins extends WP_UnitTestCase {
 		add_filter( 'devbase/required_plugins', array( $this, 'fixture_required' ) );
 		add_filter( 'devbase/bundled_plugin_is_loaded', array( $this, 'fixture_loaded' ) );
 
+		$this->licence_valid();
+
 		delete_option( DEVBASE_BUNDLED_PLUGINS_MANAGED );
 		delete_option( DEVBASE_BUNDLED_PLUGINS_ERRORS );
 		delete_option( 'devbase_bundled_plugins_lock' );
@@ -37,6 +39,8 @@ class Test_Bundled_Plugins extends WP_UnitTestCase {
 		devbase_bundled_plugins_deferred();
 		devbase_bundled_plugins_unlocked( false );
 
+		update_field( 'warden_licence_key', '', 'option' );
+		delete_option( devbase_warden_state_option( get_template() ) );
 		$this->delete_dir( WP_PLUGIN_DIR . '/fixtureplug' );
 		$this->delete_dir( $this->zip_dir );
 		update_option( 'active_plugins', array() );
@@ -64,6 +68,18 @@ class Test_Bundled_Plugins extends WP_UnitTestCase {
 	}
 
 	private $zip_version = '2.0.0';
+
+
+	/** A site with a key whose last signed answer says the licence is valid. */
+	private function licence_valid() {
+		update_field( 'warden_licence_key', 'WRD-TEST-KEY', 'option' );
+		update_option( devbase_warden_state_option( get_template() ), array( 'response' => array( 'valid' => true, 'status' => 'active' ), 'succeeded_at' => time(), 'checked_at' => time() ), false );
+	}
+
+	/** Warden's last signed answer says the licence is not valid. */
+	private function licence_lapsed() {
+		update_option( devbase_warden_state_option( get_template() ), array( 'response' => array( 'valid' => false, 'status' => 'expired' ), 'succeeded_at' => time(), 'checked_at' => time() ), false );
+	}
 
 	private function delete_dir( $dir ) {
 		if ( ! is_dir( $dir ) ) {
@@ -389,6 +405,172 @@ class Test_Bundled_Plugins extends WP_UnitTestCase {
 		devbase_bundled_plugins_unlocked( true );
 
 		$this->assertSame( array(), devbase_required_plugin_files() );
+	}
+
+	// --- when the licence has lapsed ----------------------------------------------------------
+
+	public function test_a_valid_licence_keeps_the_update_locks() {
+		$this->require_it();
+
+		$this->assertFalse( devbase_bundled_plugins_licence_lapsed() );
+		$this->assertSame( array( 'fixtureplug/fixtureplug.php' ), devbase_update_locked_plugin_files() );
+	}
+
+	public function test_a_licence_warden_says_is_not_valid_lifts_the_update_locks() {
+		$this->require_it();
+		$this->licence_lapsed();
+
+		$this->assertTrue( devbase_bundled_plugins_licence_lapsed() );
+		$this->assertSame( array(), devbase_update_locked_plugin_files() );
+
+		// WordPress hears of updates again, may auto-update, and the upgrader is let through.
+		$transient = (object) array( 'response' => array( 'fixtureplug/fixtureplug.php' => (object) array( 'new_version' => '9.9.9' ) ), 'no_update' => array(), 'checked' => array() );
+		$this->assertArrayHasKey( 'fixtureplug/fixtureplug.php', apply_filters( 'site_transient_update_plugins', $transient )->response );
+		$this->assertTrue( apply_filters( 'auto_update_plugin', true, (object) array( 'plugin' => 'fixtureplug/fixtureplug.php' ) ) );
+		$this->assertNotWPError( apply_filters( 'upgrader_pre_install', true, array( 'plugin' => 'fixtureplug/fixtureplug.php' ) ) );
+		$this->assertSame( '/tmp/u/fixtureplug/', apply_filters( 'upgrader_source_selection', '/tmp/u/fixtureplug/', '/tmp/u', null, array() ) );
+
+	}
+
+	public function test_the_plugin_stays_installed_and_active_even_when_the_licence_has_lapsed() {
+		$this->require_it();
+		$this->licence_lapsed();
+		$admin = self::factory()->user->create( array( 'role' => 'administrator' ) );
+
+		$this->assertFalse( user_can( $admin, 'deactivate_plugin', 'fixtureplug/fixtureplug.php' ) );
+		$this->assertFalse( user_can( $admin, 'delete_plugin', 'fixtureplug/fixtureplug.php' ) );
+		$this->assertSame( array( 'settings' => 'z' ), apply_filters( 'plugin_action_links', array( 'deactivate' => 'x', 'delete' => 'y', 'settings' => 'z' ), 'fixtureplug/fixtureplug.php' ) );
+
+		update_option( 'active_plugins', array( 'other/other.php' ) );
+		$this->assertContains( 'fixtureplug/fixtureplug.php', get_option( 'active_plugins' ) );
+	}
+
+	public function test_a_site_with_no_licence_key_is_treated_as_lapsed() {
+		$this->require_it();
+		update_field( 'warden_licence_key', '', 'option' );
+		delete_option( devbase_warden_state_option( get_template() ) );
+
+		$this->assertTrue( devbase_bundled_plugins_licence_lapsed() );
+		$this->assertSame( array(), devbase_update_locked_plugin_files() );
+	}
+
+	public function test_a_key_that_warden_has_never_answered_keeps_the_locks() {
+		$this->require_it();
+		delete_option( devbase_warden_state_option( get_template() ) );
+
+		$this->assertFalse( devbase_bundled_plugins_licence_lapsed(), 'No signed answer is not an invalid licence.' );
+	}
+
+	public function test_a_failed_check_does_not_lift_the_locks() {
+		$this->require_it();
+		// The last good answer stands; a failed attempt only records an error beside it.
+		update_option( devbase_warden_state_option( get_template() ), array(
+			'response'     => array( 'valid' => true, 'status' => 'active' ),
+			'succeeded_at' => time() - DAY_IN_SECONDS,
+			'checked_at'   => time(),
+			'last_error'   => 'HTTP 503',
+		), false );
+
+		$this->assertFalse( devbase_bundled_plugins_licence_lapsed() );
+	}
+
+	public function test_a_completed_licence_that_is_valid_keeps_the_locks() {
+		$this->require_it();
+		update_option( devbase_warden_state_option( get_template() ), array( 'response' => array( 'valid' => true, 'status' => 'completed' ) ), false );
+
+		$this->assertFalse( devbase_bundled_plugins_licence_lapsed() );
+	}
+
+	public function test_the_locks_come_back_by_themselves_when_the_licence_is_valid_again() {
+		$this->require_it();
+		$transient = function () {
+			return apply_filters( 'site_transient_update_plugins', (object) array( 'response' => array( 'fixtureplug/fixtureplug.php' => (object) array( 'new_version' => '9.9.9' ) ), 'no_update' => array(), 'checked' => array() ) );
+		};
+
+		$this->licence_lapsed();
+		$this->assertArrayHasKey( 'fixtureplug/fixtureplug.php', $transient()->response, 'Lapsed: WordPress hears of the update.' );
+
+		$this->licence_valid();
+		$this->assertArrayNotHasKey( 'fixtureplug/fixtureplug.php', $transient()->response, 'Valid again: locked again, with nothing to re-enable.' );
+		$this->assertFalse( apply_filters( 'auto_update_plugin', true, (object) array( 'plugin' => 'fixtureplug/fixtureplug.php' ) ) );
+	}
+
+	public function test_a_copy_the_client_updated_while_unlocked_is_never_pulled_back_by_an_older_theme() {
+		// Licence lapsed, the client updates the plugin to 3.0.0; the licence comes back
+		// and the theme (which ships 2.0.0) must keep their newer copy, locked.
+		$this->install_on_disk( '3.0.0' );
+		update_option( 'active_plugins', array( 'fixtureplug/fixtureplug.php' ) );
+		$this->make_zip( '2.0.0' );
+		$this->require_it();
+		$this->licence_lapsed();
+		$this->licence_valid();
+
+		$this->assertFalse( devbase_bundled_plugins_pending(), 'Nothing to install: the installed copy is newer.' );
+		devbase_sync_bundled_plugins();
+
+		$this->assertSame( '3.0.0', devbase_installed_plugin_version( 'fixtureplug' ) );
+		$this->assertSame( array( 'fixtureplug/fixtureplug.php' ), devbase_update_locked_plugin_files() );
+	}
+
+	public function test_a_later_theme_that_ships_a_newer_copy_still_upgrades_it() {
+		$this->install_on_disk( '3.0.0' );
+		update_option( 'active_plugins', array( 'fixtureplug/fixtureplug.php' ) );
+		$this->make_zip( '4.0.0' );
+		$this->require_it();
+
+		$this->assertTrue( devbase_bundled_plugins_pending() );
+		$this->assertSame( 'upgraded', devbase_sync_bundled_plugins()['fixtureplug'] );
+		$this->assertSame( '4.0.0', devbase_installed_plugin_version( 'fixtureplug' ) );
+	}
+
+	public function test_the_lapse_can_be_decided_by_a_filter() {
+		$this->require_it();
+		add_filter( 'devbase/bundled_plugins/licence_lapsed', '__return_true' );
+
+		$this->assertTrue( devbase_bundled_plugins_licence_lapsed() );
+		remove_filter( 'devbase/bundled_plugins/licence_lapsed', '__return_true' );
+	}
+
+	public function test_the_notice_tells_an_administrator_updates_are_paused() {
+		$this->require_it();
+		$this->licence_lapsed();
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		set_current_screen( 'plugins' );
+
+		ob_start();
+		do_action( 'admin_notices' );
+		$html = ob_get_clean();
+
+		$this->assertStringContainsString( 'Fixture Plugin', $html );
+		$this->assertStringContainsString( 'notice-warning', $html );
+	}
+
+	public function test_no_notice_while_the_licence_is_valid_or_off_the_plugins_screens() {
+		$this->require_it();
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+
+		set_current_screen( 'plugins' );
+		ob_start();
+		do_action( 'admin_notices' );
+		$this->assertStringNotContainsString( 'Fixture Plugin', ob_get_clean(), 'Valid licence: no notice.' );
+
+		$this->licence_lapsed();
+		set_current_screen( 'edit-post' );
+		ob_start();
+		do_action( 'admin_notices' );
+		$this->assertStringNotContainsString( 'Fixture Plugin', ob_get_clean(), 'Only on the Plugins screen and the Dashboard.' );
+	}
+
+	public function test_the_notice_is_for_administrators_only() {
+		$this->require_it();
+		$this->licence_lapsed();
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
+		set_current_screen( 'plugins' );
+
+		ob_start();
+		do_action( 'admin_notices' );
+
+		$this->assertStringNotContainsString( 'Fixture Plugin', ob_get_clean() );
 	}
 
 	// --- reporting ----------------------------------------------------------------

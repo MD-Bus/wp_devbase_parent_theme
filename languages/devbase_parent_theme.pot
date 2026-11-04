@@ -581,3 +581,15 @@ msgstr ""
 
 msgid "Theme Update Licence Key"
 msgstr ""
+
+msgid "This plugin is part of this site's theme and must stay installed and active."
+msgstr ""
+
+msgid "Updates are no longer provided by the theme (no active licence). You manage this plugin's updates."
+msgstr ""
+
+msgid "Theme updates are paused: this site has no active licence."
+msgstr ""
+
+msgid "%s stays at the version this theme shipped and will not be updated by the theme. You can update it from the Plugins screen when you choose, which also means taking any security fix yourself."
+msgstr ""

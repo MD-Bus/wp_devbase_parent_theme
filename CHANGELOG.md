@@ -10,17 +10,32 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.19.0] — 2026-11-03
+
+### Changed
+
+- **When the licence no longer covers a site, the theme stops managing the bundled WooCommerce, and the client can.**
+  The locks that kept WooCommerce on the theme's version (no update notice, no automatic, one-click or bulk
+  update, no uploaded zip over it) now hold only while Warden's last signed answer for the base theme says the
+  licence is valid. They lift when that answer says it is not valid (expired, suspended, anything else), or when
+  the site has no licence key at all. Nothing is pushed to the site and auto-updates stay off unless switched on:
+  the site keeps the tested version it has, and updating it, with any security fix, becomes the client's
+  choice. A failed check, an outage, or a key Warden has never answered leaves the locks as they are.
+- **WooCommerce still cannot be deactivated or deleted** from WordPress while the child requires it, licence or
+  not, because the shop does not work without it. (Update locks and presence locks are separate in
+  `inc/bundled-plugins/lock.php`.)
+- **A notice for administrators** on the Plugins screen and the Dashboard while the licence has lapsed: "Theme
+  updates are paused: this site has no active licence", naming the plugin and saying the client now updates it. The
+  plugin's row on the Plugins screen says the same.
+- The Licence page names its key field **Theme Update Licence Key** (it was "Licence Key"), so it says what the
+  key is for. Same field, same value.
+- New: `devbase_bundled_plugins_licence_lapsed()` and the filter `devbase/bundled_plugins/licence_lapsed`.
+
 ### Fixed
 
 - `bin/build-zip.sh` (manual installs only; a release tag is unaffected) left `bundled-plugins/woocommerce.zip` out of the
   zip, because it excludes every `*.zip`, and included the theme's own `.github/`. The plugin zips are kept now and
   `.github/` is left out. Tooling only: nothing changes on sites, no release needed.
-
-## [1.18.1] — 2026-11-03
-
-### Changed
-
-- The Licence page names its key field **Theme Update Licence Key** (it was "Licence Key"), so it says what the key is for. Same field, same value; French translations added.
 
 ## [1.18.0] — 2026-11-03
 

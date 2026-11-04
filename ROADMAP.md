@@ -26,7 +26,12 @@ validity by itself.
   an outage. The heartbeat is the one exception: any site with a key may send
   it, with no plan.
 
-**1. Housekeeping.** Push 1.18.1 (the Licence key label). Remove the local test
+**When the licence lapses (done in 1.19.0).** No licence, no maintenance from us: the theme
+stops managing the bundled WooCommerce (the update locks lift; it stays installed
+and active), an administrator gets a notice, and updating it, security fixes included,
+becomes the client's choice. Chosen over moving plugins out of vendor/ on expiry.
+
+**1. Housekeeping.** Release 1.19.0 (the Licence key label and the licence-lapse rule below). Remove the local test
 leftovers (the dev server, the `theme-test-2` API key, the `ocwof.local` slot in
 Warden, the stray `* 2.php` files in the OCWOF child). Write the live cutover
 checklist: add `warden_licence_key` to the live Brand Relay, remove the two old
@@ -34,7 +39,7 @@ params, trigger a sync, then check both themes under their tags. First find out
 which Brand Relay is deployed: `main` and its tags stop at 0.13.0 while `develop`
 is at 0.28.x, and the services below exist only from 0.18 up.
 
-**2. Heartbeat (1.19.0).** A daily report to `POST /v1/site/heartbeat` with
+**2. Heartbeat (next minor).** A daily report to `POST /v1/site/heartbeat` with
 WordPress, PHP and theme versions, waiting updates, disk, cron health and the
 last backup time, sent with the Brand Relay key the site already holds. This
 step also brings the shared plumbing: keep the `licence` object from `/v1/site`
@@ -42,7 +47,7 @@ next to the params, give every service one "is it in force" test, and show the
 last report and answer in a Maintenance block on the Licence page. The `theme`
 field is one version string; send the child's and keep the parent's elsewhere.
 
-**3. Error events (1.20.0).** Fatals and uncaught exceptions first (warnings and
+**3. Error events (the minor after).** Fatals and uncaught exceptions first (warnings and
 notices flood), and failed scheduled jobs if they prove useful. Queue them, send
 at the end of a request at most once every 30 seconds, 50 events and 64 KB per
 batch, within the plan's daily count. Scrub before sending, never report the
