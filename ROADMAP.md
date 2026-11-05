@@ -33,7 +33,7 @@ stops managing the bundled WooCommerce (the update locks lift; it stays installe
 and active), an administrator gets a notice, and updating it, security fixes included,
 becomes the client's choice. Chosen over moving plugins out of vendor/ on expiry.
 
-**1. Housekeeping.** Release 1.19.0 (the Licence key label and the licence-lapse rule below). Remove the local test
+**1. Housekeeping.** (1.19.0, with the licence-lapse rule, is released.) Remove the local test
 leftovers (the dev server, the `theme-test-2` API key, the `ocwof.local` slot in
 Warden, the stray `* 2.php` files in the OCWOF child). Write the live cutover
 checklist: add `warden_licence_key` to the live Brand Relay, remove the two old
@@ -49,14 +49,15 @@ because most sites get few visits and many have cron off. The plan is pulled bef
 the plan has error tracking. See `inc/maintenance/AGENT.md`. Open: failed scheduled jobs and, if wanted, warnings (they flood, and
 catching them means taking over PHP's error handler).
 
-**4. Backups.** The largest piece, and Brand Relay only receives files: making
-the backup is the site's job, uploaded in parts of exactly 50 MiB. Two options.
-(A) Upload what a host or a backup plugin already produces, and report
-`last_backup_at`: small and safe. (B) Make the backup inside the theme, a
-database dump plus a files archive, written and uploaded in resumable steps by
-a background task: much larger, and exposed to shared hosts' time, memory and
-disk limits. Do A first and take B only if a client needs it. Needs the `backup`
-service and its limits (per day, maximum size, versions kept).
+**4. Backups (done, 1.26.0 to 1.30.6).** Option B, made through WPvivid Backup rather than our own engine: WPvivid is bundled like
+WooCommerce, the theme runs its newer backup engine (the one its dashboard uses), uploads the merged file to Brand Relay in 50 MiB parts when the
+ping names `backup`, reports `last_backup_at`, and removes its local copy. The Backups tab of the Licence page lists Brand Relay's backups and
+downloads one back into WPvivid, where the client presses Restore. Clients cannot start a backup; only Brand Relay's ping does. The backup
+includes WordPress core, and skips symlinked host folders (Jetpack, Akismet and the mu-plugins on WordPress.com). A restore onto a fresh site
+was tried by the owner and works. See `inc/backups/AGENT.md`. Open: should a lapsed client still be able to download their own backups
+(Brand Relay answers `403 feature_off` today, so that is a Brand Relay change); whether the Brand Relay site key lives in `wp-config.php`,
+which a backup does not carry, so a restored site would need it entered again (not checked); a restored WordPress.com site has no usable
+passwords, since its users sign in through WordPress.com, so the client needs a password reset after a restore (a note in the client guide).
 
 **5. Warden follow-ups.** Decide whether a batch check (one request for both
 tags, installed versions keyed by tag) is worth it; it saves one request per 12
@@ -64,7 +65,7 @@ hours. Move the children's kill switch from the status name `suspended` to
 `valid: false`, since statuses now belong to each app. Lock whichever is chosen
 in a parent test.
 
-**6. The first real WooCommerce version update.** Bump the pin, build the zip,
+**6. The first real WooCommerce version update.** The bundled zip is already at 11.2.2. Bump the pin, build the zip,
 release, and watch a site with the shop on take the new version at the end of
 the request without a fatal error, while WordPress offers no update of its own.
 
