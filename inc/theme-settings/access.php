@@ -130,7 +130,24 @@ add_filter( 'acf/prepare_field', function ( $field ) {
 
 	if ( '' !== $stored ) {
 		$field['placeholder'] = __( 'Saved (hidden). Leave empty to keep it.', 'devbase_parent_theme' );
+		// Empty means "keep the stored one", so it must not be asked for again (the browser's
+		// own check and SCF's server check both look at `required`).
+		$field['required'] = 0;
 	}
 
 	return $field;
 }, 99 );
+
+// The server-side half of the same rule: SCF validates from the field's definition, not from what
+// was drawn, so a required secret submitted empty is accepted while one is already stored.
+add_filter( 'acf/validate_value', function ( $valid, $value, $field ) {
+	if ( true === $valid || ! is_array( $field ) || ! isset( $field['key'], $field['name'] ) || ! in_array( $field['key'], devbase_settings_secret_keys(), true ) ) {
+		return $valid;
+	}
+
+	if ( '' === trim( (string) ( is_scalar( $value ) ? $value : '' ) ) && '' !== (string) get_option( 'options_' . $field['name'], '' ) ) {
+		return true;
+	}
+
+	return $valid;
+}, 20, 3 );

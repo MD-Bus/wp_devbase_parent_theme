@@ -125,6 +125,22 @@ class Test_Security_Hardening extends WP_UnitTestCase {
 		$this->assertNotEmpty( $field['placeholder'] );
 	}
 
+	public function test_a_required_secret_may_stay_empty_while_one_is_stored() {
+		// The SMTP password is required while SMTP is on. Drawn empty, it must not demand a retype on every save.
+		$field = array( 'key' => 'field_devbase_smtp_password', 'name' => 'smtp_password', 'type' => 'password', 'required' => 1, 'value' => 'hunter2' );
+
+		$drawn = apply_filters( 'acf/prepare_field', $field );
+		$this->assertEmpty( $drawn['required'], 'The browser must not insist on it either.' );
+
+		update_field( 'smtp_password', 'hunter2', 'option' );
+		$this->assertTrue( apply_filters( 'acf/validate_value', 'SMTP Password value is required', '', $field, 'acf[field_devbase_smtp_password]' ) );
+
+		// Nothing stored yet: the first password is still required.
+		delete_option( 'options_smtp_password' );
+		$this->assertSame( 'SMTP Password value is required', apply_filters( 'acf/validate_value', 'SMTP Password value is required', '', $field, 'acf[field_devbase_smtp_password]' ) );
+		$this->assertTrue( 1 === (int) apply_filters( 'acf/prepare_field', array_merge( $field, array( 'value' => '' ) ) )['required'] );
+	}
+
 	public function test_relay_sync_still_writes_the_provisioned_values() {
 		// The form filter must not touch update_field(), which is how the sync (and WP-CLI) write.
 		update_field( 'warden_base_url', 'https://warden.test', 'option' );
