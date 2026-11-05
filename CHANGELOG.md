@@ -10,6 +10,14 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.35.0] — 2026-11-05
+
+### Added
+
+- **The Credit and Management tabs of Theme Settings > Miscellaneous are out of sight until asked for.** Press L twice quickly, or R twice quickly, to show them, and C
+  twice quickly to hide them; they are hidden again on every page load. The keys are ignored while typing in a field. This only hides the tabs: their fields stay in the
+  form and keep their values.
+
 ## [1.34.1] — 2026-11-05
 
 ### Removed

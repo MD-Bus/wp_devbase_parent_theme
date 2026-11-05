@@ -71,7 +71,7 @@ updates are available, plus **Check licence and updates now**. **Licence** holds
 provisioned automatically and cannot be edited here, and a notice says so once.
 **Remote setup** holds the **Management server address** and **Site access key**
 that make the rest provision themselves: saving them pulls everything else straight
-away, see [Provisioning from Brand Relay](#provisioning-from-brand-relay). Switch on **Lock remote setup** (Theme Settings > Miscellaneous > Management) to hide this tab; off, it is visible. Clients never see the product names Warden
+away, see [Provisioning from Brand Relay](#provisioning-from-brand-relay). Switch on **Lock remote setup** (Theme Settings > Miscellaneous > Management) to hide this tab; off, it is visible. The Management tab is itself out of sight, see [Hidden tabs](#hidden-tabs). Clients never see the product names Warden
 or Brand Relay.
 
 One key covers the whole site. In Warden the licence has two apps attached under the tags
@@ -287,6 +287,27 @@ opening in a new tab is left to the theme. The `devbase/credit` filter can adjus
 It deliberately does **not** print Brand Relay's `embed` HTML/CSS, which the
 reference snippets do; see the allowlist note above for why.
 The site's language is sent as `?lang=` so a multilingual brand answers in it.
+
+### Hidden tabs
+
+On **Theme Settings > Miscellaneous**, the **Credit** and **Management** tabs are
+out of sight, so a client doesn't see them. On that page:
+
+| Press | What it does |
+|---|---|
+| **L** twice quickly, or **R** twice quickly | shows both tabs |
+| **C** twice quickly | hides both tabs |
+
+The two presses must be within 400 ms. The keys are ignored while the cursor is
+in a text field, so typing never triggers them. The tabs are hidden again on
+every page load, and if a hidden tab was the one open, the page moves to the
+first tab.
+
+This only keeps the tabs out of sight; it is not a lock. Their fields stay in the
+form, so saving the page keeps their values, and an administrator who knows the
+keys or reads the page source can reach them. The code is
+`inc/theme-settings/miscellaneous/hidden-tabs.js`, and the CSS that hides the tabs
+from the start is in `inc/theme-settings/miscellaneous/settings.php`.
 
 ## The front end
 

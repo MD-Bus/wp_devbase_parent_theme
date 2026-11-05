@@ -252,7 +252,8 @@ add_action( 'acf/init', function () {
 				'type'         => 'url',
 				'instructions' => __( 'The public address of the brand in Brand Relay, for example https://relay.example.com/v1/brand/yourbrand. It is downloaded when you save this page and then once a day, and the credit is built from the saved copy. Leave it empty for no credit.', 'devbase_parent_theme' ),
 			),
-			// Tab: Management. One switch for the Licence page's Remote setup tab.
+			// Tab: Management. One switch for the Licence page's Remote setup tab. Kept out of sight, like
+			// the Credit tab, until a key is pressed twice (hidden-tabs.js).
 			array(
 				'key'   => 'field_devbase_misc_management_tab',
 				'label' => __( 'Management', 'devbase_parent_theme' ),
@@ -369,6 +370,19 @@ add_action( 'admin_enqueue_scripts', function ( $hook ) {
 		'runningText' => __( 'Purging…', 'devbase_parent_theme' ),
 		'errorText'   => __( 'Something went wrong. Please try again.', 'devbase_parent_theme' ),
 	) );
+
+	// The Credit and Management tabs start hidden, in CSS so they never flash while the page loads.
+	wp_register_style( 'devbase-hidden-tabs', false, array(), '1.0.0' );
+	wp_enqueue_style( 'devbase-hidden-tabs' );
+	wp_add_inline_style( 'devbase-hidden-tabs', 'body:not(.devbase-hidden-tabs-open) .acf-tab-group li:has(> :is([data-key="field_devbase_misc_credit_tab"], [data-key="field_devbase_misc_management_tab"])) { display: none; }' );
+
+	wp_enqueue_script(
+		'devbase-hidden-tabs',
+		get_template_directory_uri() . '/inc/theme-settings/miscellaneous/hidden-tabs.js',
+		array( 'acf-input' ),
+		'1.0.0',
+		true
+	);
 } );
 
 /**
