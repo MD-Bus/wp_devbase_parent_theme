@@ -8,8 +8,9 @@
 // health is in force. Every answer carries `next_in`, the plan's interval in seconds, which is
 // kept for the status line; a 202 means "too soon, not stored" and is a success.
 //
-// What is sent is versions, counts and disk figures. Nothing from the site's content, its
-// users or its plugin files.
+// What is sent is versions, counts, disk figures and the results of WordPress's own Site Health
+// tests (a name and WordPress's sentence for each one that did not pass). Nothing from the site's
+// content, its users or its plugin files.
 
 /**
  * The report. Fields Brand Relay does not know are ignored by it, and a field
@@ -34,6 +35,7 @@ function devbase_heartbeat_report() {
 		'cron_ok'      => devbase_heartbeat_cron_ok(),
 		// Filled in once there is a backup to report (inc/maintenance/ will grow one).
 		'last_backup_at' => apply_filters( 'devbase/maintenance/last_backup_at', null ),
+		'site_health'    => devbase_heartbeat_site_health(),
 	);
 
 	$report = array_filter( $report, function ( $value ) {
@@ -41,6 +43,109 @@ function devbase_heartbeat_report() {
 	} );
 
 	return (array) apply_filters( 'devbase/maintenance/report', $report );
+}
+
+/**
+ * The WordPress Site Health tests that run here: WordPress's own local ("direct") tests, by their id.
+ * Left out on purpose: `rest_availability` (a real REST request) and `http_requests`; and the asynchronous
+ * tests (loopback, background updates, WordPress.org, HTTPS status, page cache, authorization header), which
+ * make real network calls and do not belong in a ping. Only WordPress's own tests: a plugin's test is code
+ * we did not write, and it could be slow.
+ *
+ * @return string[]
+ */
+function devbase_heartbeat_site_health_tests() {
+	return array(
+		'wordpress_version', 'plugin_version', 'theme_version', 'php_version', 'php_extensions', 'php_default_timezone',
+		'php_sessions', 'sql_server', 'ssl_support', 'scheduled_events', 'is_in_debug_mode', 'file_uploads',
+		'plugin_theme_auto_updates', 'update_temp_backup_writable', 'available_updates_disk_space', 'autoloaded_options',
+		'insecure_registration', 'search_engine_visibility', 'opcode_cache',
+	);
+}
+
+/**
+ * WordPress's own Site Health results, in the shape Brand Relay reads (0.37.0): the counts of every test run, and
+ * the ones that did not pass (critical first), each as WordPress's test id and its own sentence, scrubbed. About 30 ms.
+ *
+ * Null when WordPress's Site Health class is not there or no test could run. A test that fails to run is left out
+ * of the counts (a report with a missing figure is better than none).
+ *
+ * @return array{good: int, recommended: int, critical: int, issues: array[]}|null
+ */
+function devbase_heartbeat_site_health() {
+	// The tests use admin-side functions (plugins, updates, the filesystem) that a ping does not load. Always asked for:
+	// WordPress or another plugin may already have loaded the Site Health class, but not the files its tests rely on.
+	foreach ( array( 'file', 'plugin', 'update', 'misc', 'theme', 'class-wp-site-health' ) as $include ) {
+		$path = ABSPATH . 'wp-admin/includes/' . $include . '.php';
+
+		if ( ! is_readable( $path ) ) {
+			return null;
+		}
+
+		require_once $path;
+	}
+
+	if ( ! class_exists( 'WP_Site_Health' ) ) {
+		return null;
+	}
+
+	$health = WP_Site_Health::get_instance();
+	$counts = array( 'good' => 0, 'recommended' => 0, 'critical' => 0 );
+	$issues = array();
+	$ran    = 0;
+
+	// One test (`php_version`) asks api.wordpress.org which PHP versions are acceptable, and WordPress keeps the answer
+	// for a week. A ping must never wait on it for long: while the tests run, a request gets three seconds at most.
+	$cap = function ( $args ) {
+		$args['timeout'] = min( (float) ( $args['timeout'] ?? 5 ), 3 );
+
+		return $args;
+	};
+	add_filter( 'http_request_args', $cap );
+
+	foreach ( devbase_heartbeat_site_health_tests() as $test ) {
+		$method = 'get_test_' . $test;
+
+		if ( ! method_exists( $health, $method ) ) {
+			continue;
+		}
+
+		try {
+			// What WordPress's own (private) perform_test() does: run it, then let plugins adjust the result.
+			$result = apply_filters( 'site_status_test_result', $health->$method() );
+		} catch ( Throwable $e ) {
+			continue;
+		}
+
+		$status = is_array( $result ) ? (string) ( $result['status'] ?? '' ) : '';
+
+		if ( ! isset( $counts[ $status ] ) ) {
+			continue;
+		}
+
+		++$ran;
+		++$counts[ $status ];
+
+		if ( 'good' !== $status ) {
+			$issues[] = array(
+				'test'   => $test,
+				'status' => $status,
+				'label'  => devbase_events_scrub( wp_strip_all_tags( (string) ( $result['label'] ?? '' ) ), 200 ),
+			);
+		}
+	}
+
+	remove_filter( 'http_request_args', $cap );
+
+	if ( ! $ran ) {
+		return null;
+	}
+
+	usort( $issues, function ( $a, $b ) {
+		return ( 'critical' === $b['status'] ) <=> ( 'critical' === $a['status'] );
+	} );
+
+	return $counts + array( 'issues' => array_slice( $issues, 0, 30 ) );
 }
 
 /**

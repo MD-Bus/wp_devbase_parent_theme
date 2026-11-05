@@ -32,6 +32,9 @@ class Test_Maintenance extends WP_UnitTestCase {
 		// The backup service would otherwise try to install WPvivid Backup into the test site.
 		add_filter( 'devbase/backup/engine_ready', array( $this, 'no_engine' ) );
 
+		// What a real site has: WordPress's one-week answer about this PHP version (else its Site Health test asks api.wordpress.org).
+		set_site_transient( 'php_check_' . md5( PHP_VERSION ), array( 'recommended_version' => '8.3', 'minimum_version' => '7.4', 'is_supported' => true, 'is_secure' => true, 'is_acceptable' => true ), WEEK_IN_SECONDS );
+
 		static $n = 0;
 		$_SERVER['REMOTE_ADDR'] = '198.51.100.' . ( ++$n % 250 + 1 ); // each test its own IP for the ping limit
 
@@ -451,5 +454,111 @@ class Test_Maintenance extends WP_UnitTestCase {
 		add_filter( 'devbase/relay/url', '__return_empty_string' );
 		$this->assertStringContainsString( esc_html__( 'Site health reports are off: enter the management server address and site access key first.', 'devbase_parent_theme' ), devbase_heartbeat_status_html() );
 		remove_filter( 'devbase/relay/url', '__return_empty_string' );
+	}
+
+	// --- WordPress Site Health results in the report ------------------------------------------
+
+	public function test_the_report_carries_wordpress_site_health_in_the_shape_brand_relay_reads() {
+		$report = devbase_heartbeat_report();
+
+		$this->assertArrayHasKey( 'site_health', $report );
+		$health = $report['site_health'];
+
+		$this->assertSame( array( 'good', 'recommended', 'critical', 'issues' ), array_keys( $health ) );
+		$this->assertSame(
+			count( devbase_heartbeat_site_health_tests() ),
+			$health['good'] + $health['recommended'] + $health['critical'],
+			'Every test ran: one that fails to run is left out of the counts silently, so this catches a missing admin file.'
+		);
+		$this->assertCount( $health['recommended'] + $health['critical'], $health['issues'], 'Only tests that did not pass are listed.' );
+		$this->assertLessThan( 16384, strlen( wp_json_encode( $report ) ), 'Brand Relay refuses a report over 16 KB.' );
+	}
+
+	public function test_site_health_lists_critical_first_with_the_test_id_and_a_scrubbed_sentence() {
+		$filter = function ( $result ) {
+			if ( 'Your site is running an outdated version of PHP' === ( $result['label'] ?? '' ) ) {
+				return $result;
+			}
+
+			static $n = 0;
+			++$n;
+
+			if ( 1 === $n ) {
+				$result['status'] = 'recommended';
+				$result['label']  = '<strong>Mail to jane@example.com</strong> fails';
+			} elseif ( 2 === $n ) {
+				$result['status'] = 'critical';
+				$result['label']  = 'Broken in /home/u/public_html/wp-content/plugins/x/y.php';
+			}
+
+			return $result;
+		};
+		add_filter( 'site_status_test_result', $filter );
+
+		$health = devbase_heartbeat_site_health();
+
+		remove_filter( 'site_status_test_result', $filter );
+
+		$this->assertSame( 'critical', $health['issues'][0]['status'], 'Critical first.' );
+		$this->assertSame( 'recommended', $health['issues'][1]['status'] );
+		$this->assertMatchesRegularExpression( '/^[a-z0-9_]{1,60}$/', $health['issues'][0]['test'] );
+		$this->assertSame( 'Broken in wp-content/plugins/x/y.php', $health['issues'][0]['label'] );
+		$this->assertSame( 'Mail to [email] fails', $health['issues'][1]['label'], 'Tags and addresses are gone.' );
+		$this->assertGreaterThanOrEqual( 1, $health['critical'] );
+	}
+
+	public function test_a_site_health_test_that_breaks_is_left_out_and_the_rest_still_report() {
+		$filter = function ( $result ) {
+			static $n = 0;
+
+			if ( 3 === ++$n ) {
+				throw new RuntimeException( 'a test broke' );
+			}
+
+			return $result;
+		};
+		add_filter( 'site_status_test_result', $filter );
+
+		$health = devbase_heartbeat_site_health();
+
+		remove_filter( 'site_status_test_result', $filter );
+
+		$this->assertSame( count( devbase_heartbeat_site_health_tests() ) - 1, $health['good'] + $health['recommended'] + $health['critical'] );
+	}
+
+	public function test_only_wordpresss_own_local_tests_are_run() {
+		$tests = devbase_heartbeat_site_health_tests();
+
+		$this->assertCount( 19, $tests );
+		foreach ( array( 'rest_availability', 'http_requests', 'loopback_requests', 'background_updates', 'dotorg_communication', 'https_status', 'page_cache', 'authorization_header' ) as $slow ) {
+			$this->assertNotContains( $slow, $tests, "$slow makes a real network call." );
+		}
+	}
+
+	public function test_the_php_check_is_the_only_network_call_and_it_waits_three_seconds_at_most() {
+		delete_site_transient( 'php_check_' . md5( PHP_VERSION ) );
+
+		$seen   = array();
+		$filter = function ( $pre, $args, $url ) use ( &$seen ) {
+			$seen[] = array( 'url' => $url, 'timeout' => $args['timeout'] );
+
+			return array( 'response' => array( 'code' => 200 ), 'body' => wp_json_encode( array( 'recommended_version' => '8.3', 'minimum_version' => '7.4', 'is_supported' => true, 'is_secure' => true, 'is_acceptable' => true ) ), 'headers' => array() );
+		};
+		add_filter( 'pre_http_request', $filter, 10, 3 );
+
+		devbase_heartbeat_site_health();
+
+		remove_filter( 'pre_http_request', $filter, 10 );
+
+		$this->assertCount( 1, $seen, 'Only PHP check asks WordPress.org, and only while its week-long answer is missing.' );
+		$this->assertStringContainsString( 'api.wordpress.org/core/serve-happy', $seen[0]['url'] );
+		$this->assertLessThanOrEqual( 3, $seen[0]['timeout'] );
+		$this->assertFalse( $this->has_cap_filter(), 'The time limit is only in force while the tests run.' );
+	}
+
+	private function has_cap_filter() {
+		$args = apply_filters( 'http_request_args', array( 'timeout' => 30 ), 'https://example.test/' );
+
+		return 3 === $args['timeout'];
 	}
 }

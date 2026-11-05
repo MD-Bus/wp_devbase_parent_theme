@@ -10,6 +10,16 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.32.0] — 2026-11-04
+
+### Added
+
+- **Site health reports now carry WordPress's own Site Health results.** The report gets a `site_health` block: how many of WordPress's local tests passed, were
+  "recommended" or "critical", and for each test that did not pass its id and WordPress's own sentence (critical first, 30 at most). Nineteen tests run, in 6 to
+  30 ms, only when a ping asks for the report. The slow ones that make network calls (loopback, background updates, WordPress.org, HTTPS status, REST) are not
+  run; the one that asks api.wordpress.org about the PHP version (WordPress keeps the answer for a week) gets 3 seconds at most. Needs Brand Relay 0.37.0 or
+  later to show it (older versions ignore the block).
+
 ## [1.31.0] — 2026-11-04
 
 ### Added

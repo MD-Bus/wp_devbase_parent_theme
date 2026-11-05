@@ -43,7 +43,7 @@ is at 0.28.x, and the services below exist only from 0.18 up.
 
 **2. Heartbeat (done in 1.23.0).** Site health reports, sent when Brand Relay's signed ping names `health`: Brand Relay is the clock,
 because most sites get few visits and many have cron off. The plan is pulled before anything is sent. See
-`inc/maintenance/AGENT.md`. Brand Relay 0.30.0 does its part (plans' "Trigger from Brand Relay"). Open: Brand Relay could read a `parent_theme` field.
+`inc/maintenance/AGENT.md`. Brand Relay 0.30.0 does its part (plans' "Trigger from Brand Relay"). WordPress's own Site Health results are in the report (see `inc/maintenance/AGENT.md`). Open: Brand Relay could read a `parent_theme` field; the slow network tests (loopback, background updates) could be a daily phase; the latest WordPress version and the outdated plugin and theme names are not sent yet.
 
 **3. Error events (done in 1.24.0; warnings and notices added after).** Fatals and uncaught exceptions, then warnings, notices and deprecations
 through a chained error handler that only counts, scrubbed and queued, sent when the ping names `events`, only while the plan has error tracking.
