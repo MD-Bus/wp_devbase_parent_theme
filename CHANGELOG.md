@@ -10,6 +10,8 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.33.0] — 2026-11-05
+
 ### Security
 
 - **Theme Settings now needs an administrator.** No options page set a capability, so SCF's default (`edit_posts`) applied and any Contributor, Author or Editor
