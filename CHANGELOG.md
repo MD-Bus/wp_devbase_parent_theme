@@ -31,8 +31,9 @@ see the README's Versioning section. Every release needs a section here.
 - **Backups accept only what they should from Brand Relay.** File names must be plain names (no folder, no `..`), upload and complete addresses must be Brand
   Relay backup paths (a path like `@other.host` could send the site key elsewhere), a downloaded file must match the checksum listed for it (required), a failed
   rename fails the job, and the administrator a backup runs as is dropped before shutdown hooks.
-- **Webhook and credit addresses are fetched with `wp_safe_remote_*`**, so they cannot reach private or local addresses (and only ports 80, 443 and 8080). A
-  receiver that lives there is allowed with `devbase/forms/webhook_unsafe_ok`; a local environment is exempt.
+- **Webhook and credit addresses are fetched with `wp_safe_remote_*`**, so they cannot reach private or local addresses (the server's own network). A webhook
+  keeps working on any port of a public address (n8n on `:5678`): the port of the destination's own URL is allowed for that one request. A receiver that lives on a
+  private address is allowed with `devbase/forms/webhook_unsafe_ok`; a local environment is exempt.
 - **The test form is off on live sites.** `?devbase_test_form=1` and its handler load only when `WP_ENVIRONMENT_TYPE` is local or development (or
   `devbase/test_form/enabled`).
 - **CAPTCHA tokens must come from this site.** Turnstile and reCAPTCHA answers naming another hostname are refused (more names with

@@ -296,4 +296,33 @@ class Test_Security_Hardening extends WP_UnitTestCase {
 		$this->assertSame( 'production', wp_get_environment_type() );
 		$this->assertFalse( has_action( 'admin_post_nopriv_devbase_test_form_submit' ), 'The debug form must not take public submissions on a live site.' );
 	}
+
+	/**
+	 * Runs a webhook destination. The request itself is faked, but the fake also asks WordPress's own
+	 * URL check (the one wp_safe_remote_post applies) about the address, while the theme's port
+	 * allowance is in place, and returns that verdict as the response.
+	 */
+	private function run_webhook( $url ) {
+		$fake = static function ( $pre, $args, $u ) {
+			$ok = (bool) wp_http_validate_url( $u );
+			return array( 'headers' => array(), 'body' => '', 'response' => array( 'code' => $ok ? 200 : 403, 'message' => '' ), 'cookies' => array(), 'filename' => null );
+		};
+		add_filter( 'pre_http_request', $fake, 10, 3 );
+		$result = devbase_forms_dispatch_webhook( array( 'label' => 'T', 'url' => $url ), 'f', array() );
+		remove_filter( 'pre_http_request', $fake, 10 );
+		return $result;
+	}
+
+	public function test_a_webhook_on_a_public_address_works_on_any_port() {
+		$this->assertTrue( $this->run_webhook( 'http://93.184.216.34:5678/hook' )['success'] );
+		$this->assertTrue( $this->run_webhook( 'https://93.184.216.34/hook' )['success'] );
+		$this->assertFalse( has_filter( 'http_allowed_safe_ports' ), 'The port allowance must not outlive the request.' );
+		$this->assertFalse( (bool) wp_http_validate_url( 'http://93.184.216.34:5678/hook' ), 'Other code keeps WordPress\'s default port rule.' );
+	}
+
+	public function test_a_webhook_cannot_reach_a_private_or_local_address() {
+		$this->assertFalse( $this->run_webhook( 'http://127.0.0.1:5678/hook' )['success'] );
+		$this->assertFalse( $this->run_webhook( 'http://192.168.1.5/hook' )['success'] );
+		$this->assertFalse( $this->run_webhook( 'http://169.254.169.254/latest/meta-data' )['success'] );
+	}
 }
