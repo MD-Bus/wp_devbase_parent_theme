@@ -17,7 +17,9 @@
 //   GET {relay url}/v1/site        Authorization: Bearer {relay site key}
 //   { ..., "params": { "warden_base_url":    "https://...",
 //                      "warden_public_key":  "base64...",
-//                      "warden_licence_key": "WRD-..." } }
+//                      "warden_licence_key": "WRD-...",
+//                      "relay_base_url":     "https://...",
+//                      "relay_site_key":     "brs_..." } }
 //
 // ONE licence key (since 1.18.0; Warden 0.5.0 lets one key cover several
 // apps). It is checked as the tag parent-theme for the base theme and child-theme for
@@ -32,9 +34,10 @@
 //
 // The ONLY two values typed on this site are the Brand Relay URL and site key
 // (fields `relay_base_url` and `relay_site_key`, Theme Settings > Licence >
-// Brand Relay). Everything else is provisioned. For development, or to keep
-// them out of the database, wp-config.php may set either one, and a constant
-// wins over its field:
+// Remote setup), and only once, to connect it. After that they can be changed
+// from Brand Relay like everything else. For development, or to keep them out
+// of the database, wp-config.php may set either one, and a constant wins over
+// its field:
 //
 //   define( 'DEVBASE_RELAY_URL',      'https://relay.example.com' );
 //   define( 'DEVBASE_RELAY_SITE_KEY', 'brs_...' );
@@ -59,16 +62,21 @@
 // param means "no change", never "clear": revoking a licence is done in
 // Warden, where it is actually enforced.
 //
-// The Warden address and signing key are FILL-ONLY: accepted when the field
-// is empty (a fresh install or a removed value), never overwritten while one
-// is present. They decide where theme code is downloaded from and which
-// signature to trust, so they must not be changeable by whoever controls a
-// Brand Relay account. Licence keys carry no such power (a wrong one is simply
-// rejected by Warden), so they are always brought back in line.
+// EVERY value is brought back in line with Brand Relay on each sync. That is
+// the point of it: a site must never need someone on it to move to another
+// Warden, another signing key, another Brand Relay or another site key. It
+// also means a Brand Relay account decides where theme code comes from, so that
+// account must be protected like the code itself. To take that power away on a
+// site, hold the value in code (devbase_relay_value_in_code()).
 //
-// The root of the chain is the Brand Relay URL and site key themselves: they
-// are what a sync needs, so they cannot be restored by one. Set them as
-// wp-config.php constants where a site's users could otherwise clear the field.
+// The Brand Relay address and site key are what the next sync needs, so a wrong
+// one would cut the site off for good. They are saved only after a request with
+// the new values succeeds (devbase_relay_request()). If either one is removed on
+// the site there is no sync to restore it; set them as wp-config.php constants
+// where a site's users could otherwise clear the field.
+//
+// A value that is sent but not applied is named in `refused` in the answer
+// (never its value), so Brand Relay can say so instead of "nothing changed".
 
 define( 'DEVBASE_RELAY_SYNC_HOOK', 'devbase_relay_sync' ); // retired: only used to remove the old schedule
 
@@ -168,18 +176,44 @@ function devbase_relay_ping_secret() {
 }
 
 /**
- * The provisionable values: param name (identical to the field name) =>
- * how to treat it. `fill_only` values are never overwritten while present;
- * `tracks` are the themes whose cached Warden answer a change invalidates (the
- * one licence key serves both). Order matters: the address and key are written
- * before the licence that depends on them.
+ * The provisionable values: param name (identical to the field name) => the
+ * themes whose cached Warden answer a change invalidates. The cached answer
+ * was given by the old Warden, under the old key, about the old licence, so any
+ * of the three invalidates it for both themes. Order matters: the address and
+ * key are written before the licence that depends on them.
  */
 function devbase_relay_params() {
+	$themes = array_values( array_unique( array_filter( array( get_template(), is_child_theme() ? get_stylesheet() : '' ) ) ) );
+
 	return array(
-		'warden_base_url'    => array( 'fill_only' => true,  'tracks' => array() ),
-		'warden_public_key'  => array( 'fill_only' => true,  'tracks' => array() ),
-		'warden_licence_key' => array( 'fill_only' => false, 'tracks' => array_values( array_unique( array_filter( array( get_template(), is_child_theme() ? get_stylesheet() : '' ) ) ) ) ),
+		'warden_base_url'    => $themes,
+		'warden_public_key'  => $themes,
+		'warden_licence_key' => $themes,
+		'relay_base_url'     => array(),
+		'relay_site_key'     => array(),
 	);
+}
+
+/**
+ * The value a param is held at in code, or null when it can be provisioned. A
+ * value held in code always wins: it is the one way to refuse a param on a site.
+ *
+ * @return string|null
+ */
+function devbase_relay_value_in_code( $name ) {
+	$value = null;
+
+	if ( 'warden_base_url' === $name && defined( 'DEVBASE_WARDEN_URL' ) ) {
+		$value = devbase_warden_base_url();
+	} elseif ( 'warden_public_key' === $name && devbase_warden_pinned_keys() ) {
+		$value = devbase_warden_public_key();
+	} elseif ( 'relay_base_url' === $name && defined( 'DEVBASE_RELAY_URL' ) ) {
+		$value = untrailingslashit( trim( (string) DEVBASE_RELAY_URL ) );
+	} elseif ( 'relay_site_key' === $name && defined( 'DEVBASE_RELAY_SITE_KEY' ) ) {
+		$value = trim( (string) DEVBASE_RELAY_SITE_KEY );
+	}
+
+	return apply_filters( 'devbase/relay/value_in_code', $value, $name );
 }
 
 /**
@@ -194,6 +228,7 @@ function devbase_relay_clean_param( $name, $value ) {
 
 	switch ( $name ) {
 		case 'warden_base_url':
+		case 'relay_base_url':
 			$url = esc_url_raw( $value );
 
 			return ( 'https' === wp_parse_url( $url, PHP_URL_SCHEME ) || 'local' === wp_get_environment_type() ) ? untrailingslashit( $url ) : '';
@@ -202,6 +237,9 @@ function devbase_relay_clean_param( $name, $value ) {
 			$raw = base64_decode( $value, true );
 
 			return ( false !== $raw && SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES === strlen( $raw ) ) ? $value : '';
+
+		case 'relay_site_key':
+			return preg_match( '/^brs_\S{1,250}$/', $value ) ? $value : '';
 
 		default:
 			return substr( sanitize_text_field( $value ), 0, 128 );
@@ -215,21 +253,19 @@ function devbase_relay_get_state() {
 }
 
 /**
- * Fetches this site's whole answer from Brand Relay (`GET /v1/site`): the params
- * and, for a site with a subscription, the `licence` object (plan, services and
- * limits in force). Every successful pull also refreshes the plan snapshot
- * (inc/maintenance/plan.php), since this is the one place it can change.
+ * One `GET /v1/site` with the given address and key. Saves nothing, so it also
+ * proves a new address and key work before they replace the current ones.
  *
  * @return array|string The decoded answer, or an error message.
  */
-function devbase_relay_fetch_site() {
+function devbase_relay_request( $url, $key ) {
 	$response = wp_remote_get(
-		devbase_relay_url() . '/v1/site',
+		$url . '/v1/site',
 		array(
 			'timeout'     => 10,
 			'redirection' => 0,
 			'headers'     => array(
-				'Authorization' => 'Bearer ' . devbase_relay_site_key(),
+				'Authorization' => 'Bearer ' . $key,
 				'Accept'        => 'application/json',
 			),
 		)
@@ -247,8 +283,22 @@ function devbase_relay_fetch_site() {
 
 	$data = json_decode( wp_remote_retrieve_body( $response ), true );
 
+	return is_array( $data ) ? $data : 'malformed JSON';
+}
+
+/**
+ * Fetches this site's whole answer from Brand Relay (`GET /v1/site`): the params
+ * and, for a site with a subscription, the `licence` object (plan, services and
+ * limits in force). Every successful pull also refreshes the plan snapshot
+ * (inc/maintenance/plan.php), since this is the one place it can change.
+ *
+ * @return array|string The decoded answer, or an error message.
+ */
+function devbase_relay_fetch_site() {
+	$data = devbase_relay_request( devbase_relay_url(), devbase_relay_site_key() );
+
 	if ( ! is_array( $data ) ) {
-		return 'malformed JSON';
+		return $data;
 	}
 
 	devbase_relay_store_plan( $data );
@@ -276,14 +326,15 @@ function devbase_relay_fetch_params() {
  *
  * @param bool $respect_interval Apply the minimum gap between pulls. True for
  *                               pings; the admin paths pass false.
- * @return array { ok: bool, error: string, changed: string[] } where
- *               `changed` lists param names, never values.
+ * @return array { ok: bool, error: string, changed: string[], refused: string[] }
+ *               where `changed` and `refused` list param names, never values.
  */
 function devbase_relay_sync( $respect_interval = false ) {
 	$result = array(
 		'ok'      => false,
 		'error'   => '',
 		'changed' => array(),
+		'refused' => array(),
 	);
 
 	if ( ! devbase_relay_enabled() ) {
@@ -319,29 +370,57 @@ function devbase_relay_sync( $respect_interval = false ) {
 		return $result;
 	}
 
+	$rules    = devbase_relay_params();
+	$incoming = array();
+
+	foreach ( $rules as $name => $tracks ) {
+		if ( ! isset( $params[ $name ] ) || ( is_string( $params[ $name ] ) && '' === trim( $params[ $name ] ) ) ) {
+			continue;
+		}
+
+		$value = devbase_relay_clean_param( $name, $params[ $name ] );
+
+		if ( '' === $value ) {
+			$result['refused'][] = $name;
+			continue;
+		}
+
+		$in_code = devbase_relay_value_in_code( $name );
+		$current = null === $in_code ? trim( (string) get_field( $name, 'option' ) ) : $in_code;
+
+		if ( $value === $current ) {
+			continue;
+		}
+
+		if ( null !== $in_code ) {
+			$result['refused'][] = $name;
+			continue;
+		}
+
+		$incoming[ $name ] = $value;
+	}
+
+	// The next sync depends on these two: a pair that doesn't work is never saved.
+	$connection = array_intersect_key( $incoming, array_flip( array( 'relay_base_url', 'relay_site_key' ) ) );
+
+	if ( $connection ) {
+		$answer = devbase_relay_request( $connection['relay_base_url'] ?? devbase_relay_url(), $connection['relay_site_key'] ?? devbase_relay_site_key() );
+
+		if ( ! is_array( $answer ) ) {
+			error_log( "devbase_parent_theme: new Brand Relay address or key not saved — {$answer}" );
+
+			$incoming          = array_diff_key( $incoming, $connection );
+			$result['refused'] = array_merge( $result['refused'], array_keys( $connection ) );
+		}
+	}
+
 	$stale = array();
 
-	foreach ( devbase_relay_params() as $name => $rule ) {
-		if ( ! isset( $params[ $name ] ) ) {
-			continue;
-		}
-
-		// A value pinned in code is not provisioned at all (devbase_warden_pinned_keys(), DEVBASE_WARDEN_URL).
-		if ( ( 'warden_public_key' === $name && devbase_warden_pinned_keys() ) || ( 'warden_base_url' === $name && defined( 'DEVBASE_WARDEN_URL' ) ) ) {
-			continue;
-		}
-
-		$value   = devbase_relay_clean_param( $name, $params[ $name ] );
-		$current = trim( (string) get_field( $name, 'option' ) );
-
-		if ( '' === $value || $value === $current || ( $rule['fill_only'] && '' !== $current ) ) {
-			continue;
-		}
-
+	foreach ( $incoming as $name => $value ) {
 		update_field( $name, $value, 'option' );
 		$result['changed'][] = $name;
 
-		$stale = array_merge( $stale, $rule['tracks'] );
+		$stale = array_merge( $stale, $rules[ $name ] );
 
 		// The single key replaces the two old per-theme keys for good.
 		if ( 'warden_licence_key' === $name ) {
@@ -349,10 +428,10 @@ function devbase_relay_sync( $respect_interval = false ) {
 		}
 	}
 
-	// A new key makes the cached Warden answer about the OLD key. Drop it so
-	// the next check asks about the new one, and ask now rather than waiting
-	// for core's schedule: that is the point of changing a licence remotely.
-	if ( $result['changed'] ) {
+	// A new Warden address, signing key or licence makes the cached answer out
+	// of date. Drop it so the next check uses the new values, and ask now rather
+	// than waiting for core's schedule: that is the point of changing them remotely.
+	if ( $stale ) {
 		foreach ( array_unique( $stale ) as $stylesheet ) {
 			delete_option( devbase_warden_state_option( $stylesheet ) );
 		}
@@ -537,6 +616,7 @@ add_action( 'rest_api_init', function () {
 				'ok'      => true,
 				'error'   => '',
 				'changed' => array(),
+				'refused' => array(),
 			);
 
 			if ( in_array( 'settings', $run, true ) ) {
@@ -553,6 +633,7 @@ add_action( 'rest_api_init', function () {
 					'ok'      => $result['ok'],
 					'error'   => $result['error'],
 					'changed' => $result['changed'],
+					'refused' => $result['refused'],
 					'ran'     => (object) $ran,
 				),
 				( 'rate limited' === $result['error'] && ! $services ) ? 429 : 200

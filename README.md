@@ -416,13 +416,23 @@ param, which is public) named exactly like the field it fills:
 | Param | Fills | Behaviour |
 |---|---|---|
 | `warden_licence_key` | Licence Key | always brought back in line |
-| `warden_base_url` | Warden URL | **fill-only**: accepted when empty, never overwritten; `https` only |
-| `warden_public_key` | Warden Public Key | **fill-only**: accepted when empty, never overwritten; must be a base64 Ed25519 key |
+| `warden_base_url` | Warden URL | always brought back in line; `https` only |
+| `warden_public_key` | Warden Public Key | always brought back in line; must be a base64 Ed25519 key |
+| `relay_base_url` | Brand Relay URL | changed once a request to the new address succeeds; `https` only |
+| `relay_site_key` | Site key | changed once a request with the new key succeeds; starts with `brs_` |
 
-The address and signing key are fill-only because they decide where theme
-code is downloaded from and which signature is trusted; they are not
-changeable by whoever controls a Brand Relay account. An empty or missing
+Everything can be changed from Brand Relay, so no one has to touch a site to
+move it to another Warden, signing key or Brand Relay. That includes where theme
+code is downloaded from and which signature is trusted, so protect the Brand
+Relay account accordingly. A value set in code (`DEVBASE_WARDEN_URL`,
+`DEVBASE_WARDEN_PUBLIC_KEY`, `inc/updates/pinned-keys.php`, `DEVBASE_RELAY_URL`,
+`DEVBASE_RELAY_SITE_KEY`) wins and cannot be changed remotely. A value that was
+sent but not applied (invalid, set in code, or a Brand Relay address or key that
+did not work) is listed in `refused` in the ping's answer. An empty or missing
 param means "no change", never "clear": revoke a licence in Warden.
+
+To change a Warden signing key, change `warden_public_key` when the new Warden
+starts signing: the site trusts one key at a time.
 
 **When it syncs:** only when asked. There is no schedule. A sync runs on a
 ping (below), when an administrator saves the Licence page, and on **Check for

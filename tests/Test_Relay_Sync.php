@@ -155,7 +155,7 @@ class Test_Relay_Sync extends WP_UnitTestCase {
 		}
 	}
 
-	public function test_the_warden_address_and_key_fill_an_empty_field_but_never_overwrite() {
+	public function test_the_warden_address_and_key_fill_an_empty_field_and_can_be_changed() {
 		$public = base64_encode( str_repeat( 'k', SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES ) );
 		update_field( 'warden_base_url', '', 'option' );
 		update_field( 'warden_public_key', '', 'option' );
@@ -166,12 +166,95 @@ class Test_Relay_Sync extends WP_UnitTestCase {
 		$this->assertSame( 'https://warden.test', devbase_warden_base_url() );
 		$this->assertSame( $public, devbase_warden_public_key() );
 
-		$this->fake_relay( 200, array( 'params' => array( 'warden_base_url' => 'https://evil.test', 'warden_public_key' => base64_encode( str_repeat( 'x', SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES ) ) ) ) );
+		$other = base64_encode( str_repeat( 'x', SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES ) );
+		$this->fake_relay( 200, array( 'params' => array( 'warden_base_url' => 'https://new-warden.test', 'warden_public_key' => $other ) ) );
+
+		$result = devbase_relay_sync();
+
+		$this->assertSame( array( 'warden_base_url', 'warden_public_key' ), $result['changed'] );
+		$this->assertSame( 'https://new-warden.test', devbase_warden_base_url() );
+		$this->assertSame( $other, devbase_warden_public_key() );
+	}
+
+	public function test_a_changed_warden_address_drops_the_cached_answer() {
+		update_field( 'warden_base_url', 'https://warden.test', 'option' );
+		update_option( devbase_warden_state_option( get_template() ), array( 'response' => array( 'valid' => true ) ), false );
+		$this->fake_relay( 200, array( 'params' => array( 'warden_base_url' => 'https://new-warden.test' ) ) );
 
 		devbase_relay_sync();
 
+		$this->assertArrayNotHasKey( 'response', devbase_warden_get_state( get_template() ) );
+	}
+
+	public function test_a_value_that_is_not_applied_is_named_in_refused() {
+		update_field( 'warden_base_url', 'https://warden.test', 'option' );
+		$this->fake_relay( 200, array( 'params' => array( 'warden_base_url' => 'http://warden.test', 'warden_public_key' => 'not-a-key' ) ) );
+
+		$result = devbase_relay_sync();
+
+		$this->assertTrue( $result['ok'] );
+		$this->assertSame( array(), $result['changed'] );
+		$this->assertSame( array( 'warden_base_url', 'warden_public_key' ), $result['refused'] );
 		$this->assertSame( 'https://warden.test', devbase_warden_base_url() );
-		$this->assertSame( $public, devbase_warden_public_key() );
+	}
+
+	public function test_a_value_held_in_code_is_refused_unless_it_already_matches() {
+		$this->fake_relay( 200, array( 'params' => array( 'relay_base_url' => 'https://other-relay.test', 'relay_site_key' => 'brs_testkey' ) ) );
+
+		$result = devbase_relay_sync();
+
+		$this->assertSame( array(), $result['changed'] );
+		$this->assertSame( array( 'relay_base_url' ), $result['refused'] );
+	}
+
+	/** The DEVBASE_RELAY_* constants of this run hold both values, so release them for one test. */
+	private function release_relay_fields() {
+		add_filter( 'devbase/relay/value_in_code', function ( $value, $name ) {
+			return 0 === strpos( $name, 'relay_' ) ? null : $value;
+		}, 10, 2 );
+		update_field( 'relay_base_url', 'https://relay.test', 'option' );
+		update_field( 'relay_site_key', 'brs_testkey', 'option' );
+	}
+
+	public function test_a_new_relay_address_and_key_are_saved_once_they_work() {
+		$this->release_relay_fields();
+		$this->fake_relay( 200, array( 'params' => array( 'relay_base_url' => 'https://relay.test/next/', 'relay_site_key' => 'brs_newkey' ) ) );
+
+		$result = devbase_relay_sync();
+
+		$this->assertSame( array( 'relay_base_url', 'relay_site_key' ), $result['changed'] );
+		$this->assertSame( 'https://relay.test/next', get_field( 'relay_base_url', 'option' ) );
+		$this->assertSame( 'brs_newkey', get_field( 'relay_site_key', 'option' ) );
+
+		$probe = end( $this->requests );
+		$this->assertSame( 'https://relay.test/next/v1/site', $probe['url'] );
+		$this->assertSame( 'Bearer brs_newkey', $probe['args']['headers']['Authorization'] );
+	}
+
+	public function test_a_relay_address_or_key_that_does_not_work_is_never_saved() {
+		$this->release_relay_fields();
+
+		$this->filter = function ( $preempt, $args, $url ) {
+			$ok = 'Bearer brs_testkey' === ( $args['headers']['Authorization'] ?? '' );
+
+			return array(
+				'response' => array( 'code' => $ok ? 200 : 401 ),
+				'body'     => wp_json_encode( array( 'params' => array( 'relay_site_key' => 'brs_revoked', 'warden_licence_key' => 'WRD-NEW' ) ) ),
+				'headers'  => array(),
+			);
+		};
+		add_filter( 'pre_http_request', $this->filter, 10, 3 );
+
+		$result = devbase_relay_sync();
+
+		$this->assertSame( array( 'warden_licence_key' ), $result['changed'] );
+		$this->assertSame( array( 'relay_site_key' ), $result['refused'] );
+		$this->assertSame( 'brs_testkey', get_field( 'relay_site_key', 'option' ) );
+	}
+
+	public function test_a_site_key_of_the_wrong_shape_is_refused() {
+		$this->assertSame( '', devbase_relay_clean_param( 'relay_site_key', 'not-a-key' ) );
+		$this->assertSame( 'brs_abc', devbase_relay_clean_param( 'relay_site_key', ' brs_abc ' ) );
 	}
 
 	public function test_a_non_https_address_or_malformed_key_is_ignored() {
@@ -301,6 +384,6 @@ class Test_Relay_Sync extends WP_UnitTestCase {
 	}
 
 	public function test_the_only_licence_param_is_warden_licence_key() {
-		$this->assertSame( array( 'warden_base_url', 'warden_public_key', 'warden_licence_key' ), array_keys( devbase_relay_params() ) );
+		$this->assertSame( array( 'warden_base_url', 'warden_public_key', 'warden_licence_key', 'relay_base_url', 'relay_site_key' ), array_keys( devbase_relay_params() ) );
 	}
 }

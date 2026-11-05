@@ -10,6 +10,20 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.34.0] — 2026-11-05
+
+### Added
+
+- **The Brand Relay address and site key can be changed from Brand Relay**, through the site params `relay_base_url` and `relay_site_key`. They are saved only
+  after a request with the new values succeeds, so a wrong one cannot cut the site off.
+- **The ping's answer lists `refused`**: params sent but not applied (invalid, set in code, or a Brand Relay address or key that failed). Names only.
+
+### Changed
+
+- **The Warden address and public key are no longer fill-only.** A sync now changes them like the licence key, and drops the cached Warden answer so the new values
+  are checked at once. A site could not otherwise move to another Warden without someone on it. A Brand Relay account therefore decides where theme code comes from;
+  to refuse that on a site, set the value in code (`DEVBASE_WARDEN_URL`, `DEVBASE_WARDEN_PUBLIC_KEY`, `inc/updates/pinned-keys.php`).
+
 ## [1.33.0] — 2026-11-05
 
 ### Security
