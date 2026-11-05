@@ -611,25 +611,6 @@ class Test_Backups extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( '<td>—</td>', $html );
 	}
 
-	public function test_the_backup_leaves_out_wordpress_core_and_keeps_the_rest() {
-		$task = array( 'id' => 'wpvivid-x', 'jobs' => array(
-			array( 'backup_type' => 'backup_db' ),
-			array( 'backup_type' => 'backup_themes' ),
-			array( 'backup_type' => 'backup_plugin' ),
-			array( 'backup_type' => 'backup_uploads' ),
-			array( 'backup_type' => 'backup_content' ),
-			array( 'backup_type' => 'backup_core' ),
-			array( 'backup_type' => 'backup_merge' ),
-		) );
-
-		$result = devbase_backup_without_core( $task );
-
-		$this->assertSame( array( 'backup_db', 'backup_themes', 'backup_plugin', 'backup_uploads', 'backup_content', 'backup_merge' ), array_column( $result['jobs'], 'backup_type' ) );
-		$this->assertSame( array( 0, 1, 2, 3, 4, 5 ), array_keys( $result['jobs'] ), 'The jobs stay a plain list.' );
-		$this->assertSame( 'wpvivid-x', $result['id'] );
-		$this->assertSame( $result, devbase_backup_without_core( $result ), 'Nothing to remove is not an error.' );
-	}
-
 	public function test_a_task_still_waiting_to_resume_counts_as_running() {
 		update_option( 'wpvivid_task_list', array( 'wpvivid-w' => array( 'id' => 'wpvivid-w', 'status' => array( 'str' => 'wait_resume' ) ) ) );
 

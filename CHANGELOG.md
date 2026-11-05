@@ -10,6 +10,13 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.30.6] — 2026-11-04
+
+### Changed
+
+- **A backup includes WordPress core again** (`wp-admin`, `wp-includes`, about 23 MB zipped), as WPvivid's own backup does. Plugins and hosts can edit core files, and
+  a restore that reinstalled a clean copy would lose those edits. 1.30.4 and 1.30.5 left it out; the backup is the whole site once more.
+
 ## [1.30.5] — 2026-11-04
 
 ### Changed

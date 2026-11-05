@@ -290,7 +290,7 @@ function devbase_backup_after_engine() {
 
 /**
  * Makes WPvivid prepare a backup task with ITS NEWER ENGINE (the one its own dashboard uses): the database
- * and everything under wp-content, kept on this site only (never sent to ITS remote storage), merged into
+ * and all the files (WordPress core and wp-content), kept on this site only (never sent to ITS remote storage), merged into
  * one archive.
  *
  * Why the newer engine: it does not follow symlinked folders (hosts like WordPress.com provide Jetpack,
@@ -298,8 +298,8 @@ function devbase_backup_after_engine() {
  * backup of ocwof.org, 157 MB against 68 MB), it skips the usual leftovers by default, and it is the code
  * WPvivid itself maintains and restores.
  *
- * WordPress core is not part of OUR backup (a restore never needs wp-admin and wp-includes, 23 MB zipped),
- * and the engine always lists it for "files+db", so its job is dropped from the task.
+ * WordPress core (wp-admin, wp-includes, 23 MB zipped) IS part of it: plugins and hosts can edit core files,
+ * and a restore that reinstalled a clean copy would lose those edits. Same as WPvivid's own backup.
  *
  * @return string|WP_Error The task id.
  */
@@ -341,29 +341,7 @@ function devbase_backup_engine_prepare() {
 		return new WP_Error( 'prepare', (string) ( $result['error'] ?? 'WPvivid Backup could not prepare the backup.' ) );
 	}
 
-	$stored = WPvivid_Setting::get_tasks()[ $result['task_id'] ] ?? null;
-	if ( is_array( $stored ) ) {
-		WPvivid_Setting::update_task( $result['task_id'], devbase_backup_without_core( $stored ) );
-	}
-
 	return (string) $result['task_id'];
-}
-
-/**
- * A WPvivid task without its WordPress core job.
- *
- * @param array $task A task of WPvivid's newer engine.
- * @return array
- */
-function devbase_backup_without_core( $task ) {
-	$task['jobs'] = array_values( array_filter(
-		(array) ( $task['jobs'] ?? array() ),
-		function ( $job ) {
-			return 'backup_core' !== ( $job['backup_type'] ?? '' );
-		}
-	) );
-
-	return $task;
 }
 
 /**
