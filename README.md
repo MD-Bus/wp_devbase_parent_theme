@@ -418,18 +418,18 @@ param, which is public) named exactly like the field it fills:
 | `warden_licence_key` | Licence Key | always brought back in line |
 | `warden_base_url` | Warden URL | always brought back in line; `https` only |
 | `warden_public_key` | Warden Public Key | always brought back in line; must be a base64 Ed25519 key |
-| `relay_base_url` | Brand Relay URL | changed once a request to the new address succeeds; `https` only |
-| `relay_site_key` | Site key | changed once a request with the new key succeeds; starts with `brs_` |
 
-Everything can be changed from Brand Relay, so no one has to touch a site to
-move it to another Warden, signing key or Brand Relay. That includes where theme
-code is downloaded from and which signature is trusted, so protect the Brand
-Relay account accordingly. A value set in code (`DEVBASE_WARDEN_URL`,
-`DEVBASE_WARDEN_PUBLIC_KEY`, `inc/updates/pinned-keys.php`, `DEVBASE_RELAY_URL`,
-`DEVBASE_RELAY_SITE_KEY`) wins and cannot be changed remotely. A value that was
-sent but not applied (invalid, set in code, or a Brand Relay address or key that
-did not work) is listed in `refused` in the ping's answer. An empty or missing
-param means "no change", never "clear": revoke a licence in Warden.
+All three can be changed from Brand Relay, so no one has to touch a site to move
+it to another Warden or signing key. That includes where theme code is downloaded
+from and which signature is trusted, so protect the Brand Relay account
+accordingly. A value set in code (`DEVBASE_WARDEN_URL`,
+`DEVBASE_WARDEN_PUBLIC_KEY`, `inc/updates/pinned-keys.php`) wins and cannot be
+changed remotely. A value that was sent but not applied (invalid, or set in code)
+is listed in `refused` in the ping's answer. An empty or missing param means "no
+change", never "clear": revoke a licence in Warden.
+
+The Brand Relay URL and site key are entered by hand on the Licence page's Remote
+setup tab; a sync never changes them.
 
 To change a Warden signing key, change `warden_public_key` when the new Warden
 starts signing: the site trusts one key at a time.

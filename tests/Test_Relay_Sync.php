@@ -199,62 +199,35 @@ class Test_Relay_Sync extends WP_UnitTestCase {
 	}
 
 	public function test_a_value_held_in_code_is_refused_unless_it_already_matches() {
-		$this->fake_relay( 200, array( 'params' => array( 'relay_base_url' => 'https://other-relay.test', 'relay_site_key' => 'brs_testkey' ) ) );
+		$pinned = base64_encode( str_repeat( 'p', SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES ) );
+		$hold   = function () use ( $pinned ) {
+			return array( $pinned );
+		};
+		add_filter( 'devbase/warden/pinned_keys', $hold );
+
+		$this->fake_relay( 200, array( 'params' => array( 'warden_public_key' => base64_encode( str_repeat( 'x', SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES ) ) ) ) );
+		$other = devbase_relay_sync();
+
+		$this->fake_relay( 200, array( 'params' => array( 'warden_public_key' => $pinned ) ) );
+		$same = devbase_relay_sync();
+
+		remove_filter( 'devbase/warden/pinned_keys', $hold );
+
+		$this->assertSame( array( 'warden_public_key' ), $other['refused'] );
+		$this->assertSame( array(), $other['changed'] );
+		$this->assertSame( array(), $same['refused'] );
+	}
+
+	public function test_the_brand_relay_address_and_key_are_never_synced() {
+		update_field( 'relay_base_url', 'https://relay.test', 'option' );
+		update_field( 'relay_site_key', 'brs_testkey', 'option' );
+		$this->fake_relay( 200, array( 'params' => array( 'relay_base_url' => 'https://other-relay.test', 'relay_site_key' => 'brs_other' ) ) );
 
 		$result = devbase_relay_sync();
 
 		$this->assertSame( array(), $result['changed'] );
-		$this->assertSame( array( 'relay_base_url' ), $result['refused'] );
-	}
-
-	/** The DEVBASE_RELAY_* constants of this run hold both values, so release them for one test. */
-	private function release_relay_fields() {
-		add_filter( 'devbase/relay/value_in_code', function ( $value, $name ) {
-			return 0 === strpos( $name, 'relay_' ) ? null : $value;
-		}, 10, 2 );
-		update_field( 'relay_base_url', 'https://relay.test', 'option' );
-		update_field( 'relay_site_key', 'brs_testkey', 'option' );
-	}
-
-	public function test_a_new_relay_address_and_key_are_saved_once_they_work() {
-		$this->release_relay_fields();
-		$this->fake_relay( 200, array( 'params' => array( 'relay_base_url' => 'https://relay.test/next/', 'relay_site_key' => 'brs_newkey' ) ) );
-
-		$result = devbase_relay_sync();
-
-		$this->assertSame( array( 'relay_base_url', 'relay_site_key' ), $result['changed'] );
-		$this->assertSame( 'https://relay.test/next', get_field( 'relay_base_url', 'option' ) );
-		$this->assertSame( 'brs_newkey', get_field( 'relay_site_key', 'option' ) );
-
-		$probe = end( $this->requests );
-		$this->assertSame( 'https://relay.test/next/v1/site', $probe['url'] );
-		$this->assertSame( 'Bearer brs_newkey', $probe['args']['headers']['Authorization'] );
-	}
-
-	public function test_a_relay_address_or_key_that_does_not_work_is_never_saved() {
-		$this->release_relay_fields();
-
-		$this->filter = function ( $preempt, $args, $url ) {
-			$ok = 'Bearer brs_testkey' === ( $args['headers']['Authorization'] ?? '' );
-
-			return array(
-				'response' => array( 'code' => $ok ? 200 : 401 ),
-				'body'     => wp_json_encode( array( 'params' => array( 'relay_site_key' => 'brs_revoked', 'warden_licence_key' => 'WRD-NEW' ) ) ),
-				'headers'  => array(),
-			);
-		};
-		add_filter( 'pre_http_request', $this->filter, 10, 3 );
-
-		$result = devbase_relay_sync();
-
-		$this->assertSame( array( 'warden_licence_key' ), $result['changed'] );
-		$this->assertSame( array( 'relay_site_key' ), $result['refused'] );
+		$this->assertSame( 'https://relay.test', get_field( 'relay_base_url', 'option' ) );
 		$this->assertSame( 'brs_testkey', get_field( 'relay_site_key', 'option' ) );
-	}
-
-	public function test_a_site_key_of_the_wrong_shape_is_refused() {
-		$this->assertSame( '', devbase_relay_clean_param( 'relay_site_key', 'not-a-key' ) );
-		$this->assertSame( 'brs_abc', devbase_relay_clean_param( 'relay_site_key', ' brs_abc ' ) );
 	}
 
 	public function test_a_non_https_address_or_malformed_key_is_ignored() {
@@ -384,6 +357,6 @@ class Test_Relay_Sync extends WP_UnitTestCase {
 	}
 
 	public function test_the_only_licence_param_is_warden_licence_key() {
-		$this->assertSame( array( 'warden_base_url', 'warden_public_key', 'warden_licence_key', 'relay_base_url', 'relay_site_key' ), array_keys( devbase_relay_params() ) );
+		$this->assertSame( array( 'warden_base_url', 'warden_public_key', 'warden_licence_key' ), array_keys( devbase_relay_params() ) );
 	}
 }

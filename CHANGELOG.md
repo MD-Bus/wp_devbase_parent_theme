@@ -10,6 +10,13 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.34.1] — 2026-11-05
+
+### Removed
+
+- **A sync no longer touches the Brand Relay address or site key.** The `relay_base_url` and `relay_site_key` params of 1.34.0 were added by mistake: both are entered
+  by hand on the Licence page's Remote setup tab, as before 1.34.0. The Warden address, public key and licence key still change on sync.
+
 ## [1.34.0] — 2026-11-05
 
 ### Added
