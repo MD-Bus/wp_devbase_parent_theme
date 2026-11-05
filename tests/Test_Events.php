@@ -32,6 +32,7 @@ class Test_Events extends WP_UnitTestCase {
 		$this->events   = array( 200, array( 'v' => 1, 'ok' => true, 'accepted' => 1, 'dropped' => 0, 'new_issues' => 1, 'stored' => 1 ) );
 		$this->fatal    = null;
 		devbase_events_captured( false );
+		devbase_events_state( 'reset' );
 
 		foreach ( array( DEVBASE_EVENTS_QUEUE, DEVBASE_EVENTS_STATE, DEVBASE_MAINTENANCE_STATE, DEVBASE_MAINTENANCE_LOCK, DEVBASE_RELAY_PLAN_OPTION, DEVBASE_RELAY_STATE_OPTION ) as $option ) {
 			delete_option( $option );
@@ -69,6 +70,7 @@ class Test_Events extends WP_UnitTestCase {
 			delete_option( $option );
 		}
 		devbase_events_captured( false );
+		devbase_events_state( 'reset' );
 
 		parent::tear_down();
 	}
@@ -218,6 +220,185 @@ class Test_Events extends WP_UnitTestCase {
 		// (The test suite swaps the handler for its own afterwards, so ours is called directly.)
 		$ours = $GLOBALS['wp_filter']['wp_die_handler']->callbacks[1];
 		$this->assertSame( 'the-handler', call_user_func( reset( $ours )['function'], 'the-handler' ), 'The handler is returned as it came.' );
+	}
+
+	// --- Warnings and notices ---------------------------------------------------------
+
+	/** What PHP would do: the handler is called with an error; this returns what it answers. */
+	private function warn( $errno, $message, $file = '/var/www/wp-content/plugins/shop/cart.php', $line = 10 ) {
+		return devbase_events_handler( $errno, $message, $file, $line );
+	}
+
+	public function test_php_error_numbers_map_to_the_levels_brand_relay_knows() {
+		$this->assertSame( 'warning', devbase_events_level( E_WARNING ) );
+		$this->assertSame( 'warning', devbase_events_level( E_USER_WARNING ) );
+		$this->assertSame( 'notice', devbase_events_level( E_NOTICE ) );
+		$this->assertSame( 'notice', devbase_events_level( E_DEPRECATED ) );
+		$this->assertSame( 'notice', devbase_events_level( E_USER_DEPRECATED ) );
+		$this->assertSame( 'error', devbase_events_level( E_RECOVERABLE_ERROR ) );
+		$this->assertNull( devbase_events_level( E_ERROR ), 'Fatals have their own path.' );
+		$this->assertNull( devbase_events_level( E_PARSE ) );
+	}
+
+	public function test_warnings_notices_and_deprecations_are_queued_once_at_the_end_of_the_request() {
+		$this->warn( E_WARNING, 'Undefined array key "x"' );
+		$this->warn( E_NOTICE, 'Undefined variable $y', '/var/www/wp-content/themes/t/a.php', 5 );
+		$this->warn( E_DEPRECATED, 'Function foo() is deprecated', '/var/www/wp-content/plugins/old/b.php', 7 );
+
+		$this->assertCount( 0, $this->queue(), 'Nothing is written while the request runs.' );
+
+		$this->assertTrue( devbase_events_flush() );
+
+		$queue = $this->queue();
+		$this->assertCount( 3, $queue );
+		$this->assertSame( array( 'warning', 'notice', 'notice' ), array_column( $queue, 'level' ) );
+		$this->assertSame( 'deprecated', $queue[2]['type'] );
+		$this->assertSame( 'wp-content/plugins/shop/cart.php', $queue[0]['file'] );
+		$this->assertSame( 'shop', $queue[0]['context']['plugin'] );
+		$this->assertFalse( devbase_events_flush(), 'Flushed once: the request has nothing left.' );
+	}
+
+	public function test_the_same_place_in_one_request_is_one_event_with_a_count() {
+		foreach ( range( 1, 500 ) as $i ) {
+			$this->warn( E_WARNING, "Undefined array key $i" );
+		}
+
+		devbase_events_flush();
+
+		$this->assertCount( 1, $this->queue() );
+		$this->assertSame( 500, $this->queue()[0]['count'] );
+	}
+
+	public function test_one_request_notes_a_limited_number_of_places() {
+		foreach ( range( 1, 60 ) as $i ) {
+			$this->warn( E_WARNING, 'Notice here', '/var/www/wp-content/plugins/p/f.php', $i );
+		}
+
+		devbase_events_flush();
+
+		$this->assertCount( DEVBASE_EVENTS_REQUEST_MAX, $this->queue() );
+	}
+
+	public function test_an_error_silenced_with_the_at_operator_is_left_alone() {
+		$old = error_reporting( 4437 ); // What PHP 8 leaves for a statement written with @.
+		$this->warn( E_WARNING, 'file_get_contents failed' );
+		error_reporting( $old );
+
+		$this->assertFalse( devbase_events_flush() );
+		$this->assertCount( 0, $this->queue() );
+	}
+
+	public function test_the_handler_changes_nothing_for_the_site() {
+		$this->assertFalse( $this->warn( E_WARNING, 'x' ), 'No earlier handler: false, so PHP carries on as it always did.' );
+
+		devbase_events_state( 'previous', function ( $no, $str ) {
+			return "handled: $str";
+		} );
+		$this->assertSame( 'handled: y', $this->warn( E_NOTICE, 'y' ), 'An earlier handler is called and its answer returned.' );
+
+		devbase_events_state( 'previous', function () {
+			return true;
+		} );
+		$this->assertTrue( $this->warn( E_DEPRECATED, 'z' ) );
+	}
+
+	public function test_nothing_is_queued_when_the_plan_lacks_error_tracking() {
+		$this->warn( E_WARNING, 'x' );
+		$this->plan( array( 'health' ) );
+
+		$this->assertFalse( devbase_events_flush() );
+		$this->assertCount( 0, $this->queue() );
+	}
+
+	public function test_the_handler_is_only_installed_while_the_plan_has_error_tracking() {
+		$this->plan( array( 'health' ) );
+		$this->assertFalse( devbase_events_install(), 'A plan without it costs nothing: no handler.' );
+
+		$this->plan( array( 'events' ) );
+		$this->assertTrue( devbase_events_install() );
+		$this->assertTrue( devbase_events_install(), 'Twice is the same as once.' );
+
+		// The handler must not have become its own "earlier handler": that would call itself without end.
+		$this->assertNotSame( 'devbase_events_handler', devbase_events_state( 'previous' ) );
+
+		// The earlier handler here is the test suite's own, which raises a warning as an exception: reaching it once,
+		// and getting its answer back, is the chain working (a loop would run out of memory instead).
+		try {
+			$this->warn( E_WARNING, 'reached the earlier handler' );
+			$this->fail( 'The earlier handler was not called.' );
+		} catch ( \Throwable $e ) {
+			$this->assertStringContainsString( 'reached the earlier handler', $e->getMessage() );
+		}
+
+		restore_error_handler();
+		restore_error_handler();
+	}
+
+	public function test_an_error_queued_a_moment_ago_does_not_write_the_database_again() {
+		$this->warn( E_WARNING, 'Undefined array key "a"' );
+		devbase_events_flush();
+		$first = get_option( DEVBASE_EVENTS_QUEUE );
+
+		$this->warn( E_WARNING, 'Undefined array key "a"' );
+		devbase_events_flush();
+
+		$this->assertSame( $first, get_option( DEVBASE_EVENTS_QUEUE ), 'Within a minute: left as it is.' );
+
+		$queue = $first;
+		foreach ( $queue as &$row ) {
+			$row['at'] = time() - 3600;
+		}
+		unset( $row );
+		update_option( DEVBASE_EVENTS_QUEUE, $queue, false );
+
+		$this->warn( E_WARNING, 'Undefined array key "a"' );
+		devbase_events_flush();
+
+		$this->assertSame( 2, $this->queue()[0]['count'], 'An hour later it counts up.' );
+	}
+
+	public function test_a_full_queue_drops_notices_before_a_fatal() {
+		$this->crash( 'The one fatal', '/a/wp-content/plugins/p/fatal.php', 1 );
+
+		foreach ( range( 1, DEVBASE_EVENTS_QUEUE_MAX + 30 ) as $i ) {
+			$this->warn( E_NOTICE, 'Noise', '/var/www/wp-content/plugins/p/n.php', $i );
+			devbase_events_flush();
+		}
+
+		$queue = $this->queue();
+		$this->assertCount( DEVBASE_EVENTS_QUEUE_MAX, $queue );
+		$this->assertContains( 'fatal', array_column( $queue, 'level' ), 'The fatal is still there.' );
+	}
+
+	public function test_a_fatal_is_sent_first_whatever_the_queue_holds() {
+		foreach ( range( 1, 60 ) as $i ) {
+			$this->warn( E_NOTICE, 'Noise', '/var/www/wp-content/plugins/p/n.php', $i );
+
+			if ( 0 === $i % 20 ) {
+				devbase_events_flush(); // Three requests' worth.
+			}
+		}
+		$this->crash( 'Late fatal', '/a/wp-content/plugins/p/late.php', 99 );
+
+		devbase_events_run();
+
+		$body = json_decode( $this->requests[0]['args']['body'], true );
+		$this->assertCount( DEVBASE_EVENTS_BATCH_MAX, $body['events'] );
+		$this->assertSame( 'fatal', $body['events'][0]['level'], 'The most severe goes first, though it came last.' );
+	}
+
+	public function test_an_event_is_sent_with_the_time_it_happened_as_an_iso_string() {
+		$this->crash();
+		$queue = $this->queue();
+		$then  = time() - 7200;
+		foreach ( get_option( DEVBASE_EVENTS_QUEUE ) as $key => $row ) {
+			update_option( DEVBASE_EVENTS_QUEUE, array( $key => array_merge( $row, array( 'at' => $then ) ) ), false );
+		}
+
+		devbase_events_run();
+
+		$sent = json_decode( $this->requests[0]['args']['body'], true )['events'][0]['at'];
+		$this->assertSame( gmdate( 'c', $then ), $sent, 'Brand Relay reads only a string; a number would date it by when it arrived.' );
 	}
 
 	// --- Sending ----------------------------------------------------------------------

@@ -8,10 +8,10 @@
 // small queue, and SENDS them when Brand Relay asks (the plan's "Ask for errors" interval),
 // like every other service: Brand Relay is the clock (see maintenance.php).
 //
-// Fatals only, for now: warnings and notices flood, and catching them means taking over
-// PHP's error handler. What is kept is scrubbed here before it is queued and again by Brand
-// Relay: first line of the message, paths cut to wp-content/..., no emails, no tokens, no
-// query strings, never request data.
+// Fatals (a shutdown function) AND warnings, notices and deprecations (a chained PHP error
+// handler that only counts, see "Warnings and notices" below). What is kept is scrubbed here
+// before it is queued and again by Brand Relay: first line of the message, paths cut to
+// wp-content/..., no emails, no tokens, no query strings, never request data.
 
 /** The queue of errors waiting to be sent: fingerprint => event. Not autoloaded. */
 const DEVBASE_EVENTS_QUEUE = 'devbase_events_queue';
@@ -19,8 +19,14 @@ const DEVBASE_EVENTS_QUEUE = 'devbase_events_queue';
 /** The last send: { sent_at, accepted, last_error }. */
 const DEVBASE_EVENTS_STATE = 'devbase_events_state';
 
-/** The queue never holds more distinct errors than this (the oldest go first). */
-const DEVBASE_EVENTS_QUEUE_MAX = 100;
+/** The queue never holds more distinct errors than this (the least severe, then the oldest, go first). */
+const DEVBASE_EVENTS_QUEUE_MAX = 200;
+
+/** One request notes at most this many distinct warnings/notices (a loop that warns 10 000 times is one row with a count). */
+const DEVBASE_EVENTS_REQUEST_MAX = 25;
+
+/** An error already queued within this many seconds is not written again (a noisy site must not write the option on every request). */
+const DEVBASE_EVENTS_REWRITE_AFTER = 60;
 
 /** Brand Relay takes at most 50 events and 64 KB per batch; stay under both. */
 const DEVBASE_EVENTS_BATCH_MAX   = 50;
@@ -150,23 +156,7 @@ function devbase_events_capture() {
 		return false;
 	}
 
-	$event       = devbase_events_build( $error );
-	$fingerprint = devbase_events_fingerprint( $event );
-	$queue       = get_option( DEVBASE_EVENTS_QUEUE );
-	$queue       = is_array( $queue ) ? $queue : array();
-
-	if ( isset( $queue[ $fingerprint ] ) ) {
-		$queue[ $fingerprint ]['count'] = (int) $queue[ $fingerprint ]['count'] + 1;
-		$queue[ $fingerprint ]['at']    = $event['at'];
-	} else {
-		$queue[ $fingerprint ] = $event;
-	}
-
-	if ( count( $queue ) > DEVBASE_EVENTS_QUEUE_MAX ) {
-		$queue = array_slice( $queue, -DEVBASE_EVENTS_QUEUE_MAX, null, true );
-	}
-
-	update_option( DEVBASE_EVENTS_QUEUE, $queue, false );
+	devbase_events_enqueue( array( devbase_events_build( $error ) ) );
 
 	return true;
 }
@@ -187,6 +177,201 @@ function devbase_events_captured( $set = null ) {
 	return $captured;
 }
 
+/** How severe a level is: lower is more important (used to decide what the full queue drops and what is sent first). */
+function devbase_events_rank( $level ) {
+	return array( 'fatal' => 0, 'error' => 1, 'warning' => 2, 'notice' => 3 )[ $level ] ?? 1;
+}
+
+/**
+ * Merges events into the queue: the same error adds to `count`, a new one is added, and past the cap the least
+ * severe, then the oldest, go. One read and at most one write of the option.
+ *
+ * An error already queued a moment ago is left alone (no write at all), so a site that warns on every request
+ * does not write the database on every request; its count is then a little low, which is fine.
+ *
+ * @param array[] $events Events as devbase_events_build() makes them (with `level` and `count` set).
+ * @return bool Whether the queue changed.
+ */
+function devbase_events_enqueue( array $events ) {
+	$queue   = get_option( DEVBASE_EVENTS_QUEUE );
+	$queue   = is_array( $queue ) ? $queue : array();
+	$changed = false;
+
+	foreach ( $events as $event ) {
+		$fingerprint = devbase_events_fingerprint( $event );
+
+		if ( isset( $queue[ $fingerprint ] ) ) {
+			if ( 'fatal' !== $event['level'] && time() - (int) $queue[ $fingerprint ]['at'] < DEVBASE_EVENTS_REWRITE_AFTER ) {
+				continue;
+			}
+
+			$queue[ $fingerprint ]['count'] = (int) $queue[ $fingerprint ]['count'] + (int) $event['count'];
+			$queue[ $fingerprint ]['at']    = $event['at'];
+		} else {
+			$queue[ $fingerprint ] = $event;
+		}
+
+		$changed = true;
+	}
+
+	if ( ! $changed ) {
+		return false;
+	}
+
+	if ( count( $queue ) > DEVBASE_EVENTS_QUEUE_MAX ) {
+		$order = array_keys( $queue );
+		usort( $order, function ( $a, $b ) use ( $queue ) {
+			return devbase_events_rank( $queue[ $a ]['level'] ) <=> devbase_events_rank( $queue[ $b ]['level'] ) ?: (int) $queue[ $b ]['at'] <=> (int) $queue[ $a ]['at'];
+		} );
+		$queue = array_intersect_key( $queue, array_flip( array_slice( $order, 0, DEVBASE_EVENTS_QUEUE_MAX ) ) );
+	}
+
+	update_option( DEVBASE_EVENTS_QUEUE, $queue, false );
+
+	return true;
+}
+
+// --- Warnings and notices -----------------------------------------------------------------------
+//
+// A PHP error handler that CHANGES NOTHING and costs almost nothing:
+//
+// - It is only installed while the saved plan says error tracking is in force (a plan without it costs nothing).
+// - It calls whatever handler was there before it (WordPress's own, Query Monitor ...) and returns that handler's answer, or
+//   false (PHP's normal handling goes on) when there was none. What the site shows and logs does not change.
+// - Per error it does an array lookup and a counter: no database, no regular expressions, no backtrace. The message is
+//   kept once per distinct place (file, line, kind), the rest only count. At most DEVBASE_EVENTS_REQUEST_MAX places per request.
+// - It leaves errors silenced with `@` alone.
+// - Everything else (scrubbing, the queue) happens ONCE, in a shutdown function, and only for a request that had something.
+
+/** The Brand Relay level for a PHP error number, or null for one we do not keep (fatals have their own path). */
+function devbase_events_level( $errno ) {
+	switch ( $errno ) {
+		case E_WARNING:
+		case E_USER_WARNING:
+		case E_CORE_WARNING:
+		case E_COMPILE_WARNING:
+			return 'warning';
+		case E_NOTICE:
+		case E_USER_NOTICE:
+		case E_DEPRECATED:
+		case E_USER_DEPRECATED:
+			return 'notice';
+		case E_RECOVERABLE_ERROR:
+		case E_USER_ERROR:
+			return 'error';
+	}
+
+	return null;
+}
+
+/**
+ * The warnings and notices this request has seen, by place; the handler this chained to; and a reset for tests.
+ *
+ * @param string $what notes | previous | reset
+ * @param mixed  $value For `previous`: the handler to remember.
+ * @return mixed
+ */
+function &devbase_events_state( $what = 'notes', $value = null ) {
+	static $notes    = array();
+	static $previous = null;
+	static $null     = null;
+
+	if ( 'reset' === $what ) {
+		$notes    = array();
+		$previous = null;
+
+		return $null;
+	}
+
+	if ( 'previous' === $what ) {
+		if ( null !== $value ) {
+			$previous = $value;
+		}
+
+		return $previous;
+	}
+
+	return $notes;
+}
+
+/** The PHP error handler. Notes the error, then hands it on exactly as PHP or the earlier handler would have. */
+function devbase_events_handler( $errno, $errstr, $errfile = '', $errline = 0 ) {
+	static $busy = false;
+
+	if ( ! $busy ) {
+		$busy = true;
+
+		// `@` leaves only the fatal bits in error_reporting(): leave those errors alone.
+		if ( ( error_reporting() & ~4437 ) && null !== devbase_events_level( $errno ) ) {
+			$notes = &devbase_events_state( 'notes' );
+			$key   = $errno . '|' . $errfile . ':' . $errline;
+
+			if ( isset( $notes[ $key ] ) ) {
+				++$notes[ $key ]['count'];
+			} elseif ( count( $notes ) < DEVBASE_EVENTS_REQUEST_MAX ) {
+				$notes[ $key ] = array( 'type' => $errno, 'message' => substr( (string) $errstr, 0, 1000 ), 'file' => (string) $errfile, 'line' => (int) $errline, 'count' => 1 );
+			}
+		}
+
+		$busy = false;
+	}
+
+	$previous = devbase_events_state( 'previous' );
+
+	return $previous ? call_user_func( $previous, $errno, $errstr, $errfile, $errline ) : false;
+}
+
+/** Turns what the handler noted into queued events: once, at the end of a request that had something. */
+function devbase_events_flush() {
+	$notes = devbase_events_state( 'notes' );
+
+	if ( ! $notes ) {
+		return false;
+	}
+
+	if ( ! function_exists( 'devbase_relay_service_in_force' ) || ! devbase_relay_service_in_force( 'events' ) ) {
+		return false;
+	}
+
+	$events = array();
+
+	foreach ( $notes as $note ) {
+		try {
+			$event          = devbase_events_build( array( 'type' => $note['type'], 'message' => $note['message'], 'file' => $note['file'], 'line' => $note['line'] ) );
+			$event['level'] = devbase_events_level( $note['type'] );
+			$event['count'] = $note['count'];
+			$event['type']  = in_array( $note['type'], array( E_DEPRECATED, E_USER_DEPRECATED ), true ) ? 'deprecated' : $event['type'];
+			$events[]       = $event;
+		} catch ( Throwable $e ) {
+			continue; // Never let reporting an error be the error.
+		}
+	}
+
+	devbase_events_state( 'reset' );
+
+	return $events && devbase_events_enqueue( $events );
+}
+
+/** Installs the handler (and its shutdown flush) while the plan has error tracking. */
+function devbase_events_install() {
+	if ( ! function_exists( 'devbase_relay_service_in_force' ) || ! devbase_relay_service_in_force( 'events' ) ) {
+		return false;
+	}
+
+	$previous = set_error_handler( 'devbase_events_handler' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
+
+	// Installed twice, the "earlier handler" would be ourselves and the handler would call itself without end:
+	// the second time changes nothing.
+	if ( 'devbase_events_handler' === $previous ) {
+		return true;
+	}
+
+	devbase_events_state( 'previous', $previous );
+	register_shutdown_function( 'devbase_events_flush' );
+
+	return true;
+}
+
 // Our own shutdown function, for the fatals WordPress's handler does not end the request on.
 register_shutdown_function( 'devbase_events_capture' );
 
@@ -198,6 +383,23 @@ add_filter( 'wp_die_handler', function ( $handler ) {
 
 	return $handler;
 }, 1 );
+
+devbase_events_install();
+
+/**
+ * The request body for a batch. `at` goes as an ISO 8601 time: Brand Relay ignores a number and would date every event
+ * by the moment the batch arrived, which is wrong for an error that waited in the queue.
+ */
+function devbase_events_body( array $batch ) {
+	$events = array();
+
+	foreach ( $batch as $event ) {
+		$event['at'] = gmdate( 'c', (int) $event['at'] );
+		$events[]    = $event;
+	}
+
+	return wp_json_encode( array( 'events' => $events ) );
+}
 
 /**
  * Sends the queued errors (one batch) and says what happened, for the maintenance check to
@@ -212,13 +414,20 @@ function devbase_events_run() {
 	// Nothing queued is still a report: an empty batch tells Brand Relay "checked, no errors"
 	// (it answers `clear`), so a quiet site is told apart from a site that did not run.
 
-	// One batch: at most 50 events and 60 KB, oldest first.
-	$batch = array_slice( $queue, 0, DEVBASE_EVENTS_BATCH_MAX, true );
-	$body  = wp_json_encode( array( 'events' => array_values( $batch ) ) );
+	// One batch: at most 50 events and 60 KB, the most severe first (a fatal never waits behind notices), then the oldest.
+	$order = array_keys( $queue );
+	usort( $order, function ( $a, $b ) use ( $queue ) {
+		return devbase_events_rank( $queue[ $a ]['level'] ) <=> devbase_events_rank( $queue[ $b ]['level'] );
+	} );
+	$batch = array();
+	foreach ( array_slice( $order, 0, DEVBASE_EVENTS_BATCH_MAX ) as $key ) {
+		$batch[ $key ] = $queue[ $key ]; // In that order: if the body is too big, the last (least severe) ones are the ones to wait.
+	}
+	$body  = devbase_events_body( $batch );
 
 	while ( strlen( (string) $body ) > DEVBASE_EVENTS_BATCH_BYTES && count( $batch ) > 1 ) {
 		array_pop( $batch );
-		$body = wp_json_encode( array( 'events' => array_values( $batch ) ) );
+		$body = devbase_events_body( $batch );
 	}
 
 	$response = wp_remote_post(

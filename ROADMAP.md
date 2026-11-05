@@ -45,9 +45,9 @@ is at 0.28.x, and the services below exist only from 0.18 up.
 because most sites get few visits and many have cron off. The plan is pulled before anything is sent. See
 `inc/maintenance/AGENT.md`. Brand Relay 0.30.0 does its part (plans' "Trigger from Brand Relay"). Open: Brand Relay could read a `parent_theme` field.
 
-**3. Error events (done in 1.24.0).** Fatals and uncaught exceptions, scrubbed and queued, sent when the ping names `events`, only while
-the plan has error tracking. See `inc/maintenance/AGENT.md`. Open: failed scheduled jobs and, if wanted, warnings (they flood, and
-catching them means taking over PHP's error handler).
+**3. Error events (done in 1.24.0; warnings and notices added after).** Fatals and uncaught exceptions, then warnings, notices and deprecations
+through a chained error handler that only counts, scrubbed and queued, sent when the ping names `events`, only while the plan has error tracking.
+See `inc/maintenance/AGENT.md`. Open: failed scheduled jobs; warnings raised while a plugin is still loading are missed (the theme loads later).
 
 **4. Backups (done, 1.26.0 to 1.30.6).** Option B, made through WPvivid Backup rather than our own engine: WPvivid is bundled like
 WooCommerce, the theme runs its newer backup engine (the one its dashboard uses), uploads the merged file to Brand Relay in 50 MiB parts when the

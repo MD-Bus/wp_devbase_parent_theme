@@ -10,6 +10,21 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.31.0] — 2026-11-04
+
+### Added
+
+- **Error tracking now collects warnings, notices and deprecations, not only fatals.** A chained PHP error handler (installed only while the plan has error
+  tracking) notes each error with an array lookup and a counter (about 0.2 microseconds), keeps one row per place with a count, and queues them once at the end of a
+  request that had something. It calls the earlier handler and returns its answer, leaves `@`-silenced errors alone, and notes at most 25 places per request. The queue
+  holds 200 errors and drops the least severe first, so notices never push out a fatal; an error queued in the last minute is not written again. Brand Relay's four
+  levels are used (`fatal`, `error`, `warning`, `notice`), and a deprecation is sent as type `deprecated`.
+
+### Fixed
+
+- **Queued errors are sent with the time they happened.** The time went as a number, which Brand Relay ignores, so every event was dated by the moment its batch arrived.
+- **A fatal is sent before notices.** A batch is the most severe first, so a fatal does not wait behind a full queue of older notices.
+
 ## [1.30.6] — 2026-11-04
 
 ### Changed
