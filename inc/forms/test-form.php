@@ -10,6 +10,13 @@
 // Registered under the name 'devbase_test_form' in registered-forms.json,
 // so it shows up under Registered Forms automatically.
 
+// Development only. On a live site it would be a public, unbranded form any bot can post into
+// (stored, and sent to whatever destination applies to it). Shown when the site's environment is
+// local or development (WP_ENVIRONMENT_TYPE in wp-config.php), or when the filter says so.
+if ( ! in_array( wp_get_environment_type(), array( 'local', 'development' ), true ) && ! apply_filters( 'devbase/test_form/enabled', false ) ) {
+	return;
+}
+
 add_action( 'template_redirect', function () {
 	if ( ! isset( $_GET['devbase_test_form'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		return;

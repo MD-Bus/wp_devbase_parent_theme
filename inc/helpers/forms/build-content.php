@@ -38,6 +38,15 @@ function devbase_form_build_content( array $post, array $fields ) {
 
 		$raw = isset( $post[ $field_name ] ) ? wp_unslash( $post[ $field_name ] ) : '';
 
+		// A field posted as an array (name[]=x) reaches a string sanitizer as an array, which is a
+		// fatal error in PHP 8 (a visitor could make any form answer 500). WordPress's string
+		// sanitizers get '' instead; a custom sanitize callable meant for a list receives it unchanged.
+		$string_sanitizers = array( 'sanitize_text_field', 'sanitize_textarea_field', 'sanitize_email', 'sanitize_key', 'sanitize_title', 'sanitize_file_name', 'sanitize_user', 'esc_url_raw', 'sanitize_url', 'wp_kses_post', 'absint', 'intval' );
+
+		if ( ! is_scalar( $raw ) && is_string( $sanitize ) && in_array( $sanitize, $string_sanitizers, true ) ) {
+			$raw = '';
+		}
+
 		$content[ $field_name ] = array(
 			'aria_label' => $label,
 			'value'      => call_user_func( $sanitize, $raw ),

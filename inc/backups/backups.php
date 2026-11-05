@@ -87,6 +87,28 @@ function devbase_backup_budget() {
 	return max( 1, (int) apply_filters( 'devbase/backup/step_budget', 20 ) );
 }
 
+/**
+ * Whether a file name from Brand Relay is a plain name (no folder, no "..") that is safe to join to
+ * the backup folder. The same rule as Brand Relay's own FILE_NAME, so a real backup always passes;
+ * the site checks it anyway rather than trusting the answer it was given.
+ */
+function devbase_backup_safe_name( $name ) {
+	return is_string( $name ) && 1 === preg_match( '/^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$/', $name ) && false === strpos( $name, '..' ) && wp_basename( $name ) === $name;
+}
+
+/**
+ * Whether a path from Brand Relay (a part's upload address, the complete address) is one of its
+ * backup addresses. It is appended to the Brand Relay URL with the site key attached, so a path
+ * such as "@other.host/x" would otherwise send the key to another host.
+ */
+function devbase_backup_safe_path( $path ) {
+	return is_string( $path )
+		&& 0 === strpos( $path, '/v1/site/backups/' )
+		&& 1 === preg_match( '#^/[A-Za-z0-9._~/{}-]+$#', $path )
+		&& false === strpos( $path, '..' )
+		&& false === strpos( $path, '//' );
+}
+
 // --- starting: the ping --------------------------------------------------------------------------
 
 /**
@@ -359,6 +381,12 @@ function devbase_backup_engine_run( $task_id ) {
 
 	wp_set_current_user( (int) $admins[0] );
 
+	// backup_now_2() ends the request with die(): every shutdown hook would then run as this
+	// administrator. Ours runs first and puts the request back to nobody.
+	add_action( 'shutdown', function () {
+		wp_set_current_user( 0 );
+	}, PHP_INT_MIN );
+
 	$_POST['nonce']   = $_REQUEST['nonce'] = wp_create_nonce( 'wpvivid_ajax' ); // phpcs:ignore WordPress.Security.NonceVerification
 	$_POST['task_id'] = $_REQUEST['task_id'] = $task_id;                          // phpcs:ignore WordPress.Security.NonceVerification
 
@@ -448,6 +476,10 @@ function devbase_backup_fail( array $job, $message ) {
  */
 function devbase_backup_discard_download( array $job ) {
 	foreach ( (array) ( $job['files'] ?? array() ) as $file ) {
+		if ( ! devbase_backup_safe_name( $file['name'] ?? null ) ) {
+			continue;
+		}
+
 		foreach ( array( $file['name'], $file['name'] . '.part' ) as $name ) {
 			$path = devbase_backup_dir() . $name;
 
@@ -612,7 +644,21 @@ function devbase_backup_backup_step( array $job, $deadline, $admin_request ) {
 
 			$uploads = array();
 			foreach ( (array) $backup['files'] as $file ) {
+				if ( ! devbase_backup_safe_name( $file['name'] ?? null ) || ! devbase_backup_safe_path( $file['upload'] ?? null ) ) {
+					return devbase_backup_fail( $job, 'Brand Relay answered the declaration with an address this site does not accept.' );
+				}
+
 				$uploads[ $file['name'] ] = array( 'upload' => $file['upload'], 'parts' => (int) $file['parts'] );
+			}
+
+			foreach ( $files as $file ) {
+				if ( ! isset( $uploads[ $file['name'] ] ) ) {
+					return devbase_backup_fail( $job, 'Brand Relay\'s answer does not list ' . $file['name'] . '.' );
+				}
+			}
+
+			if ( ! devbase_backup_safe_path( $backup['complete'] ?? null ) || empty( $backup['id'] ) ) {
+				return devbase_backup_fail( $job, 'Brand Relay answered the declaration with an address this site does not accept.' );
 			}
 
 			$job['relay_id']  = $backup['id'];
@@ -714,10 +760,20 @@ function devbase_backup_start_download( $relay_id ) {
 		}
 
 		$files = array();
+		$sums  = array();
 		$total = 0;
 		foreach ( (array) $backup['files'] as $file ) {
+			if ( ! devbase_backup_safe_name( $file['name'] ?? null ) ) {
+				return new WP_Error( 'bad_name', 'Brand Relay listed a file name this site does not accept, so the backup was not downloaded.' );
+			}
+
 			$files[] = array( 'name' => (string) $file['name'], 'size' => (int) $file['size'] );
 			$total  += (int) $file['size'];
+
+			// The checksum declared when the backup was sent. The download's header is the fallback.
+			if ( isset( $file['sha256'] ) && is_string( $file['sha256'] ) && preg_match( '/^[0-9a-f]{64}$/i', $file['sha256'] ) ) {
+				$sums[ $file['name'] ] = strtolower( $file['sha256'] );
+			}
 		}
 
 		wp_mkdir_p( devbase_backup_dir() );
@@ -730,7 +786,7 @@ function devbase_backup_start_download( $relay_id ) {
 			'relay_id' => $relay_id,
 			'label'    => (string) ( $backup['label'] ?? '' ),
 			'files'    => $files,
-			'sums'     => array(),
+			'sums'     => $sums,
 		) );
 		devbase_backup_spawn();
 
@@ -750,6 +806,10 @@ function devbase_backup_download_step( array $job, $deadline ) {
 	$dir = devbase_backup_dir();
 
 	foreach ( $job['files'] as $file ) {
+		if ( ! devbase_backup_safe_name( $file['name'] ?? null ) ) {
+			return devbase_backup_fail( $job, 'A file name in this download is not accepted.' );
+		}
+
 		$final = $dir . $file['name'];
 		$part  = $final . '.part';
 
@@ -792,7 +852,7 @@ function devbase_backup_download_step( array $job, $deadline ) {
 				return devbase_backup_fail( $job, 'Brand Relay did not answer the range request properly while downloading ' . $file['name'] . '.' );
 			}
 
-			if ( ! empty( $headers['x-checksum-sha256'] ) ) {
+			if ( empty( $job['sums'][ $file['name'] ] ) && ! empty( $headers['x-checksum-sha256'] ) ) {
 				$job['sums'][ $file['name'] ] = strtolower( $headers['x-checksum-sha256'] );
 			}
 
@@ -801,12 +861,20 @@ function devbase_backup_download_step( array $job, $deadline ) {
 			devbase_backup_save( $job );
 		}
 
-		if ( ! empty( $job['sums'][ $file['name'] ] ) && ! hash_equals( $job['sums'][ $file['name'] ], strtolower( (string) hash_file( 'sha256', $part ) ) ) ) {
+		// A file that cannot be checked is not handed to WPvivid: a restore runs whatever it contains.
+		if ( empty( $job['sums'][ $file['name'] ] ) ) {
+			@unlink( $part ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.unlink_unlink
+			return devbase_backup_fail( $job, 'Brand Relay gave no checksum for ' . $file['name'] . ', so it was discarded.' );
+		}
+
+		if ( ! hash_equals( $job['sums'][ $file['name'] ], strtolower( (string) hash_file( 'sha256', $part ) ) ) ) {
 			@unlink( $part ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.unlink_unlink
 			return devbase_backup_fail( $job, $file['name'] . ' did not match its checksum, so it was discarded.' );
 		}
 
-		rename( $part, $final );
+		if ( ! rename( $part, $final ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename
+			return devbase_backup_fail( $job, 'The downloaded ' . $file['name'] . ' could not be put in place in the backup folder.' );
+		}
 	}
 
 	// Tell WPvivid to look at its folder again (its own "scan" button does the same).

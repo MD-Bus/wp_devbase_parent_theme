@@ -267,7 +267,10 @@ function devbase_credit_refresh( $force = false ) {
 	$state['attempted_at'] = time();
 
 	// The site's language, so a multilingual brand answers in it.
-	$response = wp_remote_get(
+	// The safe variant outside a local environment: the address is typed on the settings page, and
+	// must not be able to make this server fetch its own network (169.254.169.254, localhost, ...).
+	$fetch    = 'local' === wp_get_environment_type() ? 'wp_remote_get' : 'wp_safe_remote_get';
+	$response = $fetch(
 		add_query_arg( 'lang', str_replace( '_', '-', get_locale() ), $url ),
 		array(
 			'timeout'             => 10,

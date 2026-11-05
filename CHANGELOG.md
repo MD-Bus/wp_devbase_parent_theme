@@ -10,6 +10,43 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+### Security
+
+- **Theme Settings now needs an administrator.** No options page set a capability, so SCF's default (`edit_posts`) applied and any Contributor, Author or Editor
+  could open and save Licence, SMTP, Security, Tracking, Form Destinations and Miscellaneous: read the secrets in the page source, and post a new update server and
+  signing key (which leads to code execution through a theme update), a webhook that copies every submission, or an SMTP server that receives password resets.
+  Every page under Theme Settings now needs `manage_options` (filter `devbase/settings/capability`), the Archive pages `edit_pages`
+  (`devbase/archive/capability`), including pages a child adds (inc/theme-settings/access.php).
+- **"Read-only" fields are enforced on the server.** A save from the screen never changes the update server, verification key or licence key (only the Brand
+  Relay sync and `update_field()` do), nor the Remote setup fields while that tab is hidden or the value is set in code. Password fields are no longer drawn back into
+  the page; an empty one keeps the stored value.
+- **Theme packages are verified before they are installed.** The downloaded zip must match the `sha256` of the signed Warden answer, and the release
+  `signature` must verify with a trusted key (`upgrader_pre_download`). A release without a checksum is refused.
+- **The Warden key can be pinned in code.** List it in `inc/updates/pinned-keys.php` (or `DEVBASE_WARDEN_PUBLIC_KEY`, `DEVBASE_WARDEN_URL` in wp-config.php); the
+  provisioned field is then ignored and Brand Relay no longer provisions it. Empty by default: nothing changes until a key is added. Paste EXACTLY the key the sites
+  already have, or every site rejects every answer.
+- **MCP never reaches secrets.** The Licence, SMTP, Security, Form Destinations and top Theme Settings pages are not offered or allowed for MCP access, secret and
+  provisioned fields are protected on every page, and password fields are never returned. `devbase/get-post` no longer returns the blocks of a password-protected
+  post to a caller who cannot edit it.
+- **Backups accept only what they should from Brand Relay.** File names must be plain names (no folder, no `..`), upload and complete addresses must be Brand
+  Relay backup paths (a path like `@other.host` could send the site key elsewhere), a downloaded file must match the checksum listed for it (required), a failed
+  rename fails the job, and the administrator a backup runs as is dropped before shutdown hooks.
+- **Webhook and credit addresses are fetched with `wp_safe_remote_*`**, so they cannot reach private or local addresses (and only ports 80, 443 and 8080). A
+  receiver that lives there is allowed with `devbase/forms/webhook_unsafe_ok`; a local environment is exempt.
+- **The test form is off on live sites.** `?devbase_test_form=1` and its handler load only when `WP_ENVIRONMENT_TYPE` is local or development (or
+  `devbase/test_form/enabled`).
+- **CAPTCHA tokens must come from this site.** Turnstile and reCAPTCHA answers naming another hostname are refused (more names with
+  `devbase/security/allowed_hostnames`); a reCAPTCHA answer without an action is refused.
+- **A Brand Relay ping cannot be replayed by sending it twice at once.** Its nonce is recorded with one atomic insert.
+
+### Fixed
+
+- **Forms on cached pages no longer stop working after a day.** `forms.js` asks for a fresh nonce (`devbase_form_nonce`, never cached) just before sending.
+- **A field posted as an array no longer makes a form answer 500.** WordPress's string sanitizers receive `''`; the submission screen and the notification email
+  show a list value one item per line.
+- **Error tracking no longer loses errors queued while a batch was being sent.**
+- `bin/bump-version.sh` works on Linux and in CI (it used the BSD-only `sed -i ''`).
+
 ## [1.32.0] — 2026-11-04
 
 ### Added

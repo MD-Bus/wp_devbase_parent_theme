@@ -345,9 +345,10 @@ class Test_Backups extends WP_UnitTestCase {
 
 	// --- bringing a backup back ----------------------------------------------------------------
 
-	private function stored_backup() {
+	private function stored_backup( $sha256 = null ) {
 		$this->api['GET /v1/site/backups'] = array( 200, array( 'backups' => array(
-			array( 'id' => 'bkp_9', 'label' => 'Nightly', 'status' => 'complete', 'files' => array( array( 'name' => 'site_backup_all.zip', 'size' => strlen( $this->payload ) ) ) ),
+			// Brand Relay lists the checksum the site declared when it sent the backup.
+			array( 'id' => 'bkp_9', 'label' => 'Nightly', 'status' => 'complete', 'files' => array( array( 'name' => 'site_backup_all.zip', 'size' => strlen( $this->payload ), 'sha256' => null === $sha256 ? hash( 'sha256', $this->payload ) : $sha256 ) ) ),
 			array( 'id' => 'bkp_8', 'label' => 'Unfinished', 'status' => 'uploading', 'files' => array() ),
 		) ) );
 	}
@@ -367,8 +368,7 @@ class Test_Backups extends WP_UnitTestCase {
 	}
 
 	public function test_a_download_that_does_not_match_its_checksum_is_discarded() {
-		$this->stored_backup();
-		$this->headers = array( 'x-checksum-sha256' => str_repeat( 'a', 64 ) );
+		$this->stored_backup( str_repeat( 'a', 64 ) );
 		devbase_backup_start_download( 'bkp_9' );
 
 		$job = devbase_backup_step( true );
@@ -548,7 +548,7 @@ class Test_Backups extends WP_UnitTestCase {
 	private function stored_split_backup( $names ) {
 		$files = array();
 		foreach ( $names as $name ) {
-			$files[] = array( 'name' => $name, 'size' => strlen( $this->payload ) );
+			$files[] = array( 'name' => $name, 'size' => strlen( $this->payload ), 'sha256' => hash( 'sha256', $this->payload ) );
 		}
 		$this->api['GET /v1/site/backups'] = array( 200, array( 'backups' => array( array( 'id' => 'bkp_9', 'label' => 'Split', 'status' => 'complete', 'files' => $files ) ) ) );
 	}
@@ -618,5 +618,54 @@ class Test_Backups extends WP_UnitTestCase {
 		$this->assertTrue( devbase_wpvivid_is_busy() );
 
 		delete_option( 'wpvivid_task_list' );
+	}
+
+	// --- what the site accepts from Brand Relay (1.33.0) ----------------------------------------
+
+	public function test_the_listed_checksum_wins_over_the_download_header() {
+		$this->stored_backup();
+		$this->headers = array( 'x-checksum-sha256' => str_repeat( 'a', 64 ) );
+		devbase_backup_start_download( 'bkp_9' );
+
+		$job = devbase_backup_step( true );
+
+		$this->assertSame( 'done', $job['state'], (string) $job['error'] );
+	}
+
+	public function test_a_file_with_no_checksum_anywhere_is_not_handed_to_wpvivid() {
+		$this->stored_backup( '' );
+		devbase_backup_start_download( 'bkp_9' );
+
+		$job = devbase_backup_step( true );
+
+		$this->assertSame( 'failed', $job['state'] );
+		$this->assertStringContainsString( 'no checksum', $job['error'] );
+		$this->assertFileDoesNotExist( $this->dir . 'site_backup_all.zip' );
+	}
+
+	public function test_a_listed_file_name_with_a_path_is_refused_before_anything_is_written() {
+		$this->api['GET /v1/site/backups'] = array( 200, array( 'backups' => array(
+			array( 'id' => 'bkp_9', 'label' => 'Bad', 'status' => 'complete', 'files' => array( array( 'name' => '../../evil.php', 'size' => 3, 'sha256' => str_repeat( 'b', 64 ) ) ) ),
+		) ) );
+
+		$result = devbase_backup_start_download( 'bkp_9' );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'bad_name', $result->get_error_code() );
+		$this->assertNull( devbase_backup_job() );
+	}
+
+	public function test_names_and_paths_from_brand_relay_are_checked() {
+		$this->assertTrue( devbase_backup_safe_name( 'site_backup_all.part001.zip' ) );
+		$this->assertFalse( devbase_backup_safe_name( '../wp-config.php' ) );
+		$this->assertFalse( devbase_backup_safe_name( 'a/b.zip' ) );
+		$this->assertFalse( devbase_backup_safe_name( '.htaccess' ) );
+
+		$this->assertTrue( devbase_backup_safe_path( '/v1/site/backups/bkp_1/files/a.zip/parts/{n}' ) );
+		$this->assertTrue( devbase_backup_safe_path( '/v1/site/backups/bkp_1/complete' ) );
+		$this->assertFalse( devbase_backup_safe_path( '@evil.example/v1/site/backups/x' ), 'Would make the relay host the user part of another host.' );
+		$this->assertFalse( devbase_backup_safe_path( '/v1/site/backups/../../v1/site' ) );
+		$this->assertFalse( devbase_backup_safe_path( '//evil.example/v1/site/backups/x' ) );
+		$this->assertFalse( devbase_backup_safe_path( '/v1/other' ) );
 	}
 }

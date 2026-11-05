@@ -83,8 +83,10 @@ if [ "$NEW" = "$CURRENT" ] || { [ "$LOWER" = "$NEW" ] && [ "$NEW" != "$CURRENT" 
 	exit 1
 fi
 
-# sed -i '' is the BSD/macOS form.
-sed -i '' "s/^Version: .*/Version: $NEW/" "$STYLE"
+# Portable in-place edit: `sed -i ''` is BSD/macOS only (GNU sed reads '' as the script and fails),
+# and `sed -i` alone is GNU only. A temporary file works with both.
+TMP="$(mktemp)"
+sed "s/^Version: .*/Version: $NEW/" "$STYLE" > "$TMP" && cat "$TMP" > "$STYLE" && rm -f "$TMP"
 
 echo "$CURRENT -> $NEW"
 echo ""

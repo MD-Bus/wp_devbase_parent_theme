@@ -326,6 +326,11 @@ function devbase_relay_sync( $respect_interval = false ) {
 			continue;
 		}
 
+		// A value pinned in code is not provisioned at all (devbase_warden_pinned_keys(), DEVBASE_WARDEN_URL).
+		if ( ( 'warden_public_key' === $name && devbase_warden_pinned_keys() ) || ( 'warden_base_url' === $name && defined( 'DEVBASE_WARDEN_URL' ) ) ) {
+			continue;
+		}
+
 		$value   = devbase_relay_clean_param( $name, $params[ $name ] );
 		$current = trim( (string) get_field( $name, 'option' ) );
 
@@ -477,15 +482,39 @@ function devbase_relay_verify_ping( WP_REST_Request $request ) {
 
 	// Only a correctly signed nonce is recorded, so unsigned traffic can't
 	// fill the transient table.
+	// Recorded with add_option(), which is one atomic INSERT: two copies of the same ping arriving
+	// together cannot both pass (a get-then-set on a transient let them). The value is the time it
+	// may be forgotten; expired records are swept here, a few at a time.
 	$nonce_key = 'devbase_relay_nonce_' . md5( $nonce );
+	$now       = time();
 
-	if ( false !== get_transient( $nonce_key ) ) {
-		return $denied;
+	if ( ! add_option( $nonce_key, $now + DEVBASE_RELAY_PING_WINDOW * 2, '', false ) ) {
+		if ( (int) get_option( $nonce_key ) > $now ) {
+			return $denied;
+		}
+
+		// A record past its window: this nonce is no longer a replay (its timestamp is long refused anyway).
+		update_option( $nonce_key, $now + DEVBASE_RELAY_PING_WINDOW * 2, false );
 	}
 
-	set_transient( $nonce_key, 1, DEVBASE_RELAY_PING_WINDOW * 2 );
+	devbase_relay_forget_old_nonces( $now );
 
 	return true;
+}
+
+/** Deletes up to 20 ping nonce records whose window has passed. */
+function devbase_relay_forget_old_nonces( $now ) {
+	global $wpdb;
+
+	$names = $wpdb->get_col( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		"SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s AND CAST(option_value AS UNSIGNED) < %d LIMIT 20",
+		$wpdb->esc_like( 'devbase_relay_nonce_' ) . '%',
+		$now
+	) );
+
+	foreach ( (array) $names as $name ) {
+		delete_option( $name );
+	}
 }
 
 add_action( 'rest_api_init', function () {

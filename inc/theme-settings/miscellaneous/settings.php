@@ -19,6 +19,7 @@ add_action( 'acf/init', function () {
 		'page_title'  => __( 'Miscellaneous', 'devbase_parent_theme' ),
 		'menu_title'  => __( 'Miscellaneous', 'devbase_parent_theme' ),
 		'menu_slug'   => 'miscellaneous-settings',
+		'capability'  => 'manage_options',
 		'parent_slug' => 'theme-settings',
 	) );
 
@@ -336,6 +337,11 @@ add_filter( 'acf/load_field/key=field_devbase_mcp_allowed_options_pages', functi
 	$choices = array();
 
 	foreach ( (array) acf_get_options_pages() as $page ) {
+		// Pages holding secrets or the update server are never offered (see devbase_abilities_sensitive_options_pages()).
+		if ( in_array( $page['menu_slug'], devbase_abilities_sensitive_options_pages(), true ) ) {
+			continue;
+		}
+
 		$choices[ $page['menu_slug'] ] = $page['page_title'];
 	}
 

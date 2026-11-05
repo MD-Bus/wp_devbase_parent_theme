@@ -165,3 +165,111 @@ function devbase_enable_theme_auto_updates( $update, $item ) {
 	return true;
 }
 add_filter( 'auto_update_theme', 'devbase_enable_theme_auto_updates', 10, 2 );
+
+/**
+ * The release a package address belongs to: one of our tracks whose last signed Warden answer
+ * offers exactly this download_url. Null for any other package (another theme, a plugin, core),
+ * which this file leaves alone.
+ *
+ * @param string $package The package URL WordPress is about to download.
+ * @param string $theme   The theme being updated, when WordPress says (hook_extra['theme']).
+ * @return array|null The release (Warden's update.latest).
+ */
+function devbase_update_release_for_package( $package, $theme = '' ) {
+	foreach ( devbase_update_tracks() as $stylesheet => $licence ) {
+		if ( '' !== $theme && $theme !== $stylesheet ) {
+			continue;
+		}
+
+		$state     = devbase_warden_get_state( $stylesheet );
+		$response  = isset( $state['response'] ) && is_array( $state['response'] ) ? $state['response'] : array();
+		$installed = devbase_update_installed_version( $stylesheet );
+
+		if ( ! $response || null === $installed ) {
+			continue;
+		}
+
+		$release = devbase_warden_pending_update( $response, $installed );
+
+		if ( null !== $release && (string) $release['download_url'] === (string) $package ) {
+			return $release;
+		}
+	}
+
+	return null;
+}
+
+/**
+ * Checks a downloaded package against its release: the file's SHA-256 must equal the `sha256` of
+ * the signed Warden answer, and the release `signature` (Ed25519 over that hex text, Warden's
+ * docs/releases.md "Verifying a package") must verify with a trusted key.
+ *
+ * @param string $file    The downloaded file.
+ * @param array  $release Warden's update.latest.
+ * @return true|WP_Error
+ */
+function devbase_update_verify_package( $file, array $release ) {
+	$expected = strtolower( trim( (string) ( $release['sha256'] ?? '' ) ) );
+
+	if ( ! preg_match( '/^[0-9a-f]{64}$/', $expected ) ) {
+		return new WP_Error( 'devbase_package_unverified', __( 'Warden gave this release no checksum, so it was not installed.', 'devbase_parent_theme' ) );
+	}
+
+	$actual = hash_file( 'sha256', $file );
+
+	if ( ! is_string( $actual ) || ! hash_equals( $expected, strtolower( $actual ) ) ) {
+		return new WP_Error( 'devbase_package_mismatch', __( 'The downloaded theme package does not match its published checksum, so it was not installed.', 'devbase_parent_theme' ) );
+	}
+
+	if ( ! devbase_warden_verify_any( (string) ( $release['signature'] ?? '' ), $expected, devbase_warden_trusted_keys() ) ) {
+		return new WP_Error( 'devbase_package_signature', __( 'The theme package\'s signature could not be verified, so it was not installed.', 'devbase_parent_theme' ) );
+	}
+
+	return true;
+}
+
+/**
+ * Downloads our own theme packages here instead of in core, so they can be verified before
+ * Theme_Upgrader unpacks them. Without this, WordPress installs whatever bytes the download
+ * address returns: the signed answer said WHERE to download, but nothing checked WHAT came back.
+ *
+ * @param false|string|WP_Error $reply    False to let core download.
+ * @param string                $package  The package URL.
+ * @param WP_Upgrader           $upgrader The upgrader.
+ * @param array                 $hook_extra Extra arguments (WordPress 5.5+), with 'theme'.
+ * @return false|string|WP_Error The verified local file, an error, or $reply untouched.
+ */
+function devbase_verify_theme_package_download( $reply, $package, $upgrader = null, $hook_extra = array() ) {
+	if ( false !== $reply || ! is_string( $package ) || '' === $package ) {
+		return $reply;
+	}
+
+	$theme   = is_array( $hook_extra ) && ! empty( $hook_extra['theme'] ) ? (string) $hook_extra['theme'] : '';
+	$release = devbase_update_release_for_package( $package, $theme );
+
+	if ( null === $release ) {
+		return $reply;
+	}
+
+	if ( ! function_exists( 'download_url' ) ) {
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+	}
+
+	$file = download_url( $package, 300 );
+
+	if ( is_wp_error( $file ) ) {
+		return $file;
+	}
+
+	$verified = devbase_update_verify_package( $file, $release );
+
+	if ( is_wp_error( $verified ) ) {
+		wp_delete_file( $file );
+		error_log( 'devbase_parent_theme: theme package refused — ' . $verified->get_error_message() );
+
+		return $verified;
+	}
+
+	return $file;
+}
+add_filter( 'upgrader_pre_download', 'devbase_verify_theme_package_download', 10, 4 );

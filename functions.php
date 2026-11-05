@@ -95,6 +95,11 @@ require_once __DIR__ . '/inc/backups/backups.php';
 // Registers the (currently empty) Theme Settings options page.
 require_once __DIR__ . '/inc/theme-settings/theme-settings.php';
 
+// Who may open and save Theme Settings (administrators), and what a save from
+// that screen may change (never the provisioned licence values; secrets are
+// not drawn back into the page).
+require_once __DIR__ . '/inc/theme-settings/access.php';
+
 // Registers the Licence sub-page (Warden endpoint, signing key, one
 // licence key per theme track) and the accessors inc/updates/ reads.
 // status.php only renders the read-only Status tab, and must load before

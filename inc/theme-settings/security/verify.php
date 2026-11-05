@@ -87,6 +87,28 @@ function devbase_security_recaptcha_min_score() {
 }
 
 /**
+ * The hostnames a CAPTCHA token may come from: this site's own (home and site address, with and
+ * without www). A site served under more names (staging, a second domain) adds them with the
+ * devbase/security/allowed_hostnames filter.
+ *
+ * @return string[]
+ */
+function devbase_security_allowed_hostnames() {
+	$hosts = array();
+
+	foreach ( array( home_url(), site_url() ) as $url ) {
+		$host = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+
+		if ( '' !== $host ) {
+			$hosts[] = $host;
+			$hosts[] = 0 === strpos( $host, 'www.' ) ? substr( $host, 4 ) : 'www.' . $host;
+		}
+	}
+
+	return array_values( array_unique( array_map( 'strtolower', (array) apply_filters( 'devbase/security/allowed_hostnames', $hosts ) ) ) );
+}
+
+/**
  * Verifies a submitted CAPTCHA token against whichever provider is active.
  *
  * @param string $token The token submitted with the form (field name
@@ -138,6 +160,12 @@ function devbase_security_verify( $token ) {
 		return false;
 	}
 
+	// The token must have been earned on this site. Both providers name the hostname the widget
+	// ran on; a token from another site using the same keys is refused.
+	if ( isset( $body['hostname'] ) && ! in_array( strtolower( (string) $body['hostname'] ), devbase_security_allowed_hostnames(), true ) ) {
+		return false;
+	}
+
 	if ( 'recaptcha' !== $provider ) {
 		return true;
 	}
@@ -149,7 +177,8 @@ function devbase_security_verify( $token ) {
 		return false;
 	}
 
-	if ( isset( $body['action'] ) && devbase_security_recaptcha_action() !== $body['action'] ) {
+	// A v3 answer always names its action: one without it is not accepted.
+	if ( ! isset( $body['action'] ) || devbase_security_recaptcha_action() !== $body['action'] ) {
 		return false;
 	}
 

@@ -29,6 +29,7 @@ add_action( 'acf/init', function () {
 		'page_title' => __( 'Theme Settings', 'devbase_parent_theme' ),
 		'menu_title' => __( 'Theme Settings', 'devbase_parent_theme' ),
 		'menu_slug'  => 'theme-settings',
+		'capability' => 'manage_options',
 		'icon_url'   => $icon_url,
 	) );
 } );

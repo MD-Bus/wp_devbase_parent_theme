@@ -82,6 +82,12 @@ function devbase_abilities_content_from_blocks( array $input, $post = null ) {
 function devbase_abilities_with_blocks( $data ) {
 	$post = is_array( $data ) && ! empty( $data['id'] ) ? get_post( $data['id'] ) : null;
 
+	// The REST answer hides a password-protected post's content from a caller who may not edit
+	// it; the blocks (read from the stored content) must not show it either.
+	if ( $post && '' !== $post->post_password && ! current_user_can( 'edit_post', $post->ID ) ) {
+		return array_merge( $data, array( 'built_from_blocks' => has_blocks( $post->post_content ), 'blocks' => array() ) );
+	}
+
 	if ( $post ) {
 		$data = array_merge( $data, devbase_abilities_describe_blocks( $post->post_content ) );
 	}

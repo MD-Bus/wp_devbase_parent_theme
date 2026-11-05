@@ -36,6 +36,8 @@ function devbase_forms_render_submission_meta_box( $post ) {
 			}
 			$label = isset( $field['aria_label'] ) ? $field['aria_label'] : '';
 			$value = isset( $field['value'] ) ? $field['value'] : '';
+			// A list (checkboxes, a custom sanitizer) is shown as one value per line.
+			$value = is_array( $value ) ? implode( "\n", array_map( 'strval', array_filter( $value, 'is_scalar' ) ) ) : (string) $value;
 			echo '<tr><td style="width:200px;font-weight:600;">' . esc_html( $label ) . '</td><td>' . nl2br( esc_html( $value ) ) . '</td></tr>';
 		}
 		echo '</tbody></table>';

@@ -52,9 +52,31 @@ function devbase_abilities_content_post_types() {
  * differently.
  */
 function devbase_abilities_is_options_page_allowed( $menu_slug ) {
+	if ( in_array( $menu_slug, devbase_abilities_sensitive_options_pages(), true ) ) {
+		return false;
+	}
+
 	$allowed = (array) get_field( 'mcp_allowed_options_pages', 'option' );
 
 	return in_array( $menu_slug, $allowed, true );
+}
+
+/**
+ * Options pages MCP can never reach, whatever the allow-list says: they hold the update server
+ * and its signing key, mail and CAPTCHA credentials, and where every form submission is sent. An
+ * AI client acting on content it has read (prompt injection) must not be able to read those
+ * secrets or point theme updates at a server of its choosing. Filterable to add more.
+ *
+ * @return string[] menu_slugs.
+ */
+function devbase_abilities_sensitive_options_pages() {
+	return (array) apply_filters( 'devbase_abilities_sensitive_options_pages', array(
+		'theme-settings',
+		'licence-settings',
+		'smtp-settings',
+		'security-settings',
+		'destinations-settings',
+	) );
 }
 
 /**
@@ -243,7 +265,13 @@ function devbase_abilities_field_details( array $field ) {
  * @return string[]
  */
 function devbase_abilities_protected_option_fields() {
-	return array( 'mcp_allowed_post_types', 'mcp_allowed_options_pages', 'mcp_allow_media_upload', 'mcp_site_guide' );
+	return array(
+		'mcp_allowed_post_types', 'mcp_allowed_options_pages', 'mcp_allow_media_upload', 'mcp_site_guide',
+		// Secrets and provisioned values, wherever a page puts them (see also
+		// devbase_abilities_sensitive_options_pages(), which keeps their pages out entirely).
+		'warden_licence_key', 'warden_base_url', 'warden_public_key', 'relay_base_url', 'relay_site_key',
+		'smtp_password', 'turnstile_secret_key', 'recaptcha_secret_key', 'destinations', 'lock_remote_setup',
+	);
 }
 
 /**

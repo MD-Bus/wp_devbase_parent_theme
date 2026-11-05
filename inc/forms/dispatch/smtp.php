@@ -30,6 +30,7 @@ function devbase_forms_dispatch_smtp( array $row, $form_name, array $content ) {
 		}
 		$field_label = isset( $field['aria_label'] ) ? $field['aria_label'] : '';
 		$value       = isset( $field['value'] ) ? $field['value'] : '';
+		$value       = is_array( $value ) ? implode( "\n", array_map( 'strval', array_filter( $value, 'is_scalar' ) ) ) : (string) $value;
 
 		$rows .= sprintf(
 			'<tr><td style="padding:6px 12px;font-weight:bold;vertical-align:top;">%s</td><td style="padding:6px 12px;">%s</td></tr>',

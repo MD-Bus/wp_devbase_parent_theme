@@ -49,7 +49,10 @@ function devbase_form_fields( $form_name, array $args = array() ) {
 
 	// No id: two forms on one page (a footer newsletter and a contact form)
 	// would otherwise print the same id twice, which wp_nonce_field() does.
-	$html .= '<input type="hidden" name="_devbase_form_nonce" value="' . esc_attr( wp_create_nonce( 'devbase_form_' . $form_name ) ) . '">';
+	// data-devbase-nonce: forms.js asks for a fresh one just before sending (devbase_form_nonce
+	// below), so a page served from a cache days later still submits.
+	$html .= '<input type="hidden" name="_devbase_form_nonce" value="' . esc_attr( wp_create_nonce( 'devbase_form_' . $form_name ) ) . '"'
+		. ' data-devbase-nonce="' . esc_attr( $form_name ) . '" data-nonce-url="' . esc_url( admin_url( 'admin-ajax.php' ) ) . '">';
 
 	if ( $args['honeypot'] ) {
 		// Off-screen rather than display:none, which some bots skip. Hidden from
@@ -76,3 +79,25 @@ function devbase_form_enqueue_script() {
 
 	wp_enqueue_script( 'devbase-forms', get_template_directory_uri() . '/assets/js/forms.js', array(), (string) filemtime( $file ), array( 'in_footer' => true, 'strategy' => 'defer' ) );
 }
+
+/**
+ * A fresh form nonce, for forms.js. A page cache can serve the HTML (and the nonce printed in it)
+ * long after the nonce has expired (12 to 24 hours), and every submission was then refused as
+ * "blocked". This answer is never cached. A nonce for an anonymous visitor is the same for everyone
+ * and is printed on every page with the form, so handing it out here reveals nothing new; it is
+ * only given for a registered form name.
+ */
+function devbase_form_nonce_ajax() {
+	nocache_headers();
+
+	$form  = isset( $_GET['form'] ) ? sanitize_text_field( wp_unslash( $_GET['form'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$names = wp_list_pluck( devbase_forms_get_registry(), 'name' );
+
+	if ( '' === $form || ! in_array( $form, $names, true ) ) {
+		wp_send_json_error( null, 404 );
+	}
+
+	wp_send_json_success( array( 'nonce' => wp_create_nonce( 'devbase_form_' . $form ) ) );
+}
+add_action( 'wp_ajax_devbase_form_nonce', 'devbase_form_nonce_ajax' );
+add_action( 'wp_ajax_nopriv_devbase_form_nonce', 'devbase_form_nonce_ajax' );

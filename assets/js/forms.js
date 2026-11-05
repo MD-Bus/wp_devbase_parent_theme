@@ -134,6 +134,20 @@
 			if (first) { first.focus(); }
 		}
 
+		// The nonce printed in the page may be days old when a page cache served it: ask for a fresh
+		// one first. If that fails, the printed one is sent as before.
+		function freshNonce() {
+			var field = form.querySelector('input[data-devbase-nonce]');
+			if (!field || !window.fetch) { return Promise.resolve(); }
+
+			var url = field.getAttribute('data-nonce-url') + '?action=devbase_form_nonce&form=' + encodeURIComponent(field.getAttribute('data-devbase-nonce'));
+
+			return fetch(url, { credentials: 'same-origin', cache: 'no-store' })
+				.then(function (r) { return r.json(); })
+				.then(function (res) { if (res && res.success && res.data && res.data.nonce) { field.value = res.data.nonce; } })
+				.catch(function () { /* keep the printed nonce */ });
+		}
+
 		form.addEventListener('submit', function (event) {
 			event.preventDefault();
 			clear();
@@ -144,7 +158,10 @@
 			if (button) { button.disabled = true; }
 			form.setAttribute('aria-busy', 'true');
 
-			fetch(form.getAttribute('action') || form.getAttribute('data-ajax'), { method: 'POST', body: new FormData(form), credentials: 'same-origin' })
+			freshNonce()
+				.then(function () {
+					return fetch(form.getAttribute('action') || form.getAttribute('data-ajax'), { method: 'POST', body: new FormData(form), credentials: 'same-origin' });
+				})
 				.then(function (r) { return r.json().catch(function () { return { success: false, data: {} }; }); })
 				.then(function (res) {
 					if (res.success) { succeed(res.data || {}); } else { refuse(res.data || {}); }

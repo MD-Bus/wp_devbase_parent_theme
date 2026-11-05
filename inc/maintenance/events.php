@@ -458,7 +458,7 @@ function devbase_events_run() {
 
 	if ( 200 === $code ) {
 		// Taken in: off the queue, whatever was dropped for its own reasons (no message, past the 50th).
-		update_option( DEVBASE_EVENTS_QUEUE, array_diff_key( $queue, $batch ), false );
+		devbase_events_dequeue( $batch );
 
 		return devbase_events_note( array( 'status' => 'ok', 'detail' => '', 'sent_at' => time(), 'accepted' => (int) ( $data['accepted'] ?? count( $batch ) ) ) );
 	}
@@ -483,10 +483,40 @@ function devbase_events_run() {
 
 	// A batch Brand Relay will never accept (400, 413, 415) is dropped, so it cannot block the queue for good.
 	if ( in_array( $code, array( 400, 413, 415 ), true ) ) {
-		update_option( DEVBASE_EVENTS_QUEUE, array_diff_key( $queue, $batch ), false );
+		devbase_events_dequeue( $batch );
 	}
 
 	return devbase_events_note( array( 'status' => 'error', 'detail' => "HTTP {$code}" ) );
+}
+
+/**
+ * Takes a sent batch off the queue. The queue is read again here, not reused from before the send:
+ * errors queued by other requests during the (up to 10 second) call stay queued. An entry whose
+ * count grew meanwhile keeps the difference.
+ *
+ * @param array $batch fingerprint => event, as sent.
+ */
+function devbase_events_dequeue( array $batch ) {
+	wp_cache_delete( DEVBASE_EVENTS_QUEUE, 'options' );
+
+	$queue = get_option( DEVBASE_EVENTS_QUEUE );
+	$queue = is_array( $queue ) ? $queue : array();
+
+	foreach ( $batch as $fingerprint => $sent ) {
+		if ( ! isset( $queue[ $fingerprint ] ) ) {
+			continue;
+		}
+
+		$left = (int) $queue[ $fingerprint ]['count'] - (int) ( $sent['count'] ?? 0 );
+
+		if ( $left > 0 && (int) $queue[ $fingerprint ]['at'] > (int) ( $sent['at'] ?? 0 ) ) {
+			$queue[ $fingerprint ]['count'] = $left;
+		} else {
+			unset( $queue[ $fingerprint ] );
+		}
+	}
+
+	update_option( DEVBASE_EVENTS_QUEUE, $queue, false );
 }
 
 /** Keeps the outcome of a send for the status line, and returns it. */

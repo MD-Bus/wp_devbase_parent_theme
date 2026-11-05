@@ -15,6 +15,7 @@ add_action( 'acf/init', function () {
 		'page_title'  => __( 'Security', 'devbase_parent_theme' ),
 		'menu_title'  => __( 'Security', 'devbase_parent_theme' ),
 		'menu_slug'   => 'security-settings',
+		'capability'  => 'manage_options',
 		'parent_slug' => 'theme-settings',
 	) );
 

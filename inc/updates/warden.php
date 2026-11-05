@@ -136,6 +136,23 @@ function devbase_warden_verify_signature( $signature, $body, $public_key_base64 
 }
 
 /**
+ * Whether a signature verifies under any of the trusted keys (devbase_warden_trusted_keys()).
+ *
+ * @param string   $signature Base64 Ed25519 signature.
+ * @param string   $message   The exact signed bytes.
+ * @param string[] $keys      Base64 public keys.
+ */
+function devbase_warden_verify_any( $signature, $message, array $keys ) {
+	foreach ( $keys as $key ) {
+		if ( devbase_warden_verify_signature( $signature, $message, $key ) ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
  * The tag a track is checked under.
  *
  * The base theme is parent-theme and anything else (the active child) is child-theme. A
@@ -177,10 +194,10 @@ function devbase_warden_check( $track, $licence, $version, $force = false ) {
 		return array();
 	}
 
-	$base_url   = devbase_warden_base_url();
-	$public_key = devbase_warden_public_key();
+	$base_url = devbase_warden_base_url();
+	$keys     = devbase_warden_trusted_keys();
 
-	if ( '' === $base_url || '' === $public_key ) {
+	if ( '' === $base_url || ! $keys ) {
 		// Not configured yet — no endpoint to ask, and no key to verify a
 		// reply with. Returning the cache (usually empty) keeps this a
 		// no-op rather than an error state.
@@ -245,7 +262,7 @@ function devbase_warden_check( $track, $licence, $version, $force = false ) {
 
 	$signature = wp_remote_retrieve_header( $response, 'x-warden-signature-ed25519' );
 
-	if ( ! devbase_warden_verify_signature( $signature, $body, $public_key ) ) {
+	if ( ! devbase_warden_verify_any( $signature, $body, $keys ) ) {
 		return $fail( 'signature verification failed' );
 	}
 

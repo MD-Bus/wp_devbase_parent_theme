@@ -26,6 +26,7 @@ add_action( 'acf/init', function () {
 		'page_title'  => __( 'Form Destinations', 'devbase_parent_theme' ),
 		'menu_title'  => __( 'Form Destinations', 'devbase_parent_theme' ),
 		'menu_slug'   => 'destinations-settings',
+		'capability'  => 'manage_options',
 		'parent_slug' => 'theme-settings',
 	) );
 

@@ -25,6 +25,7 @@ add_action( 'wp_loaded', function () {
 		'page_title' => __( 'Archive', 'devbase_parent_theme' ),
 		'menu_title' => __( 'Archive', 'devbase_parent_theme' ),
 		'menu_slug'  => 'archive-settings',
+		'capability' => 'edit_pages',
 		'icon_url'   => 'dashicons-archive',
 	) );
 
@@ -40,6 +41,7 @@ add_action( 'wp_loaded', function () {
 			'page_title'  => $post_type->labels->name,
 			'menu_title'  => $post_type->labels->name,
 			'menu_slug'   => $menu_slug,
+			'capability'  => 'edit_pages',
 			'parent_slug' => 'archive-settings',
 			// Every options page defaults to the SAME shared 'options'
 			// data store unless told otherwise — without this, two CPT

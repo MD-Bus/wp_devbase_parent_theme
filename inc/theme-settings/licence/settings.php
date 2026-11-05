@@ -30,6 +30,7 @@ add_action( 'acf/init', function () {
 		'page_title'  => __( 'Licence', 'devbase_parent_theme' ),
 		'menu_title'  => __( 'Licence', 'devbase_parent_theme' ),
 		'menu_slug'   => 'licence-settings',
+		'capability'  => 'manage_options',
 		'parent_slug' => 'theme-settings',
 	) );
 
@@ -180,7 +181,15 @@ add_action( 'acf/init', function () {
 // getting this wrong once.
 // ---------------------------------------------------------------------------
 
+/**
+ * The Warden address: the DEVBASE_WARDEN_URL constant when defined (wp-config.php or code),
+ * else the provisioned field.
+ */
 function devbase_warden_base_url() {
+	if ( defined( 'DEVBASE_WARDEN_URL' ) ) {
+		return untrailingslashit( trim( (string) DEVBASE_WARDEN_URL ) );
+	}
+
 	if ( ! function_exists( 'get_field' ) ) {
 		return '';
 	}
@@ -188,12 +197,68 @@ function devbase_warden_base_url() {
 	return trim( (string) get_field( 'warden_base_url', 'option' ) );
 }
 
+/**
+ * The Warden public keys pinned in code: inc/updates/pinned-keys.php (shipped with the theme)
+ * and the DEVBASE_WARDEN_PUBLIC_KEY constant (one key or a list), plus the
+ * devbase/warden/pinned_keys filter. Warden's own rule is that the key lives in the site's code,
+ * so that nobody who can edit the database (or a Brand Relay account) can choose which signature
+ * the site trusts. More than one key is accepted so a key can be rotated in a release.
+ *
+ * @return string[] Base64 raw Ed25519 public keys; empty when none is pinned.
+ */
+function devbase_warden_pinned_keys() {
+	$keys = array();
+	$file = get_template_directory() . '/inc/updates/pinned-keys.php';
+
+	if ( is_readable( $file ) ) {
+		$from_file = include $file;
+		$keys      = is_array( $from_file ) ? $from_file : array();
+	}
+
+	if ( defined( 'DEVBASE_WARDEN_PUBLIC_KEY' ) ) {
+		$keys = array_merge( $keys, (array) DEVBASE_WARDEN_PUBLIC_KEY );
+	}
+
+	$keys = (array) apply_filters( 'devbase/warden/pinned_keys', $keys );
+
+	return array_values( array_unique( array_filter( array_map( function ( $key ) {
+		return is_string( $key ) ? trim( $key ) : '';
+	}, $keys ) ) ) );
+}
+
+/**
+ * The key a Warden answer is verified with: the first pinned key when any is pinned (the
+ * provisioned field is then ignored), else the provisioned field.
+ */
 function devbase_warden_public_key() {
+	$pinned = devbase_warden_pinned_keys();
+
+	if ( $pinned ) {
+		return $pinned[0];
+	}
+
 	if ( ! function_exists( 'get_field' ) ) {
 		return '';
 	}
 
 	return trim( (string) get_field( 'warden_public_key', 'option' ) );
+}
+
+/**
+ * Every key an answer or a release may be signed with: all pinned keys, or the provisioned one.
+ *
+ * @return string[]
+ */
+function devbase_warden_trusted_keys() {
+	$pinned = devbase_warden_pinned_keys();
+
+	if ( $pinned ) {
+		return $pinned;
+	}
+
+	$key = devbase_warden_public_key();
+
+	return '' === $key ? array() : array( $key );
 }
 
 /**
