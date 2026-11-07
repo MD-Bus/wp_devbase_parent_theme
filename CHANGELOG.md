@@ -10,6 +10,14 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.36.1] — 2026-11-07
+
+### Changed
+
+- Dependencies: WPvivid Backup 0.9.138 -> 0.9.139 (Dependabot pull request, merged; the first one found through WP Packages). WPvivid's own changelog: "an issue that
+  prevented version 0.9.138 from being properly installed". Compared with 0.9.138, only the version strings and the readme differ, so the backup driver's calls
+  into WPvivid are unaffected.
+
 ## [1.36.0] — 2026-11-07
 
 ### Changed
