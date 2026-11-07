@@ -605,7 +605,7 @@ You are told when an update is due:
 
   ```yaml
       ignore:
-        - dependency-name: "wpackagist-plugin/secure-custom-fields"
+        - dependency-name: "wp-plugin/secure-custom-fields"
           versions: ["6.9.8"]
   ```
 

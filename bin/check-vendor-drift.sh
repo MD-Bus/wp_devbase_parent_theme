@@ -32,13 +32,13 @@ while IFS='|' read -r SLUG MAIN_FILE; do
 	LOCK_VERSION="$(php -r '
 		$lock = json_decode( file_get_contents( $argv[1] ), true );
 		foreach ( $lock["packages"] as $p ) {
-			if ( "wpackagist-plugin/" . $argv[2] === $p["name"] ) { echo $p["version"]; return; }
+			if ( "wp-plugin/" . $argv[2] === $p["name"] ) { echo $p["version"]; return; }
 		}
 	' "$THEME_DIR/composer.lock" "$SLUG")"
 
 	if [ -n "$DISK_VERSION" ] && [ -n "$LOCK_VERSION" ] && [ "$DISK_VERSION" != "$LOCK_VERSION" ]; then
 		echo "    DRIFT: $SLUG is $DISK_VERSION on disk but $LOCK_VERSION in composer.lock"
-		echo "           -> composer require wpackagist-plugin/$SLUG:$DISK_VERSION"
+		echo "           -> composer require wp-plugin/$SLUG:$DISK_VERSION"
 		DRIFT=1
 	else
 		echo "    ok: $SLUG $LOCK_VERSION"
@@ -106,7 +106,7 @@ while IFS='|' read -r SLUG MAIN_FILE; do
 	LOCK_VERSION="$(php -r '
 		$lock = json_decode( file_get_contents( $argv[1] ), true );
 		foreach ( $lock["packages"] as $p ) {
-			if ( "wpackagist-plugin/" . $argv[2] === $p["name"] ) { echo $p["version"]; return; }
+			if ( "wp-plugin/" . $argv[2] === $p["name"] ) { echo $p["version"]; return; }
 		}
 	' "$THEME_DIR/bundled-plugins/composer.lock" "$SLUG")"
 

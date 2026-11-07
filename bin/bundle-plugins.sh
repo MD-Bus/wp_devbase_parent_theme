@@ -40,7 +40,7 @@ while IFS='|' read -r SLUG MAIN_FILE; do
 	LOCKED="$(php -r '
 		$lock = json_decode( file_get_contents( $argv[1] ), true );
 		foreach ( $lock["packages"] as $p ) {
-			if ( "wpackagist-plugin/" . $argv[2] === $p["name"] ) { echo $p["version"]; return; }
+			if ( "wp-plugin/" . $argv[2] === $p["name"] ) { echo $p["version"]; return; }
 		}
 	' "$DIR/composer.lock" "$SLUG")"
 

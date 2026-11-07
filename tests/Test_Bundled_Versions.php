@@ -24,8 +24,8 @@ class Test_Bundled_Versions extends WP_UnitTestCase {
 		$locked = array_column( $lock['packages'], 'version', 'name' );
 		$versions = devbase_bundled_versions();
 
-		$this->assertSame( $locked['wpackagist-plugin/secure-custom-fields'], $versions['Secure Custom Fields'] );
-		$this->assertSame( $locked['wpackagist-plugin/admin-site-enhancements'], $versions['Admin Site Enhancements'] );
+		$this->assertSame( $locked['wp-plugin/secure-custom-fields'], $versions['Secure Custom Fields'] );
+		$this->assertSame( $locked['wp-plugin/admin-site-enhancements'], $versions['Admin Site Enhancements'] );
 		$this->assertSame( ltrim( $locked['timber/timber'], 'v' ), $versions['Timber'] );
 	}
 

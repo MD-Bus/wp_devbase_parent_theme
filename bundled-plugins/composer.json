@@ -2,12 +2,12 @@
     "repositories": [
         {
             "type": "composer",
-            "url": "https://wpackagist.org"
+            "url": "https://repo.wp-packages.org"
         }
     ],
     "require": {
-        "wpackagist-plugin/woocommerce": "11.2.2",
-        "wpackagist-plugin/wpvivid-backuprestore": "0.9.138"
+        "wp-plugin/woocommerce": "11.2.2",
+        "wp-plugin/wpvivid-backuprestore": "0.9.138"
     },
     "extra": {
         "installer-paths": {

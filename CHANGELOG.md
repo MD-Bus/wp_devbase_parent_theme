@@ -10,6 +10,15 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.36.0] — 2026-11-07
+
+### Changed
+
+- **Bundled plugins now come from WP Packages instead of WPackagist.** WPackagist is a community mirror that lags behind WordPress.org (WPvivid 0.9.139 was
+  eight days old and still missing). Both `composer.json` files point at `https://repo.wp-packages.org` and use the `wp-plugin/` names; the scripts, the registry,
+  the test and the README follow. Nothing ships differently: the pinned versions are unchanged and the bundled zips and `vendor/` plugin files are byte-for-byte the
+  same content. Dependabot reads the repository from the composer files, so its pull requests now see new versions as soon as WP Packages does.
+
 ## [1.35.0] — 2026-11-05
 
 ### Added

@@ -601,7 +601,7 @@
             "install-path": "../twig/twig"
         },
         {
-            "name": "wpackagist-plugin/admin-site-enhancements",
+            "name": "wp-plugin/admin-site-enhancements",
             "version": "9.3.1",
             "version_normalized": "9.3.1.0",
             "source": {
@@ -614,15 +614,28 @@
                 "url": "https://downloads.wordpress.org/plugin/admin-site-enhancements.9.3.1.zip"
             },
             "require": {
-                "composer/installers": "^1.0 || ^2.0"
+                "composer/installers": "~1.0|~2.0"
             },
+            "time": "2026-11-02T00:12:13+00:00",
             "type": "wordpress-plugin",
             "installation-source": "dist",
-            "homepage": "https://wordpress.org/plugins/admin-site-enhancements/",
+            "notification-url": "https://wp-packages.org/downloads",
+            "authors": [
+                {
+                    "name": "Bowo"
+                }
+            ],
+            "description": "Duplicate post, post order, image resize, email via SMTP, admin menu editor, custom css / code, disable gutenberg and much more in a single plugin.",
+            "homepage": "https://www.wpase.com/plugin-uri",
+            "support": {
+                "changelog": "https://wordpress.org/plugins/admin-site-enhancements/#developers",
+                "issues": "https://wordpress.org/support/plugin/admin-site-enhancements",
+                "source": "https://plugins.svn.wordpress.org/admin-site-enhancements"
+            },
             "install-path": "../admin-site-enhancements"
         },
         {
-            "name": "wpackagist-plugin/secure-custom-fields",
+            "name": "wp-plugin/secure-custom-fields",
             "version": "6.9.8",
             "version_normalized": "6.9.8.0",
             "source": {
@@ -635,14 +648,27 @@
                 "url": "https://downloads.wordpress.org/plugin/secure-custom-fields.6.9.8.zip"
             },
             "require": {
-                "composer/installers": "^1.0 || ^2.0"
+                "composer/installers": "~1.0|~2.0"
             },
+            "time": "2026-11-03T15:21:43+00:00",
             "type": "wordpress-plugin",
             "installation-source": "dist",
-            "homepage": "https://wordpress.org/plugins/secure-custom-fields/",
+            "notification-url": "https://wp-packages.org/downloads",
+            "authors": [
+                {
+                    "name": "WordPress.org"
+                }
+            ],
+            "description": "Secure Custom Fields boosts content management with custom fields and options. It deactivates Advanced Custom Fields to prevent duplicate code errors.",
+            "homepage": "https://developer.wordpress.org/secure-custom-fields/",
+            "support": {
+                "changelog": "https://wordpress.org/plugins/secure-custom-fields/#developers",
+                "issues": "https://wordpress.org/support/plugin/secure-custom-fields",
+                "source": "https://plugins.svn.wordpress.org/secure-custom-fields"
+            },
             "install-path": "../secure-custom-fields"
         }
     ],
-    "dev": false,
+    "dev": true,
     "dev-package-names": []
 }

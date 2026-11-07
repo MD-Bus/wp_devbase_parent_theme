@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "77a41adf1f9279800671618d00b709ae",
+    "content-hash": "071343c7437140826b2ae04b8690c6ca",
     "packages": [
         {
             "name": "composer/installers",
@@ -153,7 +153,7 @@
             "time": "2024-06-24T20:46:46+00:00"
         },
         {
-            "name": "wpackagist-plugin/woocommerce",
+            "name": "wp-plugin/woocommerce",
             "version": "11.2.2",
             "source": {
                 "type": "svn",
@@ -165,13 +165,26 @@
                 "url": "https://downloads.wordpress.org/plugin/woocommerce.11.2.2.zip"
             },
             "require": {
-                "composer/installers": "^1.0 || ^2.0"
+                "composer/installers": "~1.0|~2.0"
             },
             "type": "wordpress-plugin",
-            "homepage": "https://wordpress.org/plugins/woocommerce/"
+            "notification-url": "https://wp-packages.org/downloads",
+            "authors": [
+                {
+                    "name": "Automattic"
+                }
+            ],
+            "description": "Everything you need to launch an online store in days and keep it growing for years. From your first sale to millions in revenue, Woo is with you.",
+            "homepage": "https://woocommerce.com/",
+            "support": {
+                "changelog": "https://wordpress.org/plugins/woocommerce/#developers",
+                "issues": "https://wordpress.org/support/plugin/woocommerce",
+                "source": "https://plugins.svn.wordpress.org/woocommerce"
+            },
+            "time": "2026-11-04T21:34:49+00:00"
         },
         {
-            "name": "wpackagist-plugin/wpvivid-backuprestore",
+            "name": "wp-plugin/wpvivid-backuprestore",
             "version": "0.9.138",
             "source": {
                 "type": "svn",
@@ -183,10 +196,22 @@
                 "url": "https://downloads.wordpress.org/plugin/wpvivid-backuprestore.0.9.138.zip"
             },
             "require": {
-                "composer/installers": "^1.0 || ^2.0"
+                "composer/installers": "~1.0|~2.0"
             },
             "type": "wordpress-plugin",
-            "homepage": "https://wordpress.org/plugins/wpvivid-backuprestore/"
+            "notification-url": "https://wp-packages.org/downloads",
+            "authors": [
+                {
+                    "name": "wpvividplugins"
+                }
+            ],
+            "description": "All-in-one WordPress backup, migration and staging plugin — schedule automatic backups, restore in one click, and migrate or clone sites safely.",
+            "support": {
+                "changelog": "https://wordpress.org/plugins/wpvivid-backuprestore/#developers",
+                "issues": "https://wordpress.org/support/plugin/wpvivid-backuprestore",
+                "source": "https://plugins.svn.wordpress.org/wpvivid-backuprestore"
+            },
+            "time": "2026-10-30T09:01:44+00:00"
         }
     ],
     "packages-dev": [],

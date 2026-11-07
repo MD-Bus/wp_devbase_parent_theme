@@ -149,7 +149,7 @@ function devbase_bundled_plugin_version( $slug ) {
 	$data = is_readable( $lock ) ? json_decode( (string) file_get_contents( $lock ), true ) : null;
 
 	foreach ( is_array( $data ) ? ( $data['packages'] ?? array() ) : array() as $package ) {
-		if ( 'wpackagist-plugin/' . $slug === ( $package['name'] ?? '' ) ) {
+		if ( 'wp-plugin/' . $slug === ( $package['name'] ?? '' ) ) {
 			return ltrim( (string) $package['version'], 'v' );
 		}
 	}

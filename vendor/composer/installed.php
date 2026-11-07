@@ -3,17 +3,17 @@
         'name' => '__root__',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'ca1afd57c50734a23f65cb0ddf1346d38df5d885',
+        'reference' => '7638374eea234962c2e90c2dd0619ae6b064c606',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'dev' => false,
+        'dev' => true,
     ),
     'versions' => array(
         '__root__' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'ca1afd57c50734a23f65cb0ddf1346d38df5d885',
+            'reference' => '7638374eea234962c2e90c2dd0619ae6b064c606',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -73,7 +73,7 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
-        'wpackagist-plugin/admin-site-enhancements' => array(
+        'wp-plugin/admin-site-enhancements' => array(
             'pretty_version' => '9.3.1',
             'version' => '9.3.1.0',
             'reference' => 'tags/9.3.1',
@@ -82,7 +82,7 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
-        'wpackagist-plugin/secure-custom-fields' => array(
+        'wp-plugin/secure-custom-fields' => array(
             'pretty_version' => '6.9.8',
             'version' => '6.9.8.0',
             'reference' => 'tags/6.9.8',
