@@ -10,6 +10,12 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.36.2] — 2026-11-07
+
+### Changed
+
+- A test release with no change to the code: it exists so a site has a theme update waiting, to check that Brand Relay's site health report counts it.
+
 ## [1.36.1] — 2026-11-07
 
 ### Changed
