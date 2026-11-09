@@ -868,6 +868,10 @@ class Settings_Sanitization {
             $options['smtp_bypass_ssl_verification'] = false;
         }
         $options['smtp_bypass_ssl_verification'] = ( 'on' == $options['smtp_bypass_ssl_verification'] ? true : false );
+        if ( !isset( $options['smtp_force_ipv4'] ) ) {
+            $options['smtp_force_ipv4'] = false;
+        }
+        $options['smtp_force_ipv4'] = ( 'on' == $options['smtp_force_ipv4'] ? true : false );
         if ( !isset( $options['smtp_debug'] ) ) {
             $options['smtp_debug'] = false;
         }

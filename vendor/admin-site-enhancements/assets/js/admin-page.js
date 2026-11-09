@@ -575,6 +575,7 @@
       $('.smtp-username').appendTo('.fields-utilities .smtp-email-delivery .asenha-subfields');
       $('.smtp-password').appendTo('.fields-utilities .smtp-email-delivery .asenha-subfields');
       $('.smtp-bypass-ssl-verification').appendTo('.fields-utilities .smtp-email-delivery .asenha-subfields');
+      $('.smtp-force-ipv4').appendTo('.fields-utilities .smtp-email-delivery .asenha-subfields');
       $('.smtp-debug').appendTo('.fields-utilities .smtp-email-delivery .asenha-subfields');
       
       $('.smtp-send-test-email-description').appendTo('.fields-utilities .smtp-email-delivery .asenha-subfields');

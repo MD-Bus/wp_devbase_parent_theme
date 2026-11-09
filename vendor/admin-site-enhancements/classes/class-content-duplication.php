@@ -172,20 +172,10 @@ class Content_Duplication {
                         );
                     }
                 }
+                // Get the post meta keys to exclude from post meta duplication
                 $excluded_post_meta_keys = array();
-                // Copy over the post meta
-                $original_post_metas = get_post_meta( $original_post_id );
-                // all meta keys and the corresponding values
-                if ( !empty( $original_post_metas ) ) {
-                    foreach ( $original_post_metas as $meta_key => $meta_values ) {
-                        if ( !in_array( $meta_key, $excluded_post_meta_keys ) ) {
-                            // Only copy over post meta that are not ASE custom fields. We will handle that later.
-                            foreach ( $meta_values as $meta_value ) {
-                                update_post_meta( $new_post_id, $meta_key, wp_slash( maybe_unserialize( $meta_value ) ) );
-                            }
-                        }
-                    }
-                }
+                // Copy over the post meta. ASE custom fields are handled later.
+                $this->copy_post_meta( $original_post_id, $new_post_id, $excluded_post_meta_keys );
                 // Prevent Elementor plugin placeholder.png URLs from being sideloaded into the Media Library.
                 $this->normalize_elementor_placeholder_media_in_duplicate( $new_post_id );
                 // wp_insert_post() sets post_modified to post_date for a new post.
@@ -287,6 +277,32 @@ class Content_Duplication {
             array('%d')
         );
         clean_post_cache( $new_post_id );
+    }
+
+    /**
+     * Copy post meta from one post to another, skipping the given meta keys.
+     *
+     * @since 9.3.2
+     *
+     * @param int      $from_post_id  Post to copy meta from.
+     * @param int      $to_post_id    Post to copy meta to.
+     * @param string[] $excluded_keys Meta keys not to copy.
+     * @return void
+     */
+    public function copy_post_meta( $from_post_id, $to_post_id, $excluded_keys = array() ) {
+        $post_metas = get_post_meta( $from_post_id );
+        // all meta keys and the corresponding values
+        if ( empty( $post_metas ) ) {
+            return;
+        }
+        foreach ( $post_metas as $meta_key => $meta_values ) {
+            if ( in_array( $meta_key, $excluded_keys, true ) ) {
+                continue;
+            }
+            foreach ( $meta_values as $meta_value ) {
+                update_post_meta( $to_post_id, $meta_key, wp_slash( maybe_unserialize( $meta_value ) ) );
+            }
+        }
     }
 
     /**

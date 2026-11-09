@@ -986,6 +986,7 @@ class Email_Delivery {
             'username'                  => $username,
             'password'                  => $password,
             'bypass_ssl'                => !empty( $options[$prefix . 'bypass_ssl_verification'] ),
+            'force_ipv4'                => !empty( $options[$prefix . 'force_ipv4'] ),
             'debug'                     => !empty( $options['smtp_debug'] ),
             'configured'                => $configured,
             'password_blocked'          => 'enable' === $authentication && $configured && '' === trim( (string) $password ),
@@ -1036,18 +1037,39 @@ class Email_Delivery {
                 // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
             }
         }
+        // Stream context options for the SMTP socket. The fallback connection starts from
+        // an empty set so leftovers from the primary connection don't carry over.
+        $reset_options = !empty( $connection['reset_transport_overrides'] );
+        $smtp_options = array();
+        // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+        if ( !$reset_options && is_array( $phpmailer->SMTPOptions ) ) {
+            $smtp_options = $phpmailer->SMTPOptions;
+            // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+        }
+        $smtp_options_changed = false;
+        // Force the connection over IPv4 by binding the socket to an IPv4 local address.
+        // Helps when the server prefers IPv6 but its IPv6 route to the SMTP host is broken.
+        // The host name is kept, so SNI and certificate verification are unchanged.
+        // Reference: https://www.php.net/manual/en/context.socket.php
+        if ( !empty( $connection['configured'] ) && !empty( $connection['force_ipv4'] ) ) {
+            if ( !isset( $smtp_options['socket'] ) || !is_array( $smtp_options['socket'] ) ) {
+                $smtp_options['socket'] = array();
+            }
+            $smtp_options['socket']['bindto'] = '0.0.0.0:0';
+            $smtp_options_changed = true;
+        }
         // If verification of SSL certificate is bypassed.
         // Reference: https://www.php.net/manual/en/context.ssl.php & https://stackoverflow.com/a/30803024
         if ( !empty( $connection['bypass_ssl'] ) ) {
-            $phpmailer->SMTPOptions = array(
-                'ssl' => array(
-                    'verify_peer'       => false,
-                    'verify_peer_name'  => false,
-                    'allow_self_signed' => true,
-                ),
-            );
-        } elseif ( !empty( $connection['reset_transport_overrides'] ) ) {
-            $phpmailer->SMTPOptions = array();
+            $smtp_options['ssl'] = array_merge( ( isset( $smtp_options['ssl'] ) && is_array( $smtp_options['ssl'] ) ? $smtp_options['ssl'] : array() ), array(
+                'verify_peer'       => false,
+                'verify_peer_name'  => false,
+                'allow_self_signed' => true,
+            ) );
+            $smtp_options_changed = true;
+        }
+        if ( $smtp_options_changed || $reset_options ) {
+            $phpmailer->SMTPOptions = $smtp_options;
             // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
         }
         // If debug mode is enabled, send debug info (SMTP::DEBUG_CONNECTION) to WordPress debug.log file set in wp-config.php.
