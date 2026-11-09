@@ -10,6 +10,13 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+### Changed
+
+- **WPvivid Backup is locked down to what the backup flow uses**, while the site's plan includes backups (a WPvivid a client installed for themselves is untouched). Every admin-ajax action of WPvivid that is not on an allowlist is
+  unhooked (165 registered, 50 left: watching a backup, the list, deleting one, restore, logs, settings); starting a backup from a screen is no longer possible (only Brand Relay's ping starts one). Its cloud, migration, staging,
+  snapshot, export/import and image-cleaner features, their tabs and menus, and its sidebar promotions are gone from the screen as well. All through WPvivid's own hooks, no WPvivid file edited. Filters: `devbase/wpvivid/lockdown`
+  and `devbase/wpvivid/allowed_*`. Not removed: WPvivid's site-to-site receiver (it is registered before a theme can run; it needs a transfer key). Verified with a real 131 MB backup through our job.
+
 ## [1.38.0] — 2026-11-08
 
 ### Added
