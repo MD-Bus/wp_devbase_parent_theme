@@ -2,8 +2,8 @@
 
 // Is a dependency ALREADY running on this site, installed by someone else as a real plugin?
 //
-// The theme carries its own copies of Secure Custom Fields, Admin Site Enhancements and the MCP
-// Adapter in vendor/ and loads them itself. If the site already has one of them as an ordinary
+// The theme carries its own copies of Secure Custom Fields, Admin Site Enhancements, the MCP
+// Adapter and The SEO Framework in vendor/ and loads them itself. If the site already has one of them as an ordinary
 // plugin (a client installed it, or the host did), loading ours too would fight it: our asset URL
 // overrides would break theirs, our ASE defaults would be written over their settings, a second copy
 // would redeclare classes. So when one is already there we use THEIRS: the theme's loader for that
@@ -30,6 +30,8 @@ function devbase_foreign_dependencies() {
 			'ase' => defined( 'ASENHA_VERSION' ),
 			// The MCP Adapter's own main class.
 			'mcp' => class_exists( 'WP\MCP\Plugin', false ),
+			// TSF defines its version the moment its main file loads.
+			'tsf' => defined( 'THE_SEO_FRAMEWORK_VERSION' ),
 		);
 	}
 

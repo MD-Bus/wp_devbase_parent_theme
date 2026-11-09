@@ -24,6 +24,10 @@ function devbase_tests_switch_theme() {
 }
 tests_add_filter( 'muplugins_loaded', 'devbase_tests_switch_theme' );
 
+// The SEO Framework is OFF by default on a real site (Miscellaneous > SEO). The suite tests the SEO features, so it turns TSF on in
+// code; Test_TSF_Disable removes this filter again where it checks the default.
+tests_add_filter( 'devbase/tsf/enabled', '__return_true' );
+
 /**
  * Rebuilds the REST server so routes include post types registered after it
  * was first built.

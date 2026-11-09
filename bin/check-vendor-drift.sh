@@ -46,6 +46,7 @@ while IFS='|' read -r SLUG MAIN_FILE; do
 done <<-DEPS
 	secure-custom-fields|secure-custom-fields.php
 	admin-site-enhancements|admin-site-enhancements.php
+	autodescription|autodescription.php
 DEPS
 
 # The other way round: composer.lock ahead of vendor/. A Dependabot pull

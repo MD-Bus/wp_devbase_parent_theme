@@ -26,10 +26,10 @@ class Test_Foreign_Dependencies extends WP_UnitTestCase {
 		return array_merge( $found, $this->foreign );
 	}
 
-	public function test_here_the_theme_runs_all_three_of_its_own_copies() {
+	public function test_here_the_theme_runs_all_four_of_its_own_copies() {
 		remove_filter( 'devbase/dependencies/foreign', array( $this, 'set' ) );
 
-		$this->assertSame( array( 'scf' => false, 'ase' => false, 'mcp' => false ), devbase_foreign_dependencies() );
+		$this->assertSame( array( 'scf' => false, 'ase' => false, 'mcp' => false, 'tsf' => false ), devbase_foreign_dependencies() );
 	}
 
 	public function test_the_answer_for_one_dependency_is_read_by_key() {

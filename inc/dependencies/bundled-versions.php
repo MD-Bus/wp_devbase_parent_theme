@@ -26,6 +26,7 @@ function devbase_bundled_versions() {
 	$plugins = array(
 		'Secure Custom Fields'    => 'secure-custom-fields/secure-custom-fields.php',
 		'Admin Site Enhancements' => 'admin-site-enhancements/admin-site-enhancements.php',
+		'The SEO Framework'       => 'autodescription/autodescription.php',
 		'MCP Adapter'             => 'mcp-adapter/mcp-adapter.php',
 	);
 
@@ -34,6 +35,11 @@ function devbase_bundled_versions() {
 	foreach ( $plugins as $name => $file ) {
 		$header            = is_readable( $vendor . $file ) ? get_file_data( $vendor . $file, array( 'Version' => 'Version' ) ) : array();
 		$versions[ $name ] = ! empty( $header['Version'] ) ? $header['Version'] : '—';
+	}
+
+	// Shipped but not running: say so, so nobody reads the version as "this site's SEO".
+	if ( function_exists( 'devbase_tsf_disabled' ) && devbase_tsf_disabled() && isset( $versions['The SEO Framework'] ) ) {
+		$versions['The SEO Framework'] .= ' ' . __( '(disabled)', 'devbase_parent_theme' );
 	}
 
 	$versions['Timber'] = class_exists( 'Timber\Timber' ) && ! empty( Timber\Timber::$version ) ? Timber\Timber::$version : '—';

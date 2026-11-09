@@ -238,6 +238,26 @@ add_action( 'acf/init', function () {
 				'instructions' => __( 'What an AI assistant connected through MCP should know before it writes on this site: who the site is for, the tone to write in, and how pages are put together (which block starts a page, which ends it, what each block is for, how long the text should be). It reads this first. Plain text; it cannot change it.', 'devbase_parent_theme' ),
 			),
 
+			// Tab: SEO. A tab of its own that is always visible (unlike Credit and Management, which hidden-tabs.js keeps
+			// out of sight). One switch: whether The SEO Framework runs at all. Off by default.
+			array(
+				'key'   => 'field_devbase_misc_seo_tab',
+				'label' => __( 'SEO', 'devbase_parent_theme' ),
+				'name'  => '',
+				'type'  => 'tab',
+			),
+			array(
+				'key'           => 'field_devbase_enable_tsf',
+				'label'         => __( 'Enable The SEO Framework', 'devbase_parent_theme' ),
+				'name'          => 'enable_tsf',
+				'type'          => 'true_false',
+				'ui'            => 1,
+				'default_value' => 0,
+				'instructions'  => ( function_exists( 'devbase_tsf_conflicting_plugin' ) && devbase_tsf_conflicting_plugin()
+					/* translators: %s = the name of the other SEO plugin. */
+					? sprintf( __( 'Kept off while %s is active: two SEO plugins would print every tag twice. Deactivate it to be able to use The SEO Framework. ', 'devbase_parent_theme' ), devbase_tsf_conflicting_plugin() )
+					: '' ) . __( 'Off by default. When on, The SEO Framework runs the site\'s SEO: titles, descriptions, social tags, structured data, the sitemap and robots.txt, and an SEO box on the edit screens. When off it is not loaded at all (not just hidden), so a client who runs their own SEO plugin has the page to themselves. The Organization Details page and the archive SEO tab are only there while it is on, because only The SEO Framework reads them. Nothing is deleted when you turn it off. It takes effect on the next page load.', 'devbase_parent_theme' ),
+			),
 			// Tab: Credit. One setting; everything else is downloaded. See credit.php.
 			array(
 				'key'   => 'field_devbase_misc_credit_tab',

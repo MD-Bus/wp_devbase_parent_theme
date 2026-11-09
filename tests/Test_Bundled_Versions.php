@@ -15,6 +15,7 @@ class Test_Bundled_Versions extends WP_UnitTestCase {
 
 		$this->assertSame( $this->plugin_version( 'secure-custom-fields/secure-custom-fields.php' ), $versions['Secure Custom Fields'] );
 		$this->assertSame( $this->plugin_version( 'admin-site-enhancements/admin-site-enhancements.php' ), $versions['Admin Site Enhancements'] );
+		$this->assertSame( $this->plugin_version( 'autodescription/autodescription.php' ), $versions['The SEO Framework'] );
 		$this->assertSame( $this->plugin_version( 'mcp-adapter/mcp-adapter.php' ), $versions['MCP Adapter'] );
 		$this->assertMatchesRegularExpression( '/^\d+\.\d+\.\d+/', $versions['Timber'] );
 	}
@@ -26,6 +27,7 @@ class Test_Bundled_Versions extends WP_UnitTestCase {
 
 		$this->assertSame( $locked['wp-plugin/secure-custom-fields'], $versions['Secure Custom Fields'] );
 		$this->assertSame( $locked['wp-plugin/admin-site-enhancements'], $versions['Admin Site Enhancements'] );
+		$this->assertSame( $locked['wp-plugin/autodescription'], $versions['The SEO Framework'] );
 		$this->assertSame( ltrim( $locked['timber/timber'], 'v' ), $versions['Timber'] );
 	}
 

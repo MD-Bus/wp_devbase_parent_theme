@@ -27,6 +27,10 @@ require_once __DIR__ . '/inc/dependencies/ase/ase-settings.php';
 // own activation hook never fires under our vendor/-loading setup.
 require_once __DIR__ . '/inc/dependencies/ase/ase-limit-login-table.php';
 
+// Loads The SEO Framework from vendor/ and fixes its asset URLs. It is the theme's only SEO
+// implementation (see inc/dependencies/tsf/AGENT.md).
+require_once __DIR__ . '/inc/dependencies/tsf/tsf.php';
+
 // Loads the official WordPress MCP Adapter from vendor/, exposing SCF's
 // registered CPT/field abilities (and any others) as MCP tools.
 require_once __DIR__ . '/inc/dependencies/mcp-adapter/mcp-adapter.php';
@@ -133,31 +137,12 @@ require_once __DIR__ . '/inc/theme-settings/tracking/settings.php';
 // Injects the configured GTM/GA4/custom scripts into the front end.
 require_once __DIR__ . '/inc/theme-settings/tracking/inject.php';
 
-// Registers the Schema Markup sub-page, and assembles one field group
-// with a tab per schema type from each type's 'devbase/schema/tabs'
-// contribution below (Organization / Website / Breadcrumb tabs, not three
-// separate stacked boxes). Require order among these five files doesn't
-// matter — contributions register via add_filter() immediately, and the
-// assembly itself runs on a later acf/init priority.
+// The Organization Details sub-page: the few organization fields The SEO Framework has none for
+// (description, slogan, founding date, expertise, locations). The page itself ...
 require_once __DIR__ . '/inc/theme-settings/schema/settings.php';
 
-// Contributes the Organization tab.
-require_once __DIR__ . '/inc/theme-settings/schema/organization/settings.php';
-
-// Prints the Organization JSON-LD block sitewide in wp_head.
-require_once __DIR__ . '/inc/theme-settings/schema/organization/inject.php';
-
-// Contributes the Website tab.
-require_once __DIR__ . '/inc/theme-settings/schema/website/settings.php';
-
-// Prints the WebSite JSON-LD block sitewide in wp_head.
-require_once __DIR__ . '/inc/theme-settings/schema/website/inject.php';
-
-// Contributes the Breadcrumb tab.
-require_once __DIR__ . '/inc/theme-settings/schema/breadcrumb/settings.php';
-
-// Prints the BreadcrumbList JSON-LD block, computed per-request.
-require_once __DIR__ . '/inc/theme-settings/schema/breadcrumb/inject.php';
+// ... and the filter that merges them into TSF's own Organization entity in its JSON-LD graph.
+require_once __DIR__ . '/inc/theme-settings/schema/organization.php';
 
 // Registers the theme's first two CPTs: registered_form (one per form
 // name) and form_data (one per submission). Foundational — everything
@@ -237,8 +222,8 @@ require_once __DIR__ . '/inc/forms/test-form.php';
 // no location rule for one.
 require_once __DIR__ . '/inc/archive/settings.php';
 
-// SEO title and description for each archive (an "SEO" tab on its Archive options page), printed on the
-// archive's own URL, since no SEO plugin can attach to an archive.
+// SEO title and description for each archive (an "SEO" tab on its Archive options page), handed to
+// The SEO Framework through its custom title and description filters for the archive's own URL.
 require_once __DIR__ . '/inc/archive/seo.php';
 
 // Makes CPT archive links show up in the WP internal link picker (used by

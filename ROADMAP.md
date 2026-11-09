@@ -75,6 +75,22 @@ core proposes `core/read-content` and `core/manage-content` for 7.1 and 7.2
 or later. Neither covers custom fields, options pages or blocks, so our
 abilities stay. Revisit our post abilities if those ship with meta support.
 
+**8. SEO through The SEO Framework (built, unreleased: 2.0.0).** The theme's own SEO code is gone and The SEO Framework
+(TSF, `autodescription`, free, no premium version, GPLv3) is vendored like Secure Custom Fields and loaded by
+`inc/dependencies/tsf/tsf.php`. It was chosen over a bundled plugin zip so it stays under the same test-then-release control as SCF and
+ASE and a client site never has a second copy to install. Free means no licence key and no activation; its Extension Manager and
+premium extensions (Local, Articles, Focus, Cord, Monitor, Honeypot) are deliberately not used. What remains of ours: the
+**Organization Details** page (name, URL, logo, profile links, description, slogan, founding date, expertise, locations: merged into TSF's Organization entity, with the first four replacing TSF's own settings when filled)
+and each archive's **SEO** tab (handed to TSF through its custom title and description filters). No database change: the old
+values keep working, read by field key. TSF's branding and promotion are switched off from the theme (`devbase/tsf/hide_branding`). Left to do before release: measure page weight and queries with Query Monitor, and try a site that
+still has SEOPress active (TSF shows its own conflict notice).
+Known risks: one maintainer and bursty releases (a 10-month gap before 5.2.0). The loader depends on TSF internals (its
+`plugins_loaded` start-up callback and its asset URL constant) and our hooks on its filters, none of which are a promised
+API: `tests/Test_TSF_Loader.php` fails on the Dependabot pull request when a release moves any of them. If upstream is
+abandoned or a fix is not shipped, `vendor/autodescription/` is already a full copy to fork from.
+Not covered, as TSF's free version has none: Article, Product, FAQ, Review, Event and LocalBusiness schema, focus keywords,
+a Google News sitemap, and SEO fields over REST (MCP cannot set a page's SEO title; it can set an archive's).
+
 ## Considered
 
 **A header and footer template pair.** The theme ships one placeholder

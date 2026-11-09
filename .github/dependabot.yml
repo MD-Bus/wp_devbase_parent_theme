@@ -1,7 +1,7 @@
 # Dependabot: a pull request when a Composer dependency has a new version.
 #
 # Since 1.7.0 this is THE way the bundled dependencies change: sites no longer
-# update anything themselves, so SCF, ASE, Timber, Twig and the Symfony
+# update anything themselves, so SCF, ASE, The SEO Framework, Timber, Twig and the Symfony
 # polyfills move only through a pull request here, tested and released by the
 # developer. (The MCP Adapter isn't on Packagist; see
 # .github/workflows/mcp-adapter-release.yml.)
