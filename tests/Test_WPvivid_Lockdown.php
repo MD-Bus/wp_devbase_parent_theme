@@ -132,17 +132,16 @@ class Test_WPvivid_Lockdown extends WP_UnitTestCase {
 
 	// --- what the screens still show ----------------------------------------------------------
 
-	public function test_the_tabs_are_cut_to_backup_and_restore_settings_and_log() {
+	public function test_the_tabs_are_cut_to_backup_and_restore_and_log() {
 		$tabs = array( 'backup_restore' => 1, 'schedule' => 1, 'remote_storage' => 1, 'setting' => 1, 'website_info' => 1, 'log' => 1, 'premium' => 1, 'migrate' => 1, 'key' => 1, 'mwp' => 1 );
 
-		$this->assertSame( array( 'backup_restore', 'setting', 'log' ), array_keys( apply_filters( 'wpvivid_add_tab_page', $tabs ) ) );
+		$this->assertSame( array( 'backup_restore', 'log' ), array_keys( apply_filters( 'wpvivid_add_tab_page', $tabs ) ) );
 	}
 
 	public function test_the_inner_tabs_menus_and_logs_are_cut_too() {
 		$this->assertSame( array( 'list_backup', 'list_log', 'list_restore' ), array_keys( apply_filters( 'wpvivid_backuppage_load_backuplist', array( 'list_backup' => 1, 'list_upload' => 1, 'list_log' => 1, 'list_restore' => 1, 'list_download' => 1 ) ) ) );
-		$this->assertSame( array( 'general_setting', 'advance_setting' ), array_keys( apply_filters( 'wpvivid_add_setting_tab_page', array( 'general_setting' => 1, 'advance_setting' => 1, 'staging_setting' => 1, 'uc_setting' => 1 ) ) ) );
-		$this->assertSame( array( 'backup_log_page' ), array_keys( apply_filters( 'wpvivid_add_log_tab_page', array( 'backup_log_page' => 1, 'staging_log_page' => 1 ) ) ) );
-		$this->assertSame( array( 'WPvivid', 'wpvivid-setting' ), array_keys( apply_filters( 'wpvivid_get_admin_menus', array( 'WPvivid' => 1, 'wpvivid-snapshot-ex' => 1, 'wpvivid-setting' => 1, 'wpvivid-staging' => 1, 'wpvivid-export' => 1 ) ) ) );
+				$this->assertSame( array( 'backup_log_page' ), array_keys( apply_filters( 'wpvivid_add_log_tab_page', array( 'backup_log_page' => 1, 'staging_log_page' => 1 ) ) ) );
+		$this->assertSame( array( 'WPvivid' ), array_keys( apply_filters( 'wpvivid_get_admin_menus', array( 'WPvivid' => 1, 'wpvivid-snapshot-ex' => 1, 'wpvivid-setting' => 1, 'wpvivid-staging' => 1, 'wpvivid-export' => 1 ) ) ) );
 	}
 
 	public function test_the_screens_are_left_alone_when_not_locked_down() {
