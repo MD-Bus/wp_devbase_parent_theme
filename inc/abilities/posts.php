@@ -10,6 +10,73 @@
 // field values (see helpers.php's docblock for why).
 
 /**
+ * Whether this site has The SEO Framework running, so a page can carry an SEO title and description. TSF's own
+ * post-meta class is the test, not our switch: it is also right when the site runs its own TSF plugin.
+ */
+function devbase_abilities_seo_available() {
+	return class_exists( '\\The_SEO_Framework\\Data\\Plugin\\Post' );
+}
+
+/**
+ * The SEO title and description saved on a post, as TSF reads them (empty string = TSF decides). Null when TSF is not running.
+ *
+ * @return array{title:string, description:string}|null
+ */
+function devbase_abilities_seo_read( $post_id ) {
+	if ( ! devbase_abilities_seo_available() ) {
+		return null;
+	}
+
+	$class = '\\The_SEO_Framework\\Data\\Plugin\\Post';
+
+	return array(
+		'title'       => (string) $class::get_meta_item( '_genesis_title', $post_id ),
+		'description' => (string) $class::get_meta_item( '_genesis_description', $post_id ),
+	);
+}
+
+/**
+ * Saves the SEO title and/or description of a post through TSF's own save routine (it sanitises, drops empty values and refreshes its
+ * sitemap). Only the keys sent are changed; an empty string clears one so TSF decides again.
+ *
+ * @param int   $post_id The post.
+ * @param array $seo     { title?: string, description?: string }
+ */
+function devbase_abilities_seo_write( $post_id, array $seo ) {
+	$class = '\\The_SEO_Framework\\Data\\Plugin\\Post';
+
+	foreach ( array( 'title' => '_genesis_title', 'description' => '_genesis_description' ) as $key => $meta_key ) {
+		if ( array_key_exists( $key, $seo ) ) {
+			$class::update_single_meta_item( $meta_key, (string) $seo[ $key ], $post_id );
+		}
+	}
+}
+
+/**
+ * The error to give before anything is written when an SEO value was sent but there is nowhere to save it, or null when all is well.
+ */
+function devbase_abilities_seo_error( array $input ) {
+	if ( ! isset( $input['seo'] ) ) {
+		return null;
+	}
+
+	if ( ! devbase_abilities_seo_available() ) {
+		return new WP_Error( 'devbase_seo_unavailable', __( 'SEO titles and descriptions are not available on this site: The SEO Framework is not running (Theme Settings > Miscellaneous > SEO).', 'devbase_parent_theme' ) );
+	}
+
+	return null;
+}
+
+/** Adds `seo` ( title, description ) to a post response when TSF is running. */
+function devbase_abilities_with_seo( $data ) {
+	if ( is_array( $data ) && ! empty( $data['id'] ) && null !== ( $seo = devbase_abilities_seo_read( $data['id'] ) ) ) {
+		$data['seo'] = $seo;
+	}
+
+	return $data;
+}
+
+/**
  * Shared shape for the create/update input schema — used by both
  * devbase/create-post and devbase/update-post below.
  */
@@ -44,7 +111,16 @@ function devbase_abilities_post_write_properties() {
 			'type'        => 'object',
 			'description' => __( 'Custom field values, keyed by field name — see devbase/get-post-type-schema for the available fields.', 'devbase_parent_theme' ),
 		),
-	);
+	) + ( devbase_abilities_seo_available() ? array(
+		'seo'     => array(
+			'type'        => 'object',
+			'description' => __( 'The page\'s search result: { "title": "...", "description": "..." }, either or both. Title about 50 to 60 characters with the main phrase first; description about 120 to 155 characters saying what the visitor will find and why to click. Leave a key out to keep it; send an empty string to clear it so the site decides again.', 'devbase_parent_theme' ),
+			'properties'  => array(
+				'title'       => array( 'type' => 'string' ),
+				'description' => array( 'type' => 'string' ),
+			),
+		),
+	) : array() );
 }
 
 /**
@@ -203,7 +279,7 @@ add_action( 'wp_abilities_api_init', function () {
 				return $error;
 			}
 
-			return devbase_abilities_with_blocks( $data );
+			return devbase_abilities_with_seo( devbase_abilities_with_blocks( $data ) );
 		},
 		'permission_callback' => function ( $input ) {
 			if ( empty( $input['id'] ) ) {
@@ -260,6 +336,10 @@ add_action( 'wp_abilities_api_init', function () {
 				return $block_content;
 			}
 
+			if ( $seo_error = devbase_abilities_seo_error( $input ) ) {
+				return $seo_error;
+			}
+
 			$params = array( 'status' => $input['status'] ?? 'draft' );
 
 			if ( isset( $input['title'] ) ) {
@@ -286,7 +366,11 @@ add_action( 'wp_abilities_api_init', function () {
 				return $error;
 			}
 
-			return devbase_abilities_with_blocks( $data );
+			if ( isset( $input['seo'] ) && ! empty( $data['id'] ) ) {
+				devbase_abilities_seo_write( $data['id'], $input['seo'] );
+			}
+
+			return devbase_abilities_with_seo( devbase_abilities_with_blocks( $data ) );
 		},
 		'permission_callback' => function ( $input ) {
 			$post_types = devbase_abilities_content_post_types();
@@ -355,6 +439,10 @@ add_action( 'wp_abilities_api_init', function () {
 				return $block_content;
 			}
 
+			if ( $seo_error = devbase_abilities_seo_error( $input ) ) {
+				return $seo_error;
+			}
+
 			$params = array();
 
 			foreach ( array( 'title', 'content', 'status' ) as $key ) {
@@ -373,13 +461,22 @@ add_action( 'wp_abilities_api_init', function () {
 
 			$rest_base = devbase_abilities_rest_base( $post_types[ $input['post_type'] ] );
 
-			list( $data, $error ) = devbase_abilities_rest_dispatch( 'PUT', "/wp/v2/{$rest_base}/{$input['id']}", $params );
+			// A call that only sends `seo` has nothing for REST to change, so it is not sent there (an empty update is refused).
+			if ( empty( $params ) ) {
+				list( $data, $error ) = devbase_abilities_rest_dispatch( 'GET', "/wp/v2/{$rest_base}/{$input['id']}" );
+			} else {
+				list( $data, $error ) = devbase_abilities_rest_dispatch( 'PUT', "/wp/v2/{$rest_base}/{$input['id']}", $params );
+			}
 
 			if ( $error ) {
 				return $error;
 			}
 
-			return devbase_abilities_with_blocks( $data );
+			if ( isset( $input['seo'] ) && ! empty( $data['id'] ) ) {
+				devbase_abilities_seo_write( $data['id'], $input['seo'] );
+			}
+
+			return devbase_abilities_with_seo( devbase_abilities_with_blocks( $data ) );
 		},
 		'permission_callback' => function ( $input ) {
 			if ( empty( $input['id'] ) ) {

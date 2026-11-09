@@ -10,6 +10,12 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+### Added
+
+- **MCP: a page's SEO title and description.** `devbase/create-post` and `devbase/update-post` take an optional `seo` object (`title`, `description`; a key left out is kept, an empty string clears it)
+  and `devbase/get-post`, create and update return it. It is saved through The SEO Framework's own save routine, only while TSF is running, and needs the same permission as editing the post.
+  Organization Details and an archive's SEO tab were already reachable through the options-page abilities once the owner allows the page under Miscellaneous > MCP Access; tests now cover that.
+
 ## [1.37.1] — 2026-11-08
 
 ### Changed

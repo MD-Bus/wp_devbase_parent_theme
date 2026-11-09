@@ -194,4 +194,29 @@ class Test_MCP_Abilities_Options_Pages extends WP_UnitTestCase {
 		$this->run_own_storage_pages();
 		$this->assertSame( 'test-archive-a', devbase_abilities_options_page_post_id( 'test-archive-a' ) );
 	}
+
+	// --- The SEO pages (The SEO Framework) -----------------------------------------
+
+	public function test_organization_details_is_not_open_to_mcp_until_the_owner_allows_it() {
+		$result = wp_get_ability( 'devbase/update-options' )->execute( array( 'menu_slug' => 'schema-settings', 'fields' => array( 'organization_name' => 'Nope' ) ) );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'devbase_options_page_not_allowed', $result->get_error_code() );
+	}
+
+	public function test_mcp_can_fill_organization_details_once_allowed_and_tsf_prints_it() {
+		update_field( 'mcp_allowed_options_pages', array( 'schema-settings' ), 'option' );
+
+		$result = wp_get_ability( 'devbase/update-options' )->execute( array(
+			'menu_slug' => 'schema-settings',
+			'fields'    => array( 'organization_name' => 'Written By MCP Inc.' ),
+		) );
+		$this->assertIsArray( $result );
+
+		$got = wp_get_ability( 'devbase/get-options' )->execute( array( 'menu_slug' => 'schema-settings' ) );
+		$this->assertSame( 'Written By MCP Inc.', $got['organization_name'] );
+
+		acf_get_store( 'values' )->reset();
+		$this->assertSame( 'Written By MCP Inc.', devbase_schema_field( 'organization_name' ) );
+	}
 }

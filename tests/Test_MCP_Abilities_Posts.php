@@ -123,4 +123,75 @@ class Test_MCP_Abilities_Posts extends WP_UnitTestCase {
 		$ability = wp_get_ability( 'devbase/get-post' );
 		$this->assertTrue( $ability->check_permissions( array( 'post_type' => 'page', 'id' => $page_id ) ), 'get-post must use the read capability, not the edit capability, so a read-only user is not wrongly denied.' );
 	}
+
+	// --- SEO title and description (The SEO Framework) ----------------------------
+
+	public function test_the_write_abilities_offer_an_seo_input_while_tsf_runs() {
+		$properties = wp_get_ability( 'devbase/update-post' )->get_input_schema()['properties'];
+
+		$this->assertArrayHasKey( 'seo', $properties );
+		$this->assertArrayHasKey( 'title', $properties['seo']['properties'] );
+		$this->assertArrayHasKey( 'description', $properties['seo']['properties'] );
+	}
+
+	public function test_create_post_saves_the_seo_title_and_description_where_tsf_reads_them() {
+		$created = wp_get_ability( 'devbase/create-post' )->execute( array(
+			'post_type' => 'page',
+			'title'     => 'About us',
+			'seo'       => array( 'title' => 'About Dev Co | Who we are', 'description' => 'Meet the team behind Dev Co.' ),
+		) );
+
+		$this->assertIsArray( $created );
+		$this->assertSame( 'About Dev Co | Who we are', $created['seo']['title'] );
+		$this->assertSame( 'Meet the team behind Dev Co.', $created['seo']['description'] );
+		$this->assertSame( 'About Dev Co | Who we are', get_post_meta( $created['id'], '_genesis_title', true ), 'The very meta key TSF reads.' );
+	}
+
+	public function test_update_post_can_change_only_the_seo_and_leaves_the_rest() {
+		$id = self::factory()->post->create( array( 'post_type' => 'page', 'post_title' => 'Keep this title', 'post_status' => 'publish' ) );
+
+		$result = wp_get_ability( 'devbase/update-post' )->execute( array(
+			'post_type' => 'page',
+			'id'        => $id,
+			'seo'       => array( 'description' => 'Only a description.' ),
+		) );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'Only a description.', $result['seo']['description'] );
+		$this->assertSame( '', $result['seo']['title'], 'A key left out is left alone.' );
+		$this->assertSame( 'Keep this title', get_post( $id )->post_title );
+		$this->assertSame( 'publish', get_post( $id )->post_status );
+	}
+
+	public function test_an_empty_seo_value_clears_it_and_the_other_key_stays() {
+		$id = self::factory()->post->create( array( 'post_type' => 'page', 'post_status' => 'publish' ) );
+		wp_get_ability( 'devbase/update-post' )->execute( array( 'post_type' => 'page', 'id' => $id, 'seo' => array( 'title' => 'A title', 'description' => 'A description.' ) ) );
+
+		$result = wp_get_ability( 'devbase/update-post' )->execute( array( 'post_type' => 'page', 'id' => $id, 'seo' => array( 'title' => '' ) ) );
+
+		$this->assertSame( '', $result['seo']['title'] );
+		$this->assertSame( 'A description.', $result['seo']['description'] );
+		$this->assertSame( '', get_post_meta( $id, '_genesis_title', true ) );
+	}
+
+	public function test_get_post_returns_the_seo_and_tsf_uses_it_for_the_page() {
+		$id = self::factory()->post->create( array( 'post_type' => 'page', 'post_title' => 'Plain', 'post_status' => 'publish' ) );
+		wp_get_ability( 'devbase/update-post' )->execute( array( 'post_type' => 'page', 'id' => $id, 'seo' => array( 'title' => 'Written through MCP' ) ) );
+
+		$got = wp_get_ability( 'devbase/get-post' )->execute( array( 'post_type' => 'page', 'id' => $id ) );
+		$this->assertSame( 'Written through MCP', $got['seo']['title'] );
+
+		// By post ID, not by the current request: TSF keeps the request's query state for its whole run, which a test cannot reset.
+		$this->assertSame( 'Written through MCP', tsf()->title()->get_bare_title( array( 'id' => $id ) ) );
+	}
+
+	public function test_a_user_who_cannot_edit_the_post_cannot_write_its_seo() {
+		$id = self::factory()->post->create( array( 'post_type' => 'page', 'post_status' => 'publish' ) );
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'subscriber' ) ) );
+
+		$result = wp_get_ability( 'devbase/update-post' )->execute( array( 'post_type' => 'page', 'id' => $id, 'seo' => array( 'title' => 'Nope' ) ) );
+
+		$this->assertWPError( $result );
+		$this->assertSame( '', (string) get_post_meta( $id, '_genesis_title', true ) );
+	}
 }
