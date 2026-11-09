@@ -10,6 +10,13 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.37.1] — 2026-11-08
+
+### Changed
+
+- Dependencies: Admin Site Enhancements 9.3.1 -> 9.3.2 and WPvivid Backup 0.9.139 -> 0.9.140 (two Dependabot pull requests, tested and merged: vendor drift check clean,
+  the full test suite passing, and the site's front end and admin loading without errors on ASE 9.3.2).
+
 ## [1.37.0] — 2026-11-08
 
 **Upgrade note:** SEO is now The SEO Framework and it is **off by default**. A site that updates has no theme SEO output (titles, descriptions, social tags, structured data, sitemap) until someone turns it on in Theme Settings > Miscellaneous > SEO > Enable The SEO Framework. The old Schema Markup settings are replaced by Organization Details.
