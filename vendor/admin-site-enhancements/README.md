@@ -4,8 +4,8 @@ Contributors: qriouslad
 Donate link: https://bowo.io/asenha-sp-rdm  
 Tags: enhancements, tweaks, optimizations, tools  
 Requires at least: 4.6  
-Tested up to: 7.1.3  
-Stable tag: 9.3.1  
+Tested up to: 7.1.4  
+Stable tag: 9.3.2  
 Requires PHP: 5.6  
 License: GPLv2 or later  
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -210,31 +210,34 @@ ASE does not officially support multisite. Please use at your own risk. That sai
 
 ## Changelog
 
-**Admin and Site Enhancements (ASE) v1.0.0** was released on October 17, 2022. Since then, there have been **93 _major_ releases** (e.g. 1.1.0 ) and **213 _minor_ releases** (e.g. 4.9.1), for a **total of 306 releases**.
+**Admin and Site Enhancements (ASE) v1.0.0** was released on October 17, 2022. Since then, there have been **93 _major_ releases** (e.g. 1.1.0 ) and **214 _minor_ releases** (e.g. 4.9.1), for a **total of 307 releases**.
 
 Each **_major release_** usually corresponds with the addition of one new module/feature. Each module/feature usually is the equivalent of one (or more) single-purpose plugin. Each **_minor release_** usually contain one or more bugfix or improvements to existing modules/features.
 
 [**Upgrade to ASE Pro**](https://www.wpase.com/chnlg-to-web). **Currently on YEAR END SALE, 20% discount on new license and license upgrade**. Lifetime Deal (LTD) available.
 
-### 9.3.1 (2026.11.02) - ASE Free and Pro
+### 9.3.2 (2026.11.09) - ASE Free and Pro
 
-* **[FIXED in Free and Pro] Utilities >> View Admin as Role**: Fixed role lockout when making changes in the block editor preference. Props to [@lucasp1](https://wordpress.org/support/users/lucasp1/) for [reporting](https://wordpress.org/support/topic/view-admin-as-role-switch-back-and-recovery-url-stop-working-after-opening-the/) the issue in detail.
+* **[IMPROVED in Free and Pro] Utilities >> Email Delivery**: added a "Force IPv4 connection" option to SMTP settings. It helps when the server can't reach the SMTP host over IPv6, which shows up as "Could not connect to SMTP host" or SSL handshake timeouts. In Pro, the fallback connection has its own option.
 
-* **[IMPROVED in Free and Pro] Disable Components >> Disable All Updates**: 
-  * ASE Free: Update checks are now also blocked at the HTTP and cron level so they do not keep coming back, and plugin/theme auto-update emails are silenced along with core update emails.
-  * ASE Pro: Renamed the module to Disable Updates. Adds granular settings to disable updates and/or automatic updates for WordPress core, plugins, themes and translations, a core security mode that allows minor/security auto-updates while blocking major and development updates, and separate toggles for update nags, core update emails, plugin/theme auto-update emails, the Dashboard >> Updates menu and Site Health update tests. Existing sites that already had the module enabled keep the previous all-or-nothing behavior until the settings are changed. Props to Jan S., Dominik K., David M., Jamie O., Michael S. and John R. for prompting this improvement.
+* **[IMPROVED in Free and Pro] Utilities >> View Admin as Role**: Module's scripts (JS) and styles (CSS) are now loaded only for the relevant user and context. Props to Mike D. for reporting the issue.
 
-* **[IMPROVED and FIXED in Pro] Content Management >> Custom Content Types >> Custom Field Groups**: Improve alignments of meta box content in the block editor, both when tab fieldss are set to horizontal or vertical.
+* **[FIXED in Free and Pro] Security >> Password Policy**: Make the number fields wider so two or three digit numbers are not being cut-off. Props to Torben H.V. for reporting the issue.
 
-* **[IMPROVED in Pro] Utilities >> Redirect Manager**: Added the option to manage redirects via the REST API. Props to Cremel M. for prompting this improvement.
+* **[IMPROVED in Pro] Content Management >> Content Duplication**: When Public Preview for Drafts module is enabled, duplicating a post will no longer copy the public preview URL and expiry period, so the new, duplicate post has it's own URL and a fresh/full expiry period. Props to Rob M. for prompting this improvement.
 
-* **[IMPROVED and FIXED in Pro] Utilities >> Maintenance Mode**: Added an option to set the HTTP response code to either be "503 Service Unavailable" (default) or "200 OK" (which works better with troubleshooting and monitoring tools). Props to Ivan C.d.A. for prompting this improvement.
+* **[IMPROVED and FIXED in Pro] Utilities >> Site Backup and Migration**: 
+  * Large backups are more reliable and reduce the risk of failing partway through when the archive grows larger than 4 GB. Failed backups clean up after themselves and gives a clearer error message when disk space or the hosting quota runs out. Props to Jonathan J. for reporting an issue with large backup failing and facilitating the troubleshooting process.
+  * Archives listed in a remote backup location that no longer exist can now be deleted from the backup archives list.
+  * Fixed an issue where migration stalls when the destination is a subdirectory install. Props to Matija S. for reporting the issue in great detail.
 
-* **[FIXED in Pro] Optimizations >> Image Upload Control**: With Convert to WebP enabled, converted images no longer get an unnecessary "-1" or "-1-1" suffix. Props to Stijn V. for reporting the issue.
+* **[FIXED in Pro] Content Management >> Custom Content Types >> Custom Field Groups**: Gallery field's image previews in post edit screen now properly shows square thumbnails, preventing tall images from overlapping the "Edit Selection" button. Props to Andrew T. for reporting the issue with a screenshot.
+
+* **[FIXED in Pro] Utilities >> File Manager**: Checkboxes in the list of folders/files now properly aligns with the heading row, no longer flush to the left edge.
 
 * **[TRANSLATION in Free and Pro]** ASE is now being translated into [41 languages](https://translate.wpase.com/):
   * **Added new/improved translation** for:
-    * ASE Free: Updated Turkish, Spanish, Slovak, Serbian, Portuguese (Brazil), Norwegian, Galician, Dutch.
+    * ASE Free: Updated Norwegian, Galician, Polish, Slovak, Portuguese (Brazil), Turkish, Dutch (Netherlands).
     * ASE Pro: Updated Portuguese (Brazil).
   * **More strings have been internationalized**. @Translators, please visit the respective project pages for the Free and Pro versions to translate the new strings, if you havent' done so already.
   * **Interested to help translate or improve the translation?** Please go to [https://translate.wpase.com](https://translate.wpase.com) for more info.

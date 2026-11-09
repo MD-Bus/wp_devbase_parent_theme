@@ -1,10 +1,32 @@
 ## Changelog
 
-**Admin and Site Enhancements (ASE) v1.0.0** was released on October 17, 2022. Since then, there have been **93 _major_ releases** (e.g. 1.1.0 ) and **213 _minor_ releases** (e.g. 4.9.1), for a **total of 306 releases**.
+**Admin and Site Enhancements (ASE) v1.0.0** was released on October 17, 2022. Since then, there have been **93 _major_ releases** (e.g. 1.1.0 ) and **214 _minor_ releases** (e.g. 4.9.1), for a **total of 307 releases**.
 
 Each **_major release_** usually corresponds with the addition of one new module/feature. Each module/feature usually is the equivalent of one (or more) single-purpose plugin. Each **_minor release_** usually contain one or more bugfix or improvements to existing modules/features.
 
 [**Upgrade to ASE Pro**](https://www.wpase.com/chnlg-to-web). **Currently on YEAR END SALE, 20% discount on new license and license upgrade**. Lifetime Deal (LTD) available.
+
+### 9.3.2 (2026.11.09) - ASE Free and Pro
+
+* **[IMPROVED in Free and Pro] Utilities >> Email Delivery**: added a "Force IPv4 connection" option to SMTP settings. It helps when the server can't reach the SMTP host over IPv6, which shows up as "Could not connect to SMTP host" or SSL handshake timeouts. In Pro, the fallback connection has its own option.
+
+* **[FIXED in Free and Pro] Security >> Password Policy**: Make the number fields wider so two or three digit numbers are not being cut-off. Props to Torben H.V. for reporting the issue.
+
+* **[IMPROVED in Pro] Content Management >> Content Duplication**: When Public Preview for Drafts module is enabled, duplicating a post will no longer copy the public preview URL and expiry period, so the new, duplicate post has it's own URL and a fresh/full expiry period. Props to Rob M. for prompting this improvement.
+
+* **[IMPROVED and FIXED in Pro] Utilities >> Site Backup and Migration**: 
+  * Large backups are more reliable and reduce the risk of failing partway through when the archive grows larger than 4 GB. Failed backups clean up after themselves and gives a clearer error message when disk space or the hosting quota runs out. Props to Jonathan J. for reporting an issue with large backup failing and facilitating the troubleshooting process.
+  * Archives listed in a remote backup location that no longer exist can now be deleted from the backup archives list.
+  * Fixed an issue where migration stalls when the destination is a subdirectory install. Props to Matija S. for reporting the issue in great detail.
+
+* **[FIXED in Pro] Content Management >> Custom Content Types >> Custom Field Groups**: Gallery field's image previews in post edit screen now properly shows square thumbnails, preventing tall images from overlapping the "Edit Selection" button. Props to Andrew T. for reporting the issue with a screenshot.
+
+* **[FIXED in Pro] Utilities >> File Manager**: Checkboxes in the list of folders/files now properly aligns with the heading row, no longer flush to the left edge.
+
+* **[TRANSLATION in Free and Pro]** ASE is now being translated into [41 languages](https://translate.wpase.com/):
+  * **Added new/improved translation** for:
+    * ASE Free: Updated Norwegian, Galician, Polish, Slovak, Portuguese (Brazil), Turkish, Dutch (Netherlands).
+    * ASE Pro: Updated Portuguese (Brazil).
 
 ### 9.3.1 (2026.11.02) - ASE Free and Pro
 

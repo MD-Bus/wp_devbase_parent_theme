@@ -1398,6 +1398,11 @@ JS;
             return;
         }
 
+        // The notice is only shown right after switching roles, so skip guests and users not in a view-as session.
+        if ( ! is_user_logged_in() || ! $this->is_allowlisted_non_admin_view( wp_get_current_user() ) ) {
+            return;
+        }
+
         wp_register_script( 'asenha-view-admin-as-role-copy-notice', false, array(), ASENHA_VERSION, true );
         wp_enqueue_script( 'asenha-view-admin-as-role-copy-notice' );
         wp_localize_script(
