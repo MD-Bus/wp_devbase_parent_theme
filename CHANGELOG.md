@@ -10,6 +10,10 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.37.0] — 2026-11-08
+
+**Upgrade note:** SEO is now The SEO Framework and it is **off by default**. A site that updates has no theme SEO output (titles, descriptions, social tags, structured data, sitemap) until someone turns it on in Theme Settings > Miscellaneous > SEO > Enable The SEO Framework. The old Schema Markup settings are replaced by Organization Details.
+
 ### Changed (breaking)
 
 - **SEO is The SEO Framework (TSF), version 5.2.0, vendored** in `vendor/autodescription/` like Secure Custom Fields and loaded by

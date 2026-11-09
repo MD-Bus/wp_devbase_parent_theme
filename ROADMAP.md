@@ -75,7 +75,7 @@ core proposes `core/read-content` and `core/manage-content` for 7.1 and 7.2
 or later. Neither covers custom fields, options pages or blocks, so our
 abilities stay. Revisit our post abilities if those ship with meta support.
 
-**8. SEO through The SEO Framework (built, unreleased: 2.0.0).** The theme's own SEO code is gone and The SEO Framework
+**8. SEO through The SEO Framework (released: 1.37.0).** The theme's own SEO code is gone and The SEO Framework
 (TSF, `autodescription`, free, no premium version, GPLv3) is vendored like Secure Custom Fields and loaded by
 `inc/dependencies/tsf/tsf.php`. It was chosen over a bundled plugin zip so it stays under the same test-then-release control as SCF and
 ASE and a client site never has a second copy to install. Free means no licence key and no activation; its Extension Manager and
