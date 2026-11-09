@@ -10,6 +10,8 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.38.0] — 2026-11-08
+
 ### Added
 
 - **MCP: a page's SEO title and description.** `devbase/create-post` and `devbase/update-post` take an optional `seo` object (`title`, `description`; a key left out is kept, an empty string clears it)
