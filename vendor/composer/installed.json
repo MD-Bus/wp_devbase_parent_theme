@@ -703,6 +703,6 @@
             "install-path": "../secure-custom-fields"
         }
     ],
-    "dev": true,
+    "dev": false,
     "dev-package-names": []
 }

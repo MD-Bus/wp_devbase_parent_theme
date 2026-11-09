@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "54a57702ddebec1f2905eaaf31692155",
+    "content-hash": "8efe40f3c2b2815efab70c7ece07527a",
     "packages": [
         {
             "name": "composer/installers",
@@ -185,15 +185,15 @@
         },
         {
             "name": "wp-plugin/wpvivid-backuprestore",
-            "version": "0.9.139",
+            "version": "0.9.140",
             "source": {
                 "type": "svn",
                 "url": "https://plugins.svn.wordpress.org/wpvivid-backuprestore/",
-                "reference": "tags/0.9.139"
+                "reference": "tags/0.9.140"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/wpvivid-backuprestore.0.9.139.zip"
+                "url": "https://downloads.wordpress.org/plugin/wpvivid-backuprestore.0.9.140.zip"
             },
             "require": {
                 "composer/installers": "~1.0|~2.0"
@@ -211,7 +211,7 @@
                 "issues": "https://wordpress.org/support/plugin/wpvivid-backuprestore",
                 "source": "https://plugins.svn.wordpress.org/wpvivid-backuprestore"
             },
-            "time": "2026-10-30T09:22:17+00:00"
+            "time": "2026-11-09T00:31:45+00:00"
         }
     ],
     "packages-dev": [],
