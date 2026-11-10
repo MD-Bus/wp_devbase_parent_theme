@@ -10,6 +10,40 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.41.0] — 2026-11-10
+
+**Upgrade notes.**
+- The update to this version is still checked by 1.40.0's home-page-only check; the admin side is checked from the next
+  update on.
+- Archives appear in `sitemap.xml` once TSF rebuilds its cached sitemap: after the next post save, or a save of TSF's settings.
+
+### Added
+- **Post type archives in the sitemap** (`inc/archive/seo.php`). TSF's sitemap lists posts only; every public archive that
+  TSF supports, that is not `noindex` and that has a published post is added, with its newest post's modified date as
+  `lastmod`. `devbase/archive_seo/sitemap` ( bool, $post_type ) leaves one out. Only while The SEO Framework is on.
+
+### Fixed
+- **A theme release that broke only wp-admin was not rolled back.** The health check after an update loaded the home page
+  only; found by pushing a release with an admin-only fatal to a throwaway site, which left the administrator on an HTTP 500
+  at `/wp-admin/` (Dashboard > Updates included). The check now also loads `wp-admin/admin-ajax.php` (the whole admin side,
+  no login needed): a fatal on either page rolls back, and a fatal outweighs a page that could not be checked.
+  `devbase/updates/health_check_urls` changes the list.
+- **Dashboard > Updates said "updated successfully" for a release that was then rolled back.** The update screen now says
+  that the version was put back, on the line after WordPress's own message.
+
+### Changed
+- Rollback messages say the release "broke the site", not "the home page" (English and the three French translations).
+- **About 24 fewer database queries on every front-end page** (dev site, measured: 55 → 31 with The SEO Framework off,
+  78 → 54 with it on). The settings pages' read-only status messages (Licence status, Site health, Error tracking, the
+  System Status tab, Retention status, MCP Activity) were built while their field groups registered on `acf/init`, which
+  runs for every visitor; they are now built only when the page is shown (`devbase_message_when_shown()`,
+  `acf/prepare_field`). The Tracking values and the credit link are read by field key, like Organization Details: by
+  name, a site saved before the theme's rename (`field_boostway_...` reference rows) cost three queries per value.
+
+### Tests
+- The plan's `starts_at` and `expires_at` are tested in the exact form Brand Relay 0.43.0 sends them
+  (`toISOString()`: `2027-01-31T23:59:59.999Z`).
+
 ## [1.40.0] — 2026-11-09
 
 The nine features the November 2026 reliability audit suggested (`ROADMAP.md`, "Reliability audit").

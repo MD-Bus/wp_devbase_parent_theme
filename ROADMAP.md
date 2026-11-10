@@ -38,8 +38,9 @@ leftovers (the dev server, the `theme-test-2` API key, the `ocwof.local` slot in
 Warden, the stray `* 2.php` files in the OCWOF child). Write the live cutover
 checklist: add `warden_licence_key` to the live Brand Relay, remove the two old
 params, trigger a sync, then check both themes under their tags. First find out
-which Brand Relay is deployed: `main` and its tags stop at 0.13.0 while `develop`
-is at 0.28.x, and the services below exist only from 0.18 up.
+which Brand Relay is deployed. The repo is no longer the question (2026-11-10: `origin/main` is 0.42.0, `develop` and the
+latest tag 0.43.0, so both are past the 0.18 the services below need); what is still unknown is what the live worker runs.
+It has no version endpoint, and no Cloudflare account wrangler can see has a worker named `brand-relay`.
 
 **2. Heartbeat (done in 1.23.0).** Site health reports, sent when Brand Relay's signed ping names `health`: Brand Relay is the clock,
 because most sites get few visits and many have cron off. The plan is pulled before anything is sent. See
@@ -82,8 +83,13 @@ ASE and a client site never has a second copy to install. Free means no licence 
 premium extensions (Local, Articles, Focus, Cord, Monitor, Honeypot) are deliberately not used. What remains of ours: the
 **Organization Details** page (name, URL, logo, profile links, description, slogan, founding date, expertise, locations: merged into TSF's Organization entity, with the first four replacing TSF's own settings when filled)
 and each archive's **SEO** tab (handed to TSF through its custom title and description filters). No database change: the old
-values keep working, read by field key. TSF's branding and promotion are switched off from the theme (`devbase/tsf/hide_branding`). Left to do before release: measure page weight and queries with Query Monitor, and try a site that
-still has SEOPress active (TSF shows its own conflict notice).
+values keep working, read by field key. TSF's branding and promotion are switched off from the theme (`devbase/tsf/hide_branding`). Measured 2026-11-10 on dev-blueprint
+(post and page, anonymous): TSF on adds 23 queries, about 0.3 MB of peak memory, 2.3 to 3.2 KB of `<head>`, and no measurable
+time (17 ms against 18 to 20 ms locally). All 23 queries are the theme's own Organization Details values (SCF options are saved with
+`autoload` off, so each is its own query), not TSF's. Open: saving the front-end option pages (Organization Details, Tracking,
+Miscellaneous) with `autoload` on would remove most of them; it needs a one-time switch of existing rows and every writer (the
+admin page and the MCP options ability's `update_field()`) to keep the flag. A site with SEOPress (or another listed SEO plugin)
+active never loads TSF at all (`devbase_tsf_conflicting_plugin()`, `Test_TSF_Disable`), so there is no double output to try.
 Known risks: one maintainer and bursty releases (a 10-month gap before 5.2.0). The loader depends on TSF internals (its
 `plugins_loaded` start-up callback and its asset URL constant) and our hooks on its filters, none of which are a promised
 API: `tests/Test_TSF_Loader.php` fails on the Dependabot pull request when a release moves any of them. If upstream is
@@ -109,8 +115,9 @@ were released in 1.39.0, each with tests; the tenth was left as it is on purpose
 | 9 | Nothing tested the WPvivid internals the backup engine calls | Fixed: a contract test reads the bundled zip | `tests/Test_WPvivid_Engine_Contract.php` |
 | 10 | `inc/updates/pinned-keys.php` is empty, so a Brand Relay account decides which signing key every site trusts | **Left as it is** (owner's decision, 2026-11-09): the key stays provisioned by Brand Relay and is not pinned in code. Not to be reopened without the owner asking | `inc/updates/pinned-keys.php` |
 
-**Still to do for the fixed ones.** Find out which format Brand Relay sends the plan's `starts_at` and
-`expires_at` in (finding 8 now handles all three, but nobody has looked). Tell the OCWOF child's author about the honeypot's
+**Still to do for the fixed ones.** (Answered 2026-11-10: Brand Relay 0.43.0 sends the plan's `starts_at` and `expires_at`
+in `/v1/site` as `toISOString()`, e.g. `2027-01-31T23:59:59.999Z`, from epoch milliseconds stored in its database;
+`app/lib/plans.ts`, `subscriptionAnswer()`. `strtotime()` reads it, and `Test_Ping_Housekeeping` now pins that exact form.) Tell the OCWOF child's author about the honeypot's
 new name if that child prints its own field (the starter child does not).
 
 **Suggested by the same audit, built and released in 1.40.0** (owner's go-ahead, 2026-11-09). Each with its own tests; the reasoning is
@@ -129,9 +136,15 @@ in the `AGENT.md` of its folder.
 | Free disk space checked before a backup starts | 1.5 × the last backup + 100 MiB | `inc/backups/backups.php`, `tests/Test_Backups.php` |
 
 **Open on these.** Warden has no "urgent" field on a release, so the rollout reads `[urgent]` from the notes (or `urgent: true`
-if Warden ever sends it): worth a real field in Warden. The rollback has not yet been seen on a real broken release: try it on a
-staging site with a release whose `functions.php` fatals, by an unattended update and from Dashboard > Updates. It checks the home
-page only, not wp-admin. PHPStan runs at level 5; level 6 and up want typed docblocks across the theme. Brand Relay could show the
+if Warden ever sends it): worth a real field in Warden. The rollback was tried end to end on 2026-11-10, on a throwaway WordPress (PHP's built-in server, its own database on
+Local's MySQL) with a fake Warden signing in Warden's shape with a test key; the package checks, WordPress's upgrader, the
+loopback scrape and `restore_temp_backup()` were all real. A healthy release stayed. A release whose `functions.php` fatals
+was put back by the unattended updater (from `wp-cron.php`) and from Dashboard > Updates, the files matched the previous
+version exactly, the temporary backup was cleaned up, the version was never offered again, and the notice showed. Two gaps
+found and fixed: a release that broke only wp-admin stayed installed (the check now loads `admin-ajax.php` too), and the
+update screen said "updated successfully" (it now says the version was put back). Still not covered: a fatal that happens
+only on one admin screen or one front-end template, not while WordPress loads; a visitor during the update gets WordPress's
+own 503 maintenance page, as with any update. Not tried on a real host with OPcache and a page cache. PHPStan runs at level 5; level 6 and up want typed docblocks across the theme. Brand Relay could show the
 report's new `mail` and `theme_rollbacks` fields.
 
 ## Considered

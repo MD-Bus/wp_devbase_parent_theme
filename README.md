@@ -756,13 +756,14 @@ from a cached answer, and it installs then rather than at WordPress's next twice
 says when the site will install it. For a release that cannot wait, put `[urgent]` in its notes in Warden.
 
 **Health check and rollback.** WordPress checks a plugin's update for a fatal error and puts the old version back;
-it does nothing of the kind for a theme. For our two themes, the home page is loaded before the update and again
-after it. If the update broke it (a fatal error that was not there before, or one in the theme's own files), the
-previous version is put back from the copy WordPress itself keeps during an update, and that version is never
-offered to the site again; the next release is. Administrators see a notice for a week, the Licence status tab says
-so, and the health report carries it as `theme_rollbacks`. A check that cannot be made (a host that blocks the site
-calling itself) never rolls back. The check runs in the code of the version being replaced, so it protects updates
-from 1.40.0 onwards.
+it does nothing of the kind for a theme. For our two themes, the home page and the admin side
+(`wp-admin/admin-ajax.php`) are loaded before the update and again after it. If the update broke either (a fatal
+error that was not there before, or one in the theme's own files), the previous version is put back from the copy
+WordPress itself keeps during an update, and that version is never offered to the site again; the next release is.
+The update screen says so, administrators see a notice for a week, the Licence status tab says so, and the health
+report carries it as `theme_rollbacks`. A check that cannot be made (a host that blocks the site calling itself)
+never rolls back. The check runs in the code of the version being replaced, so it protects updates from 1.40.0
+onwards, and the admin side from 1.41.0 onwards.
 
 No licence key means no update checks for that theme — which is the right
 state for a staging clone or a local copy.
