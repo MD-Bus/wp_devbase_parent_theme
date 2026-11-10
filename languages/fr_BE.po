@@ -765,3 +765,27 @@ msgid "%d error waiting to be sent."
 msgid_plural "%d errors waiting to be sent."
 msgstr[0] "%d erreur en attente d’envoi."
 msgstr[1] "%d erreurs en attente d’envoi."
+
+msgid "More old submissions were left than one run could delete; the next run carries on."
+msgstr "Il restait plus d’anciennes soumissions qu’une seule exécution ne pouvait en supprimer ; la prochaine exécution poursuivra."
+
+msgid "No submission has been discarded by the spam trap."
+msgstr "Aucune soumission n’a été écartée par le piège antispam."
+
+msgid "%1$s: %2$d discarded (last %3$s ago)"
+msgstr "%1$s : %2$d écartées (la dernière il y a %3$s)"
+
+msgid "These were answered as sent and not stored. A form whose visitors report lost messages should be checked here."
+msgstr "Elles ont reçu une réponse de réussite sans être enregistrées. Si les visiteurs d’un formulaire signalent des messages perdus, c’est ici qu’il faut vérifier."
+
+msgid "Spam Trap"
+msgstr "Piège antispam"
+
+msgid "(tried %d times)"
+msgstr "(%d tentatives)"
+
+msgid "A destination that failed will be tried again in about %s."
+msgstr "Une destination en échec sera réessayée dans environ %s."
+
+msgid "A destination that failed will be tried again."
+msgstr "Une destination en échec sera réessayée."

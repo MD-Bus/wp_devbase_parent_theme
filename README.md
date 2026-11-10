@@ -191,6 +191,11 @@ webhook) plus the forms it applies to.
 admin explicitly ticks it here. A newly registered post type starts fully
 locked down. **Allow Media Uploads** is a separate switch, off by default.
 
+**Never, whatever is ticked:** the Licence, SMTP, Security, Form Destinations
+and Tracking pages. The first four hold secrets or decide where updates and
+submissions go; Tracking holds scripts that are printed on every page, so
+writing it is running code in every visitor's browser.
+
 **Building pages from blocks.** An MCP client can see and use the blocks the
 active child theme registers, without the parent knowing any of them:
 
@@ -420,6 +425,19 @@ CAPTCHA so a typo does not spend the visitor's one-time token.
 `devbase_form_log_submission()` remains for a form with its own handler, and
 applies the same rate limit, nonce and CAPTCHA.
 
+**The honeypot** is a hidden field named `devbase_ref`, a name no browser or
+password manager fills in by itself. What it discards is answered as a success,
+so it is counted, per form, on Miscellaneous > System Status > Spam Trap: a form
+whose visitors say their message never arrived is checked there. A form that
+prints its own honeypot passes its name as `'honeypot'`.
+
+**Sending.** Where the server runs PHP-FPM the visitor gets their answer first
+and the destinations are called afterwards, so a slow mail server or webhook
+never holds the form. A destination that fails is tried twice more (after 5 and
+after 30 minutes), alone: one that already received the submission is not sent
+it again. The submission's screen shows each destination's outcome and how often
+it was tried.
+
 | Filter | Purpose |
 | --- | --- |
 | `devbase/ase/defaults` | Adjust an admin-hardening default. Fills gaps only — a value the site has already saved wins. |
@@ -427,6 +445,14 @@ applies the same rate limit, nonce and CAPTCHA.
 | `devbase/forms/registered_forms` | Register this site's forms. |
 | `devbase/forms/rate_limit` | Change a form's limit (`max` requests per `window` seconds; `max` 0 turns it off). Default 5 per 10 minutes. |
 | `devbase/forms/client_ip` | Return the real visitor address when the site sits behind a proxy or CDN (otherwise every visitor shares the proxy's limit). |
+| `devbase/forms/honeypot_name` | The honeypot field's name (default `devbase_ref`). |
+| `devbase/forms/dispatch_max_attempts` | How many times in all a destination is tried (default 3). |
+| `devbase/forms/dispatch_retry_delay` | Seconds before the next try (default 300, then 1800). |
+| `devbase/forms/defer_dispatch` | Whether destinations are called after the visitor's answer (default: where PHP-FPM allows it). |
+| `devbase/forms/retention_batch`, `devbase/forms/retention_budget` | Submissions deleted per query (200) and seconds one purge may run (20). |
+| `devbase/smtp/timeout` | Seconds to wait for the SMTP server (default 15; PHPMailer's own is 300). |
+| `devbase/maintenance/spawn_cron` | `false` stops a Brand Relay ping from starting WordPress's scheduled tasks. |
+| `devbase/maintenance/sync_plugins_on_ping` | `false` stops a ping from applying a pending bundled-plugin change. |
 | `devbase/admin_menu/hidden_items` | Change which admin menu items are hidden. |
 | `devbase/updates/tracks` | Override update track detection (rarely needed). |
 | `devbase/consent/stylesheet_url` | Reserved for consent integrations. |
@@ -651,6 +677,13 @@ clock: its signed sync ping may carry a signed JSON body such as `{ "run": ["set
 empty body is the old ping, settings only); nothing runs on a website visit or on WP-Cron. The plan is pulled before anything is
 sent, so nothing goes out in the blind. Details in `inc/maintenance/AGENT.md`.
 
+**Every verified ping also does two things, whatever it names.** It applies a pending bundled-plugin change (a newer WooCommerce
+or WPvivid that a theme release shipped), which otherwise waited for an administrator to open wp-admin. And it starts WordPress's
+own scheduled tasks if any is due, by calling `wp-cron.php`, which works whether or not the host has `DISABLE_WP_CRON` set. Theme
+auto-updates, the retention purge, a backup's retry and a failed form notification's retry all run there, so a site that Brand
+Relay pings does not depend on visits for any of them. A site with no Brand Relay configured gets no ping and relies on WP-Cron
+and admin visits, as before.
+
 **Error tracking** (needs Brand Relay 0.30.0+): the same ping can name `events`. The site keeps its fatal errors and uncaught
 exceptions, scrubbed (first line only, paths cut to `wp-content/...`, emails, tokens and query strings removed), and sends
 them to Brand Relay in one batch when asked. It collects only while the site's plan includes error tracking. A fatal while a
@@ -722,8 +755,19 @@ It refuses unless the tree is clean and on `main`, `style.css` carries a
 version newer than every existing tag, `CHANGELOG.md` has a dated, non-empty
 section for it directly under an empty `[Unreleased]`, the branch is not
 behind `origin`, `vendor/` matches `composer.lock` in both directions, and
-the test suite passes. The branch and the annotated tag are then pushed in one atomic
-push.
+the test suite passes.
+
+Then, after the confirmation, **the branch is pushed alone and the script waits
+for CI on that commit**. The suite above ran on your machine's PHP, which is
+newer than the 8.2 the theme promises; CI runs it on 8.2 and 8.4. Only when
+that run is green is the annotated tag created and pushed, and the tag is what
+Warden publishes. A red run, or none, tags nothing: fix it in a new commit and
+run the script again. It needs a token that can read the repository's Actions
+runs (`GH_TOKEN`, `gh auth login`, or the credential git already uses for
+github.com). If a PHP 8.2 is on the machine (Local by Flywheel installs one,
+or set `RELEASE_MIN_PHP_BIN`), every shipped PHP file is parsed with it first,
+which catches newer-only syntax in seconds. `RELEASE_SKIP_CI=1` releases
+without waiting, for when GitHub Actions is down and a fix cannot wait.
 
 ## Packaging a zip
 

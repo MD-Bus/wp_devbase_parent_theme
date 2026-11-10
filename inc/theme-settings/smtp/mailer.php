@@ -21,6 +21,11 @@ add_action( 'phpmailer_init', function ( $phpmailer ) {
 	}
 
 	$phpmailer->isSMTP();
+
+	// PHPMailer waits 300 seconds for a server that does not answer. A dead or mistyped host would
+	// hold every request that sends mail (a form submission, a password reset) for five minutes.
+	$phpmailer->Timeout = max( 1, (int) apply_filters( 'devbase/smtp/timeout', 15 ) );
+
 	$phpmailer->Host     = $host;
 	$phpmailer->Port     = (int) get_field( 'smtp_port', 'option' ) ?: 587;
 	$phpmailer->SMTPAuth = true;

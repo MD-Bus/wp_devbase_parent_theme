@@ -78,7 +78,13 @@ function devbase_forms_run_retention_purge() {
 	$policies      = get_field( 'retention_policies', 'option' );
 	$day_counts    = devbase_forms_retention_period_days();
 	$total_deleted = 0;
-	$batch_size    = 200;
+	$batch_size    = max( 1, (int) apply_filters( 'devbase/forms/retention_batch', 200 ) );
+
+	// One batch per row was the whole run until 1.39.0, so a form flooded with more than 200 old
+	// submissions a day never caught up. Now a row is purged batch after batch until nothing old is
+	// left, within a time budget (the rest waits for the next run, and `unfinished` says so).
+	$deadline   = time() + max( 0, (int) apply_filters( 'devbase/forms/retention_budget', 20 ) );
+	$unfinished = false;
 
 	if ( ! empty( $policies ) && is_array( $policies ) ) {
 		foreach ( $policies as $row ) {
@@ -91,38 +97,54 @@ function devbase_forms_run_retention_purge() {
 
 			$cutoff = gmdate( 'Y-m-d H:i:s', time() - ( $day_counts[ $period ] * DAY_IN_SECONDS ) );
 
-			$old_submissions = get_posts( array(
-				'post_type'      => 'form_data',
-				'post_status'    => 'any',
-				'posts_per_page' => $batch_size,
-				'fields'         => 'ids',
-				'date_query'     => array(
-					array(
-						'before'    => $cutoff,
-						'inclusive' => false,
-						'column'    => 'post_date_gmt',
+			do {
+				$old_submissions = get_posts( array(
+					'post_type'      => 'form_data',
+					'post_status'    => 'any',
+					'posts_per_page' => $batch_size,
+					'fields'         => 'ids',
+					'date_query'     => array(
+						array(
+							'before'    => $cutoff,
+							'inclusive' => false,
+							'column'    => 'post_date_gmt',
+						),
 					),
-				),
-				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-					array(
-						'key'     => 'form_name',
-						'value'   => $applies_to,
-						'compare' => 'IN',
+					'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+						array(
+							'key'     => 'form_name',
+							'value'   => $applies_to,
+							'compare' => 'IN',
+						),
 					),
-				),
-			) );
+				) );
 
-			foreach ( $old_submissions as $post_id ) {
-				if ( wp_delete_post( $post_id, true ) ) {
-					++$total_deleted;
+				$deleted_now = 0;
+
+				foreach ( $old_submissions as $post_id ) {
+					if ( wp_delete_post( $post_id, true ) ) {
+						++$deleted_now;
+					}
 				}
-			}
+
+				$total_deleted += $deleted_now;
+
+				// A full batch means there may be more. A batch that deleted nothing would come back
+				// the same for ever (posts that will not delete): stop instead of looping on it.
+				$more = count( $old_submissions ) >= $batch_size && $deleted_now > 0;
+
+				if ( $more && time() >= $deadline ) {
+					$unfinished = true;
+					break 2;
+				}
+			} while ( $more );
 		}
 	}
 
 	update_option( 'devbase_retention_last_run', array(
-		'time'    => time(),
-		'deleted' => $total_deleted,
+		'time'       => time(),
+		'deleted'    => $total_deleted,
+		'unfinished' => $unfinished,
 	), false );
 
 	return $total_deleted;
@@ -153,6 +175,10 @@ function devbase_forms_retention_last_run_message() {
 		wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $last_run['time'] ),
 		$last_run['deleted']
 	);
+
+	if ( ! empty( $last_run['unfinished'] ) ) {
+		$message .= ' ' . __( 'More old submissions were left than one run could delete; the next run carries on.', 'devbase_parent_theme' );
+	}
 
 	if ( $age_hours > 36 ) {
 		$message .= ' ' . __( '⚠ Over 36 hours ago — if this keeps growing, WP-Cron may not be running on this site (common on hosts that disable it in favor of a real system cron). Use "Run Purge Now" to verify, or point a real cron job at wp-cron.php.', 'devbase_parent_theme' );

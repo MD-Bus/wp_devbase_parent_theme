@@ -91,6 +91,44 @@ abandoned or a fix is not shipped, `vendor/autodescription/` is already a full c
 Not covered, as TSF's free version has none: Article, Product, FAQ, Review, Event and LocalBusiness schema, focus keywords,
 a Google News sitemap, and SEO fields over REST (MCP cannot set a page's SEO title; it can set an archive's).
 
+## Reliability audit (November 2026)
+
+A read of the theme's own code for what could fail on a client site without anyone noticing. Ten findings; nine are fixed and
+were released in 1.39.0, each with tests; the tenth was left as it is on purpose. The reasoning for each is in the `AGENT.md` of its folder.
+
+| # | Finding | Status | Where |
+| --- | --- | --- | --- |
+| 1 | The release gate tested only on the developer's PHP (8.5); the theme promises 8.2, and CI ran after Warden had published | Fixed: the branch is pushed, CI on that commit must be green, then the tag. First used to release 1.39.0 | `bin/release.sh`, `tests/Test_Release_Script.php` |
+| 2 | Theme auto-updates, the retention purge, backup retries and the credit refresh depended on WP-Cron | Fixed: every verified ping starts `wp-cron.php`; the purge runs past one batch | `inc/maintenance/maintenance.php`, `inc/forms/retention.php`, `tests/Test_Ping_Housekeeping.php` |
+| 3 | A backup that stalled was never cleaned up: its archive stayed on disk, Brand Relay was never told | Fixed: asking again moves a waiting job on; a stalled one is failed and cleaned before the next starts | `inc/backups/backups.php`, `tests/Test_Backups.php` |
+| 4 | Form notifications were sent inside the visitor's request (SMTP waited 300 s), and a failure was never retried | Fixed: 15 s timeout, sent after the answer on PHP-FPM, three tries per destination | `inc/forms/dispatch/orchestrator.php`, `inc/theme-settings/smtp/mailer.php`, `tests/Test_Form_Dispatch_Retry.php` |
+| 5 | A newer bundled plugin waited for an administrator to open wp-admin | Fixed: a verified ping applies it | `inc/maintenance/maintenance.php`, `tests/Test_Ping_Housekeeping.php` |
+| 6 | MCP could write the Tracking page's scripts, printed on every page | Fixed: the page and its fields are out of MCP's reach | `inc/abilities/helpers.php`, `tests/Test_Security_Hardening.php` |
+| 7 | The honeypot was named `website`, which browsers fill in; a catch is silent | Fixed: renamed, and catches are counted on System Status | `inc/helpers/forms/submit.php`, `tests/Test_Form_Submit.php` |
+| 8 | A plan expiry that could not be read counted as "never expires" | Fixed: milliseconds are understood; unreadable switches the service off and is recorded | `inc/maintenance/plan.php`, `tests/Test_Ping_Housekeeping.php` |
+| 9 | Nothing tested the WPvivid internals the backup engine calls | Fixed: a contract test reads the bundled zip | `tests/Test_WPvivid_Engine_Contract.php` |
+| 10 | `inc/updates/pinned-keys.php` is empty, so a Brand Relay account decides which signing key every site trusts | **Left as it is** (owner's decision, 2026-11-09): the key stays provisioned by Brand Relay and is not pinned in code. Not to be reopened without the owner asking | `inc/updates/pinned-keys.php` |
+
+**Still to do for the fixed ones.** Find out which format Brand Relay sends the plan's `starts_at` and
+`expires_at` in (finding 8 now handles all three, but nobody has looked). Tell the OCWOF child's author about the honeypot's
+new name if that child prints its own field (the starter child does not).
+
+**Suggested by the same audit, not built** (each needs its own decision):
+
+- **A health check after a theme update, with rollback.** Load the home page after an update and restore the previous version
+  on a fatal error. WordPress does this for nothing of a theme's.
+- **A staged rollout.** Each site waits a random few hours before installing a release, so a bad one can be withdrawn in
+  Warden before most sites have it.
+- **Mail failures on System Status and in the health report.** Today only the "Send Test Email" button records anything;
+  `wp_mail_failed` for real mail is not kept.
+- **Reply-To on form notifications**, set to the submitter's address, and a **Resend** button on a submission.
+- **Tracking only where it should run**: not on a non-production environment, not for a logged-in editor, and a filter a
+  consent plugin can use.
+- **An audit log for MCP writes**: what was changed, through which application password, with an option's previous value.
+- **WordPress's personal data export and erasure** for form submissions.
+- **Static analysis** (PHPStan) in the release gate.
+- **Free disk space checked before a backup starts** (it is checked before a download).
+
 ## Considered
 
 **A header and footer template pair.** The theme ships one placeholder

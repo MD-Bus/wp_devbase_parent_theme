@@ -36,6 +36,76 @@
 // the fail-closed rule is unchanged: no valid nonce or CAPTCHA, no
 // submission.
 
+/** Where the honeypot's catches are counted: form name => { count, last }. Not autoloaded. */
+const DEVBASE_FORM_HONEYPOT_OPTION = 'devbase_form_honeypot_drops';
+
+/**
+ * The name of the honeypot field: the one devbase_form_fields() prints and devbase_form_submit() checks.
+ *
+ * It was `website` until 1.39.0. That is a name browsers and password managers fill in by themselves
+ * (they go by the field's name, and do not all honour autocomplete="off"), and a filled honeypot is
+ * answered as a success with nothing stored: a real visitor's message could vanish with no sign of it
+ * anywhere. This name means nothing to an autofill. A form that prints its own honeypot under another
+ * name passes that name as 'honeypot' to devbase_form_submit(), as before.
+ */
+function devbase_form_honeypot_name() {
+	return (string) apply_filters( 'devbase/forms/honeypot_name', 'devbase_ref' );
+}
+
+/**
+ * Counts one submission the honeypot discarded. Nothing of the submission is kept, only that it
+ * happened: a discarded submission is answered as a success, so without this count a honeypot that
+ * catches real visitors would be invisible. Shown on Miscellaneous > System Status.
+ *
+ * @param string $form_name The registered form name.
+ */
+function devbase_form_honeypot_caught( $form_name ) {
+	$drops = get_option( DEVBASE_FORM_HONEYPOT_OPTION );
+	$drops = is_array( $drops ) ? $drops : array();
+	$name  = substr( sanitize_key( (string) $form_name ), 0, 60 );
+
+	// A name that is not counted yet, past a sane number of forms: someone is inventing form names.
+	if ( '' === $name || ( ! isset( $drops[ $name ] ) && count( $drops ) >= 50 ) ) {
+		return;
+	}
+
+	$drops[ $name ] = array(
+		'count' => (int) ( $drops[ $name ]['count'] ?? 0 ) + 1,
+		'last'  => time(),
+	);
+
+	update_option( DEVBASE_FORM_HONEYPOT_OPTION, $drops, false );
+}
+
+/**
+ * The honeypot line for Miscellaneous > System Status: how many submissions each form's honeypot has
+ * discarded, and when the last one was. A form that discards far more than a bot would send, or
+ * one whose visitors say their message never arrived, is the thing to look for.
+ *
+ * @return string Plain text.
+ */
+function devbase_form_honeypot_status_message() {
+	$drops = get_option( DEVBASE_FORM_HONEYPOT_OPTION );
+
+	if ( ! is_array( $drops ) || ! $drops ) {
+		return __( 'No submission has been discarded by the spam trap.', 'devbase_parent_theme' );
+	}
+
+	$parts = array();
+
+	foreach ( $drops as $name => $drop ) {
+		$parts[] = sprintf(
+			/* translators: 1: form name, 2: how many submissions, 3: how long ago, e.g. "3 hours". */
+			__( '%1$s: %2$d discarded (last %3$s ago)', 'devbase_parent_theme' ),
+			$name,
+			(int) ( $drop['count'] ?? 0 ),
+			human_time_diff( (int) ( $drop['last'] ?? time() ) )
+		);
+	}
+
+	return implode( '; ', $parts ) . '. ' . __( 'These were answered as sent and not stored. A form whose visitors report lost messages should be checked here.', 'devbase_parent_theme' );
+}
+
 /**
  * Runs a submission through every step above and returns the answer,
  * without sending it (devbase_form_send() sends it).
@@ -54,8 +124,8 @@
  *     @type callable $after_log  fn( int $post_id, array $content, array $data ): runs once stored.
  *     @type callable $success    fn( array $values, array $data ): array of data for the reply.
  *     @type array    $messages   Visitor-facing text for 'rate_limited' and 'blocked'.
- *     @type string   $honeypot   The honeypot field name. Default 'website', as printed by
- *                                devbase_form_fields().
+ *     @type string   $honeypot   The honeypot field name. Default devbase_form_honeypot_name(), as
+ *                                printed by devbase_form_fields(). '' switches the check off.
  *     @type array    $data       The submission. Default $_POST.
  * }
  * @return array{status:int, success:bool, data:array}
@@ -68,7 +138,7 @@ function devbase_form_submit( $form_name, array $args = array() ) {
 		'after_log'  => null,
 		'success'    => null,
 		'messages'   => array(),
-		'honeypot'   => 'website',
+		'honeypot'   => devbase_form_honeypot_name(),
 		'data'       => null,
 	) );
 
@@ -83,6 +153,8 @@ function devbase_form_submit( $form_name, array $args = array() ) {
 	};
 
 	if ( '' !== $args['honeypot'] && ! empty( $data[ $args['honeypot'] ] ) ) {
+		devbase_form_honeypot_caught( $form_name );
+
 		return $answer( 200, true );
 	}
 

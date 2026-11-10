@@ -161,6 +161,15 @@ add_action( 'acf/init', function () {
 				'message'      => devbase_forms_dispatch_status_message(), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				'instructions' => __( 'Checks the most recent 50 dispatch attempts across all submissions.', 'devbase_parent_theme' ),
 			),
+			// What the forms' honeypot discarded (inc/helpers/forms/submit.php). A discarded submission is
+			// answered as a success, so this count is the only place a wrong catch can be seen.
+			array(
+				'key'     => 'field_devbase_status_honeypot',
+				'label'   => __( 'Spam Trap', 'devbase_parent_theme' ),
+				'name'    => '',
+				'type'    => 'message',
+				'message' => esc_html( devbase_form_honeypot_status_message() ),
+			),
 			array(
 				'key'     => 'field_devbase_status_retention',
 				'label'   => __( 'Retention Policy', 'devbase_parent_theme' ),

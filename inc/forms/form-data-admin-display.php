@@ -59,7 +59,20 @@ function devbase_forms_render_submission_meta_box( $post ) {
 		$badge   = $success
 			? '<span style="color:#008a20;font-weight:600;">' . esc_html__( 'Sent', 'devbase_parent_theme' ) . '</span>'
 			: '<span style="color:#d63638;font-weight:600;">' . esc_html__( 'Failed', 'devbase_parent_theme' ) . '</span>';
-		echo '<tr><td>' . $badge . '</td><td>' . esc_html( $entry['label'] ?? '' ) . '</td><td>' . esc_html( $entry['message'] ?? '' ) . '</td></tr>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		$tries   = (int) ( $entry['attempts'] ?? 0 );
+		/* translators: %d: how many times the destination was tried. */
+		$detail  = (string) ( $entry['message'] ?? '' ) . ( $tries > 1 ? ' ' . sprintf( __( '(tried %d times)', 'devbase_parent_theme' ), $tries ) : '' );
+		echo '<tr><td>' . $badge . '</td><td>' . esc_html( $entry['label'] ?? '' ) . '</td><td>' . esc_html( $detail ) . '</td></tr>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 	echo '</tbody></table>';
+
+	// A failed destination with tries left is sent again by WP-Cron (inc/forms/dispatch/orchestrator.php).
+	if ( 'retry' === get_post_meta( $post->ID, '_devbase_dispatched', true ) ) {
+		$next = wp_next_scheduled( DEVBASE_FORMS_RETRY_HOOK, array( (int) $post->ID ) );
+
+		echo '<p class="description">' . esc_html( $next
+			/* translators: %s: how long from now, e.g. "5 mins". */
+			? sprintf( __( 'A destination that failed will be tried again in about %s.', 'devbase_parent_theme' ), human_time_diff( time(), $next ) )
+			: __( 'A destination that failed will be tried again.', 'devbase_parent_theme' ) ) . '</p>';
+	}
 }

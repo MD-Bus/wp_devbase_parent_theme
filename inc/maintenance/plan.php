@@ -23,12 +23,40 @@ const DEVBASE_RELAY_PLAN_OPTION = 'devbase_relay_plan';
  */
 function devbase_relay_store_plan( array $data ) {
 	$licence = isset( $data['licence'] ) && is_array( $data['licence'] ) ? $data['licence'] : null;
+	$problem = '';
+
+	// A date that is there but cannot be read switches the plan's services off (see
+	// devbase_relay_service_in_force()). Said once, here, where the plan arrives, and kept with it.
+	foreach ( array( 'starts_at', 'expires_at' ) as $field ) {
+		if ( $licence && ! empty( $licence[ $field ] ) && false === devbase_relay_time( $licence[ $field ] ) ) {
+			$problem = "the plan's {$field} cannot be read";
+			error_log( "devbase_parent_theme: {$problem}, so its services are treated as not in force" );
+		}
+	}
 
 	update_option( DEVBASE_RELAY_PLAN_OPTION, array(
 		'fetched_at' => time(),
 		'ttl'        => isset( $data['ttl'] ) ? (int) $data['ttl'] : 0,
 		'licence'    => $licence,
+		'problem'    => $problem,
 	), false );
+}
+
+/**
+ * A time from Brand Relay as a timestamp in seconds, or false when it cannot be read. Brand Relay sends
+ * epoch MILLISECONDS in places (1793823580262) and ISO dates in others; plain seconds are understood too.
+ *
+ * @param mixed $value
+ * @return int|false
+ */
+function devbase_relay_time( $value ) {
+	if ( is_numeric( $value ) ) {
+		$number = (float) $value;
+
+		return $number > 100000000000 ? (int) floor( $number / 1000 ) : (int) $number;
+	}
+
+	return is_string( $value ) && '' !== trim( $value ) ? strtotime( $value ) : false;
 }
 
 /** The saved plan answer, or an empty array when the site has never pulled one. */
@@ -58,14 +86,20 @@ function devbase_relay_service_in_force( $service, $now = null ) {
 		return false;
 	}
 
-	if ( ! empty( $licence['starts_at'] ) && strtotime( (string) $licence['starts_at'] ) > $now ) {
-		return false;
+	// A date that is present but unreadable is NOT "no date": reading it as one would keep an expired
+	// plan in force for good. Brand Relay refuses the calls anyway; the site's job is not to make them.
+	if ( ! empty( $licence['starts_at'] ) ) {
+		$starts = devbase_relay_time( $licence['starts_at'] );
+
+		if ( false === $starts || $starts > $now ) {
+			return false;
+		}
 	}
 
 	if ( ! empty( $licence['expires_at'] ) ) {
-		$ends = strtotime( (string) $licence['expires_at'] );
+		$ends = devbase_relay_time( $licence['expires_at'] );
 
-		if ( false !== $ends && $ends < $now ) {
+		if ( false === $ends || $ends < $now ) {
 			return false;
 		}
 	}

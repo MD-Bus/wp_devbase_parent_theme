@@ -235,11 +235,18 @@ class Test_Security_Hardening extends WP_UnitTestCase {
 
 		$this->assertFalse( devbase_abilities_is_options_page_allowed( 'licence-settings' ) );
 		$this->assertFalse( devbase_abilities_is_options_page_allowed( 'smtp-settings' ) );
-		$this->assertTrue( devbase_abilities_is_options_page_allowed( 'tracking-settings' ) );
+		// Its Custom Scripts are printed unescaped on every page: writing them is running script site-wide.
+		$this->assertFalse( devbase_abilities_is_options_page_allowed( 'tracking-settings' ) );
+	}
+
+	public function test_a_page_that_holds_no_secret_is_allowed_once_ticked() {
+		update_field( 'mcp_allowed_options_pages', array( 'schema-settings' ), 'option' );
+
+		$this->assertTrue( devbase_abilities_is_options_page_allowed( 'schema-settings' ) );
 	}
 
 	public function test_secret_fields_are_protected_from_mcp_on_any_page() {
-		foreach ( array( 'warden_base_url', 'warden_public_key', 'relay_site_key', 'smtp_password', 'turnstile_secret_key', 'recaptcha_secret_key', 'destinations' ) as $name ) {
+		foreach ( array( 'warden_base_url', 'warden_public_key', 'relay_site_key', 'smtp_password', 'turnstile_secret_key', 'recaptcha_secret_key', 'destinations', 'header_scripts', 'footer_scripts', 'gtm_id', 'ga4_id' ) as $name ) {
 			$this->assertContains( $name, devbase_abilities_protected_option_fields() );
 		}
 	}

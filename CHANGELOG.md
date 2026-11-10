@@ -10,6 +10,58 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.39.0] — 2026-11-09
+
+Nine fixes from the November 2026 reliability audit (tracked in `ROADMAP.md`, "Reliability audit").
+
+**Upgrade notes.**
+- An MCP client can no longer read or write the **Tracking** page, even where it was ticked under MCP Access. Nothing to do; the tick is ignored.
+- A form that **prints its own honeypot field called `website`** (instead of calling `devbase_form_fields()`) must pass `'honeypot' => 'website'`
+  to `devbase_form_submit()` / `devbase_form_send()`, or rename the field: the default name changed. A form built with `devbase_form_fields()`
+  needs nothing.
+- Cutting a release now needs a GitHub token that can read the repository's Actions runs (`gh auth login`, or git's stored credential, is enough).
+
+### Security
+
+- **MCP can no longer write the Tracking page.** Its Custom Scripts fields are printed unescaped on every page, so an AI client allowed onto that page
+  (and acting on text it had read: prompt injection) could have put a script in every visitor's browser with `devbase/update-options`. `tracking-settings`
+  joins the pages MCP never reaches, and `header_scripts`, `footer_scripts`, `gtm_id` and `ga4_id` join the protected fields, wherever a child theme puts them.
+
+### Fixed
+
+- **Releases are checked on PHP 8.2 before sites get them.** `bin/release.sh` ran the suite only on the developer's PHP (8.5), and CI ran after Warden had
+  already published the tag. It now pushes the branch first, waits for the Tests workflow on that exact commit (PHP 8.2 and 8.4), and creates the tag only
+  when it is green; a red, missing or unfinished run tags nothing. Before that, when a PHP of the minimum version is on the machine (Local installs one),
+  every shipped PHP file is parsed with it. `RELEASE_SKIP_CI=1` is the emergency way round, and says so.
+- **Scheduled tasks no longer depend on visits.** Every verified Brand Relay ping now starts `wp-cron.php` when something is due, whether or not
+  `DISABLE_WP_CRON` is set. Theme auto-updates, the retention purge, a backup's retry and the credit refresh all ran only on WP-Cron, which a quiet site
+  or a host with cron off never fires. Filter: `devbase/maintenance/spawn_cron`.
+- **A bundled plugin is updated without waiting for an administrator.** A newer WooCommerce or WPvivid shipped in a theme release was applied only when
+  someone with the right to manage plugins loaded wp-admin, while WordPress's own update for it is locked. A verified ping now applies it too. Filter:
+  `devbase/maintenance/sync_plugins_on_ping`.
+- **A backup that stops moving is finished off, not abandoned.** Asking for a backup while one has not moved for 90 seconds now moves it on (it was only
+  answered `idle`, and waited for a WP-Cron event). A job stalled past six hours is failed properly before the next one starts: aborted at Brand Relay and
+  its local archive of the whole site deleted. Before, the new job overwrote the record and that archive stayed in the backup folder for good. A failed
+  request to Brand Relay keeps its reason ("Operation timed out…") instead of "no answer".
+- **A slow mail server or webhook no longer holds the visitor's form.** With SMTP on, a server that did not answer was waited on for PHPMailer's 300
+  seconds; it is now 15 (`devbase/smtp/timeout`). And on PHP-FPM a submission is sent to its destinations after the visitor has their answer, not before.
+- **A destination that fails is tried again**: three tries in all (at once, after 5 minutes, after 30), a destination at a time, so one that already
+  received the submission never gets it twice. A request that dies between storing and sending is picked up the same way. The submission screen says how
+  often it tried. Filters: `devbase/forms/defer_dispatch`, `devbase/forms/dispatch_max_attempts`, `devbase/forms/dispatch_retry_delay`.
+- **The honeypot field is no longer called `website`**, a name browsers and password managers fill in by themselves: a filled honeypot is answered as a
+  success with nothing stored, so a real visitor's message could vanish silently. It is now `devbase_ref` (`devbase/forms/honeypot_name`), and what the
+  honeypot discards is counted per form on Miscellaneous > System Status > Spam Trap (a count and a time, nothing of the submission).
+- **A plan date that cannot be read no longer means "no date".** Brand Relay sends some times as epoch milliseconds; read with `strtotime()` alone, such
+  an expiry was ignored and the plan never ended. Dates, seconds and milliseconds are now all understood, and one that is present but unreadable switches
+  the plan's services off and is recorded (`problem` in the saved plan, and the PHP error log).
+- **The retention purge finishes.** It deleted at most 200 old submissions per policy row per run, so a flooded form never caught up. It now goes on,
+  batch after batch, for up to 20 seconds, and says so when it had to stop (`devbase/forms/retention_batch`, `devbase/forms/retention_budget`).
+
+### Added
+
+- `tests/Test_WPvivid_Engine_Contract.php` reads the bundled WPvivid zip and fails when a class, method, option or nonce the backup engine calls is
+  renamed or removed. Every other backup test replaces the engine, so such a release passed the suite; it now fails on the Dependabot pull request.
+
 ### Changed
 
 - **WPvivid Backup is locked down to what the backup flow uses**, while the site's plan includes backups (a WPvivid a client installed for themselves is untouched). Every admin-ajax action of WPvivid that is not on an allowlist is

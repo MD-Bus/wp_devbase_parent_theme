@@ -65,7 +65,9 @@ function devbase_abilities_is_options_page_allowed( $menu_slug ) {
  * Options pages MCP can never reach, whatever the allow-list says: they hold the update server
  * and its signing key, mail and CAPTCHA credentials, and where every form submission is sent. An
  * AI client acting on content it has read (prompt injection) must not be able to read those
- * secrets or point theme updates at a server of its choosing. Filterable to add more.
+ * secrets or point theme updates at a server of its choosing. The Tracking page is in the list for
+ * a different reason: its Custom Scripts fields are printed unescaped on every page of the site, so
+ * writing them is running script in every visitor's browser. Filterable to add more.
  *
  * @return string[] menu_slugs.
  */
@@ -76,6 +78,7 @@ function devbase_abilities_sensitive_options_pages() {
 		'smtp-settings',
 		'security-settings',
 		'destinations-settings',
+		'tracking-settings',
 	) );
 }
 
@@ -271,6 +274,9 @@ function devbase_abilities_protected_option_fields() {
 		// devbase_abilities_sensitive_options_pages(), which keeps their pages out entirely).
 		'warden_licence_key', 'warden_base_url', 'warden_public_key', 'relay_base_url', 'relay_site_key',
 		'smtp_password', 'turnstile_secret_key', 'recaptcha_secret_key', 'destinations', 'lock_remote_setup',
+		// Printed into every page (inc/theme-settings/tracking/inject.php), the scripts unescaped. Their
+		// page is kept out entirely; named here too for a child theme that puts them on another page.
+		'header_scripts', 'footer_scripts', 'gtm_id', 'ga4_id',
 	);
 }
 

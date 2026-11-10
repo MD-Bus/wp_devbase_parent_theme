@@ -668,4 +668,117 @@ class Test_Backups extends WP_UnitTestCase {
 		$this->assertFalse( devbase_backup_safe_path( '//evil.example/v1/site/backups/x' ) );
 		$this->assertFalse( devbase_backup_safe_path( '/v1/other' ) );
 	}
+
+	// --- a job that stopped moving (1.39.0) ----------------------------------------------------
+
+	/** Makes the saved job look as if it last moved $seconds ago. */
+	private function age_job( $seconds ) {
+		$job               = devbase_backup_job();
+		$job['updated_at'] = time() - $seconds;
+		update_option( DEVBASE_BACKUP_JOB, $job, false );
+	}
+
+	public function test_asking_again_moves_on_a_job_that_is_waiting_on_wp_cron() {
+		devbase_backup_run();
+		$this->assertSame( 1, $this->spawns );
+
+		// Still fresh: a step is probably running. Nothing more is started.
+		$this->assertSame( 'idle', devbase_backup_run()['status'] );
+		$this->assertSame( 1, $this->spawns );
+
+		// Two minutes without moving: it is waiting for a WP-Cron event this site may never fire.
+		$this->age_job( 120 );
+		$id = devbase_backup_job()['id'];
+
+		$this->assertSame( 'idle', devbase_backup_run()['status'], 'Still one job, and still the same answer.' );
+		$this->assertSame( 2, $this->spawns, 'But Brand Relay asking is what moves it on.' );
+		$this->assertSame( $id, devbase_backup_job()['id'] );
+	}
+
+	public function test_a_job_that_stalled_for_good_is_cleaned_up_before_the_next_one_starts() {
+		// A backup that got as far as uploading, then never moved again.
+		devbase_backup_new_job( 'backup' );
+		devbase_backup_step( true );
+		$this->reset_job_to( 'uploading', 2 );
+		$job             = devbase_backup_job();
+		$job['files'][0]['path'] = $this->dir . 'site_backup_all.zip';
+		devbase_backup_save( $job );
+		$stalled = $job['id'];
+		$this->age_job( 7 * HOUR_IN_SECONDS );
+
+		$this->assertFalse( devbase_backup_job_active(), 'Past six hours it no longer blocks a new backup.' );
+		$this->assertFileExists( $this->dir . 'site_backup_all.zip', 'Its archive of the whole site is still on disk.' );
+		$this->calls = array();
+
+		$this->assertSame( 'started', devbase_backup_run()['status'] );
+
+		$this->assertSame( 1, $this->called( 'POST', '/v1/site/backups/bkp_1/abort' ), 'Brand Relay is told the old upload is dead.' );
+		$this->assertFileDoesNotExist( $this->dir . 'site_backup_all.zip', 'The old archive is not left behind for good.' );
+		$this->assertNotSame( $stalled, devbase_backup_job()['id'] );
+		$this->assertSame( 'new', devbase_backup_job()['state'] );
+	}
+
+	public function test_giving_up_a_stalled_job_records_why() {
+		devbase_backup_new_job( 'backup' );
+		$this->age_job( 7 * HOUR_IN_SECONDS );
+
+		$this->assertTrue( devbase_backup_give_up_stalled() );
+
+		$job = devbase_backup_job();
+		$this->assertSame( 'failed', $job['state'] );
+		$this->assertStringContainsString( 'stopped moving', $job['error'] );
+		$this->assertSame( 'error', devbase_maintenance_state()['services']['backup']['status'] );
+	}
+
+	public function test_a_finished_a_failed_or_a_running_job_is_never_given_up() {
+		$this->assertFalse( devbase_backup_give_up_stalled(), 'No job at all.' );
+
+		devbase_backup_new_job( 'backup' );
+		$this->assertFalse( devbase_backup_give_up_stalled(), 'Running.' );
+		$this->assertSame( 'new', devbase_backup_job()['state'] );
+
+		foreach ( array( 'done', 'failed' ) as $state ) {
+			$job          = devbase_backup_job();
+			$job['state'] = $state;
+			devbase_backup_save( $job );
+			$this->age_job( 7 * HOUR_IN_SECONDS );
+
+			$this->assertFalse( devbase_backup_give_up_stalled(), $state );
+			$this->assertSame( $state, devbase_backup_job()['state'] );
+		}
+
+		$this->assertSame( 0, $this->called( 'POST', '/v1/site/backups/bkp_1/abort' ) );
+	}
+
+	public function test_a_stalled_download_is_cleaned_up_before_another_download_starts() {
+		$sha = hash( 'sha256', $this->payload );
+		$this->api['GET /v1/site/backups'] = array( 200, array( 'backups' => array(
+			array( 'id' => 'bkp_9', 'status' => 'complete', 'label' => 'Stored', 'files' => array( array( 'name' => 'stored.zip', 'size' => strlen( $this->payload ), 'sha256' => $sha ) ) ),
+		) ) );
+
+		// An earlier download left half a file and never moved again.
+		devbase_backup_new_job( 'download', array( 'relay_id' => 'bkp_8', 'files' => array( array( 'name' => 'old.zip', 'size' => 100 ) ), 'sums' => array() ) );
+		file_put_contents( $this->dir . 'old.zip.part', 'half' );
+		$this->age_job( 7 * HOUR_IN_SECONDS );
+
+		$job = devbase_backup_start_download( 'bkp_9' );
+
+		$this->assertIsArray( $job );
+		$this->assertSame( 'bkp_9', $job['relay_id'] );
+		$this->assertFileDoesNotExist( $this->dir . 'old.zip.part', 'WPvivid must never find a half backup in its folder.' );
+	}
+
+	public function test_a_request_that_failed_keeps_its_reason() {
+		devbase_backup_new_job( 'backup' );
+		$job             = devbase_backup_job();
+		$job['attempts'] = 4; // the last try
+
+		devbase_backup_retry_or_fail( $job, 'Sending part 2 of a.zip', new WP_Error( 'put', 'Operation timed out after 900 seconds' ) );
+
+		$this->assertStringContainsString( 'Operation timed out after 900 seconds', devbase_backup_job()['error'], '"no answer" did not tell a timeout from a refused connection.' );
+
+		devbase_backup_new_job( 'backup' );
+		devbase_backup_retry_or_fail( devbase_backup_job(), 'Declaring the backup', 413 );
+		$this->assertStringContainsString( 'HTTP 413', devbase_backup_job()['error'] );
+	}
 }

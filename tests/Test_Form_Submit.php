@@ -94,11 +94,87 @@ class Test_Form_Submit extends WP_UnitTestCase {
 	}
 
 	public function test_honeypot_answers_success_and_stores_nothing() {
-		$result = devbase_form_submit( 'devbase_test_form', $this->args( $this->good( array( 'website' => 'http://spam.example' ) ) ) );
+		$result = devbase_form_submit( 'devbase_test_form', $this->args( $this->good( array( devbase_form_honeypot_name() => 'http://spam.example' ) ) ) );
 
 		$this->assertTrue( $result['success'] );
 		$this->assertSame( 200, $result['status'] );
 		$this->assertEmpty( $this->stored() );
+	}
+
+	// --- the honeypot's name and its count (1.39.0) ---------------------------------------------
+
+	public function test_the_honeypot_is_not_a_field_a_browser_fills_in_by_itself() {
+		$name = devbase_form_honeypot_name();
+
+		// The names autofill goes by. `website` was the old one: a filled honeypot is answered as a
+		// success with nothing stored, so an autofilled one loses a real visitor's message silently.
+		foreach ( array( 'website', 'url', 'email', 'name', 'phone', 'tel', 'address', 'company', 'organization', 'city', 'zip', 'postal', 'country', 'username', 'password' ) as $autofilled ) {
+			$this->assertStringNotContainsStringIgnoringCase( $autofilled, $name );
+		}
+	}
+
+	public function test_a_real_field_called_website_no_longer_discards_the_submission() {
+		$result = devbase_form_submit( 'devbase_test_form', $this->args( $this->good( array( 'website' => 'https://ada.example' ) ) ) );
+
+		$this->assertTrue( $result['success'] );
+		$this->assertCount( 1, $this->stored(), 'A browser that filled in "website" used to make this vanish.' );
+	}
+
+	public function test_a_form_with_its_own_honeypot_name_still_works() {
+		$result = devbase_form_submit( 'devbase_test_form', $this->args( $this->good( array( 'trap' => 'x' ) ), array( 'honeypot' => 'trap' ) ) );
+
+		$this->assertTrue( $result['success'] );
+		$this->assertEmpty( $this->stored() );
+	}
+
+	public function test_what_the_honeypot_discards_is_counted_per_form_and_nothing_of_it_is_kept() {
+		delete_option( DEVBASE_FORM_HONEYPOT_OPTION );
+		$this->assertSame( __( 'No submission has been discarded by the spam trap.', 'devbase_parent_theme' ), devbase_form_honeypot_status_message() );
+
+		$spam = $this->good( array( devbase_form_honeypot_name() => 'buy pills', 'name' => 'Spammer Name' ) );
+		devbase_form_submit( 'devbase_test_form', $this->args( $spam ) );
+		devbase_form_submit( 'devbase_test_form', $this->args( $spam ) );
+
+		$drops = get_option( DEVBASE_FORM_HONEYPOT_OPTION );
+		$this->assertSame( 2, $drops['devbase_test_form']['count'] );
+		$this->assertEqualsWithDelta( time(), $drops['devbase_test_form']['last'], 5 );
+		$this->assertStringNotContainsString( 'Spammer', wp_json_encode( $drops ), 'Only that it happened, never what was sent.' );
+		$this->assertStringNotContainsString( 'pills', wp_json_encode( $drops ) );
+
+		$message = devbase_form_honeypot_status_message();
+		$this->assertStringContainsString( 'devbase_test_form', $message );
+		$this->assertStringContainsString( sprintf( __( '%1$s: %2$d discarded (last %3$s ago)', 'devbase_parent_theme' ), 'devbase_test_form', 2, human_time_diff( $drops['devbase_test_form']['last'] ) ), $message );
+
+		delete_option( DEVBASE_FORM_HONEYPOT_OPTION );
+	}
+
+	public function test_a_submission_that_passes_the_honeypot_is_not_counted() {
+		delete_option( DEVBASE_FORM_HONEYPOT_OPTION );
+
+		devbase_form_submit( 'devbase_test_form', $this->args( $this->good() ) );
+
+		$this->assertFalse( get_option( DEVBASE_FORM_HONEYPOT_OPTION ) );
+	}
+
+	public function test_invented_form_names_cannot_grow_the_count_without_end() {
+		delete_option( DEVBASE_FORM_HONEYPOT_OPTION );
+
+		for ( $i = 0; $i < 60; $i++ ) {
+			devbase_form_honeypot_caught( 'form_' . $i );
+		}
+		devbase_form_honeypot_caught( 'form_0' ); // one already counted still counts
+
+		$drops = get_option( DEVBASE_FORM_HONEYPOT_OPTION );
+		$this->assertCount( 50, $drops );
+		$this->assertSame( 2, $drops['form_0']['count'] );
+
+		delete_option( DEVBASE_FORM_HONEYPOT_OPTION );
+	}
+
+	public function test_the_spam_trap_line_is_on_system_status() {
+		$fields = wp_list_pluck( acf_get_fields( 'group_devbase_miscellaneous' ) ?: array(), 'key' );
+
+		$this->assertContains( 'field_devbase_status_honeypot', $fields );
 	}
 
 	public function test_missing_or_foreign_nonce_is_refused() {
@@ -258,7 +334,8 @@ class Test_Form_Submit extends WP_UnitTestCase {
 		$html = devbase_form_fields( 'devbase_test_form', array( 'action' => 'my_action' ) );
 
 		$this->assertStringContainsString( '<input type="hidden" name="action" value="my_action">', $html );
-		$this->assertStringContainsString( 'name="website"', $html );
+		$this->assertStringContainsString( 'name="' . devbase_form_honeypot_name() . '"', $html );
+		$this->assertStringNotContainsString( 'name="website"', $html );
 		$this->assertStringNotContainsString( 'id="_devbase_form_nonce"', $html );
 
 		$this->assertSame( 1, preg_match( '/name="_devbase_form_nonce" value="([^"]+)"/', $html, $m ) );

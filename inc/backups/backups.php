@@ -40,6 +40,9 @@ const DEVBASE_BACKUP_LOCK = 'devbase_backup_step_lock';
 /** The WP-Cron safety net. */
 const DEVBASE_BACKUP_CRON = 'devbase_backup_poll';
 
+/** A job that has not moved for this many seconds is moved on when Brand Relay asks for a backup again. */
+const DEVBASE_BACKUP_NUDGE_AFTER = 90;
+
 /** The saved job, or null. */
 function devbase_backup_job() {
 	$job = get_option( DEVBASE_BACKUP_JOB );
@@ -60,6 +63,27 @@ function devbase_backup_job_active( $job = false ) {
 	$job = false === $job ? devbase_backup_job() : $job;
 
 	return is_array( $job ) && ! in_array( $job['state'] ?? '', array( 'done', 'failed' ), true ) && time() - (int) ( $job['updated_at'] ?? 0 ) < 6 * HOUR_IN_SECONDS;
+}
+
+/**
+ * Ends a job that stopped moving (neither finished nor failed, and too old to count as active) the way any
+ * other failure ends: aborted at Brand Relay, its local files removed, the reason kept. Called before a new
+ * job takes its place. Without it the new job overwrote the record, and the old one's archive of the whole
+ * site stayed in the backup folder for good, with Brand Relay still holding a backup "in progress".
+ *
+ * @param array|null|false $job The saved job; false reads it.
+ * @return bool Whether there was a stalled job.
+ */
+function devbase_backup_give_up_stalled( $job = false ) {
+	$job = false === $job ? devbase_backup_job() : $job;
+
+	if ( ! is_array( $job ) || in_array( $job['state'] ?? '', array( 'done', 'failed' ), true ) || devbase_backup_job_active( $job ) ) {
+		return false;
+	}
+
+	devbase_backup_fail( $job, 'The job stopped moving and was given up after six hours.' );
+
+	return true;
 }
 
 /** A fresh job, saved. */
@@ -149,9 +173,20 @@ function devbase_backup_engine_ready() {
  * @return array{status: string, detail: string}
  */
 function devbase_backup_run() {
-	if ( devbase_backup_job_active() ) {
+	$job = devbase_backup_job();
+
+	if ( devbase_backup_job_active( $job ) ) {
+		// Brand Relay is the clock for a job that waits, too. A job that has not moved for a while is
+		// waiting on WP-Cron (a retry, WPvivid still working, a loopback that never arrived), and many
+		// sites have no working WP-Cron: this ask moves it on. The step lock keeps it to one at a time.
+		if ( time() - (int) ( $job['updated_at'] ?? 0 ) >= DEVBASE_BACKUP_NUDGE_AFTER ) {
+			devbase_backup_spawn();
+		}
+
 		return array( 'status' => 'idle', 'detail' => 'a backup or a download is already running' );
 	}
+
+	devbase_backup_give_up_stalled( $job );
 
 	$ready = devbase_backup_engine_ready();
 	if ( true !== $ready ) {
@@ -517,10 +552,18 @@ function devbase_backup_note( $status, $detail = '' ) {
 	update_option( DEVBASE_MAINTENANCE_STATE, $state, true );
 }
 
-/** A failed call to Brand Relay: worth trying again later, or not. */
+/**
+ * A failed call to Brand Relay: worth trying again later, or not.
+ *
+ * @param int|WP_Error $code The HTTP status, or the error when the request itself failed (its words are kept:
+ *                           "no answer" alone does not tell a timeout from a refused connection).
+ */
 function devbase_backup_retry_or_fail( array $job, $what, $code = 0 ) {
-	if ( in_array( (int) $code, array( 400, 401, 403, 404, 409, 413 ), true ) || (int) $job['attempts'] >= 4 ) {
-		return devbase_backup_fail( $job, sprintf( '%s failed (%s).', $what, $code ? 'HTTP ' . $code : 'no answer' ) );
+	$reason = is_wp_error( $code ) ? $code->get_error_message() : ( $code ? 'HTTP ' . (int) $code : 'no answer' );
+	$code   = is_wp_error( $code ) ? 0 : (int) $code;
+
+	if ( in_array( $code, array( 400, 401, 403, 404, 409, 413 ), true ) || (int) $job['attempts'] >= 4 ) {
+		return devbase_backup_fail( $job, sprintf( '%s failed (%s).', $what, '' !== $reason ? $reason : 'no answer' ) );
 	}
 
 	$job['attempts'] = (int) $job['attempts'] + 1;
@@ -634,7 +677,7 @@ function devbase_backup_backup_step( array $job, $deadline, $admin_request ) {
 			) );
 
 			if ( is_wp_error( $declared ) || 5 === (int) floor( $declared['code'] / 100 ) ) {
-				return devbase_backup_retry_or_fail( $job, 'Declaring the backup', is_wp_error( $declared ) ? 0 : $declared['code'] );
+				return devbase_backup_retry_or_fail( $job, 'Declaring the backup', is_wp_error( $declared ) ? $declared : $declared['code'] );
 			}
 
 			$backup = $declared['data']['backup'] ?? null;
@@ -688,7 +731,7 @@ function devbase_backup_backup_step( array $job, $deadline, $admin_request ) {
 					$code   = devbase_backup_put_part( $path, $file['path'], $offset, $length );
 
 					if ( 200 !== $code ) {
-						return devbase_backup_retry_or_fail( $job, sprintf( 'Sending part %d of %s', $part, $file['name'] ), is_int( $code ) ? $code : 0 );
+						return devbase_backup_retry_or_fail( $job, sprintf( 'Sending part %d of %s', $part, $file['name'] ), $code );
 					}
 
 					$job['next_part'][ $file['name'] ] = ++$part;
@@ -706,7 +749,7 @@ function devbase_backup_backup_step( array $job, $deadline, $admin_request ) {
 			$done = devbase_backup_api( 'POST', $job['complete'] );
 
 			if ( is_wp_error( $done ) || 5 === (int) floor( $done['code'] / 100 ) ) {
-				return devbase_backup_retry_or_fail( $job, 'Completing the backup', is_wp_error( $done ) ? 0 : $done['code'] );
+				return devbase_backup_retry_or_fail( $job, 'Completing the backup', is_wp_error( $done ) ? $done : $done['code'] );
 			}
 
 			if ( 200 !== $done['code'] ) {
@@ -740,6 +783,8 @@ function devbase_backup_start_download( $relay_id ) {
 	if ( devbase_backup_job_active() ) {
 		return new WP_Error( 'busy', 'A backup or a download is already running.' );
 	}
+
+	devbase_backup_give_up_stalled();
 
 	$ready = devbase_backup_engine_ready();
 	if ( true !== $ready ) {
@@ -841,7 +886,7 @@ function devbase_backup_download_step( array $job, $deadline ) {
 			fclose( $handle );
 
 			if ( 200 !== $code && 206 !== $code ) {
-				return devbase_backup_retry_or_fail( $job, 'Downloading ' . $file['name'], is_int( $code ) ? $code : 0 );
+				return devbase_backup_retry_or_fail( $job, 'Downloading ' . $file['name'], $code );
 			}
 
 			clearstatcache( true, $part );

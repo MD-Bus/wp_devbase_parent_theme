@@ -5,7 +5,7 @@
 //
 //   - the AJAX action (when 'action' is given)
 //   - the per-form nonce devbase_form_log_submission()/devbase_form_submit() verify
-//   - the honeypot field devbase_form_submit() checks ('website')
+//   - the honeypot field devbase_form_submit() checks (devbase_form_honeypot_name(), in submit.php)
 //   - the active CAPTCHA's widget or token field (devbase_security_widget_html())
 //
 // and it loads assets/js/forms.js, the shared script that sends any
@@ -58,7 +58,7 @@ function devbase_form_fields( $form_name, array $args = array() ) {
 		// Off-screen rather than display:none, which some bots skip. Hidden from
 		// assistive technology and out of the tab order, so no person fills it.
 		$html .= '<div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden">'
-			. '<label>' . esc_html__( 'Leave this empty', 'devbase_parent_theme' ) . '<input type="text" name="website" value="" tabindex="-1" autocomplete="off"></label>'
+			. '<label>' . esc_html__( 'Leave this empty', 'devbase_parent_theme' ) . '<input type="text" name="' . esc_attr( devbase_form_honeypot_name() ) . '" value="" tabindex="-1" autocomplete="off"></label>'
 			. '</div>';
 	}
 

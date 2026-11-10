@@ -83,6 +83,47 @@ function devbase_maintenance_requested( $body ) {
 	} ) ) );
 }
 
+/**
+ * What every verified ping does besides what it names, in this order: bring the bundled plugins in line with
+ * the theme release and the plan, then let WordPress's own scheduled tasks run.
+ *
+ * WHY. Both used to wait for something a managed site may never get. A newer bundled plugin (a WooCommerce
+ * security fix shipped in a theme release) was applied only when an administrator loaded wp-admin, while
+ * WordPress's own update for it is locked. And theme auto-updates, the retention purge, a backup's retry and
+ * the credit refresh all run on WP-Cron, which only fires on a visit and which many hosts switch off. A ping
+ * is the one event that reliably arrives, so it carries both.
+ *
+ * @return array{plugins: array, cron: bool} What was done (for tests and `wp eval`).
+ */
+function devbase_maintenance_housekeeping() {
+	$done = array( 'plugins' => array(), 'cron' => false );
+
+	if ( apply_filters( 'devbase/maintenance/sync_plugins_on_ping', true ) && function_exists( 'devbase_bundled_plugins_pending' ) && devbase_bundled_plugins_pending() ) {
+		// The same sync a wp-admin load runs. A plugin that is loaded in this request is changed at the
+		// very end of it (devbase_bundled_plugins_run_deferred()), never mid-request.
+		$done['plugins'] = devbase_sync_bundled_plugins();
+	}
+
+	$done['cron'] = devbase_maintenance_spawn_cron();
+
+	return $done;
+}
+
+/**
+ * Starts wp-cron.php in a request of its own, if anything is due. It is WordPress's own spawn_cron(): it
+ * does nothing when no event is due or when a run started in the last minute, and wp-cron.php runs the due
+ * events whether or not DISABLE_WP_CRON is set (that constant only stops a VISIT from starting it).
+ *
+ * @return bool Whether a run was started.
+ */
+function devbase_maintenance_spawn_cron() {
+	if ( ! apply_filters( 'devbase/maintenance/spawn_cron', true ) || ! function_exists( 'spawn_cron' ) ) {
+		return false;
+	}
+
+	return (bool) spawn_cron();
+}
+
 /** Takes the single-run lock. The insert is atomic; a lock older than two minutes is stale. */
 function devbase_maintenance_lock() {
 	if ( add_option( DEVBASE_MAINTENANCE_LOCK, time(), '', false ) ) {

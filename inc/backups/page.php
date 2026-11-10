@@ -59,13 +59,7 @@ function devbase_backups_remote_list( $force = false ) {
  * @return int|false
  */
 function devbase_backup_time( $value ) {
-	if ( is_numeric( $value ) ) {
-		$number = (float) $value;
-
-		return $number > 100000000000 ? (int) floor( $number / 1000 ) : (int) $number;
-	}
-
-	return is_string( $value ) && '' !== $value ? strtotime( $value ) : false;
+	return devbase_relay_time( $value ); // inc/maintenance/plan.php: the plan's dates are read the same way.
 }
 
 /** One plain sentence about the job in progress or the last one. */

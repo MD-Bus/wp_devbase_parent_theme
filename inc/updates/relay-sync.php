@@ -580,6 +580,10 @@ add_action( 'rest_api_init', function () {
 				$ran = array_merge( $ran, devbase_maintenance_run( $services ) );
 			}
 
+			// Every verified ping, whatever it named: apply a pending bundled-plugin change and let
+			// WordPress's scheduled tasks run (inc/maintenance/maintenance.php says why).
+			devbase_maintenance_housekeeping();
+
 			return new WP_REST_Response(
 				array(
 					'ok'      => $result['ok'],

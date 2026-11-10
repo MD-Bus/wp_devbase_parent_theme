@@ -763,3 +763,27 @@ msgid "%d error waiting to be sent."
 msgid_plural "%d errors waiting to be sent."
 msgstr[0] ""
 msgstr[1] ""
+
+msgid "More old submissions were left than one run could delete; the next run carries on."
+msgstr ""
+
+msgid "No submission has been discarded by the spam trap."
+msgstr ""
+
+msgid "%1$s: %2$d discarded (last %3$s ago)"
+msgstr ""
+
+msgid "These were answered as sent and not stored. A form whose visitors report lost messages should be checked here."
+msgstr ""
+
+msgid "Spam Trap"
+msgstr ""
+
+msgid "(tried %d times)"
+msgstr ""
+
+msgid "A destination that failed will be tried again in about %s."
+msgstr ""
+
+msgid "A destination that failed will be tried again."
+msgstr ""
