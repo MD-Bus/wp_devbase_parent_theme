@@ -95,6 +95,11 @@ Connection fields stay hidden until the feature is switched on, and are
 only required while it is — ACF skips validation for conditionally hidden
 fields, so "required when enabled" needs no custom JavaScript.
 
+**Every mail is watched, not only the test.** Each failure of `wp_mail()`, whatever sent it (a form notification, a
+password reset, WooCommerce), is kept: Miscellaneous > System Status > Mail Delivery shows the last one with its
+error, how many failed in the last 7 days, and when the last mail went out. The health report sends the same counts
+as `mail`, with the error scrubbed and no recipient.
+
 ### Security
 
 ![Security settings](docs/screenshots/security-settings.png)
@@ -176,6 +181,11 @@ more can hook TSF's `the_seo_framework_schema_graph_data` filter.
 
 ![Tracking settings](docs/screenshots/tracking-settings.png)
 
+**Only where it should run.** Nothing on this page reaches the pages on a site whose environment is not production
+(`WP_ENVIRONMENT_TYPE` local, development or staging), nor for a logged-in user who can edit posts, so the site's own
+staff never count as visitors. A consent plugin holds it back with the `devbase/tracking/enabled` filter (it receives
+`analytics` or `scripts`, and why the theme said no), and a child theme can use the same filter to track staging on purpose.
+
 ### Form destinations
 
 ![Form destinations](docs/screenshots/form-destinations.png)
@@ -240,6 +250,10 @@ active child theme registers, without the parent knowing any of them:
   in the editor renders the same after a round trip (checked on every OCWOF
   page), though SCF may store a default it filled in, or drop a reference the
   editor left without a value.
+- **Everything changed is recorded.** Every change made through an ability (ours or a plugin's, whatever called it) is
+  kept for 90 days, the last 200: which ability, which user, which application password, on what, and for an options
+  page the values its fields had before. The last 20 are under MCP Access > MCP Activity. A refused call changed
+  nothing and leaves no entry; reading leaves none either.
 
 ### Credit
 
@@ -438,6 +452,16 @@ after 30 minutes), alone: one that already received the submission is not sent
 it again. The submission's screen shows each destination's outcome and how often
 it was tried.
 
+**Replying and resending.** An email notification's Reply-To is the person who filled in the form (the field named
+`email`, else the first field whose name contains "email", when it holds a valid address), so pressing Reply answers
+them. A submission's screen has a **Resend** button for administrators: it sends the submission again to every
+destination that applies to its form, from the start, for a notification that went to spam or a destination fixed
+after its tries ran out.
+
+**Personal data.** Form submissions are part of WordPress's own Tools > Export Personal Data and Erase Personal Data.
+A submission belongs to an address when one of its values is that address (without regard to case); erasing deletes
+the submission.
+
 | Filter | Purpose |
 | --- | --- |
 | `devbase/ase/defaults` | Adjust an admin-hardening default. Fills gaps only — a value the site has already saved wins. |
@@ -450,7 +474,14 @@ it was tried.
 | `devbase/forms/dispatch_retry_delay` | Seconds before the next try (default 300, then 1800). |
 | `devbase/forms/defer_dispatch` | Whether destinations are called after the visitor's answer (default: where PHP-FPM allows it). |
 | `devbase/forms/retention_batch`, `devbase/forms/retention_budget` | Submissions deleted per query (200) and seconds one purge may run (20). |
+| `devbase/forms/reply_to` | The Reply-To address of a form's email notifications (default: the submitter's; `''` for none). |
 | `devbase/smtp/timeout` | Seconds to wait for the SMTP server (default 15; PHPMailer's own is 300). |
+| `devbase/tracking/enabled` | Whether tracking is printed on this page (`$enabled, $kind, $reason`). For a consent plugin. |
+| `devbase/abilities/audit_records` | Whether a call to an ability is recorded in the MCP activity log. |
+| `devbase/backup/disk_needed` | Bytes free that a backup needs to start (default 1.5 × the last backup + 100 MiB). |
+| `devbase/updates/rollout_window` | Seconds over which sites spread a new release (default 6 hours; 0 installs at once). |
+| `devbase/updates/release_urgent` | Whether a release skips the staged rollout (default: `[urgent]` in its Warden notes). |
+| `devbase/updates/rollback_enabled` | `false` turns off the health check and rollback after a theme update. |
 | `devbase/maintenance/spawn_cron` | `false` stops a Brand Relay ping from starting WordPress's scheduled tasks. |
 | `devbase/maintenance/sync_plugins_on_ping` | `false` stops a ping from applying a pending bundled-plugin change. |
 | `devbase/admin_menu/hidden_items` | Change which admin menu items are hidden. |
@@ -718,6 +749,21 @@ when something goes wrong:
   seven days, so a response that can no longer be re-verified cannot keep
   approving updates indefinitely.
 
+**Staged rollout.** A new release is not taken by every site at once. Each site waits its own share of a 6-hour
+window, counted from when the release was published in Warden, so a bad release can be withdrawn there before most
+sites have it. When its wait is over a site asks Warden again before installing, so a withdrawn release is not taken
+from a cached answer, and it installs then rather than at WordPress's next twice-daily check. The Licence status tab
+says when the site will install it. For a release that cannot wait, put `[urgent]` in its notes in Warden.
+
+**Health check and rollback.** WordPress checks a plugin's update for a fatal error and puts the old version back;
+it does nothing of the kind for a theme. For our two themes, the home page is loaded before the update and again
+after it. If the update broke it (a fatal error that was not there before, or one in the theme's own files), the
+previous version is put back from the copy WordPress itself keeps during an update, and that version is never
+offered to the site again; the next release is. Administrators see a notice for a week, the Licence status tab says
+so, and the health report carries it as `theme_rollbacks`. A check that cannot be made (a host that blocks the site
+calling itself) never rolls back. The check runs in the code of the version being replaced, so it protects updates
+from 1.40.0 onwards.
+
 No licence key means no update checks for that theme — which is the right
 state for a staging clone or a local copy.
 
@@ -768,6 +814,11 @@ github.com). If a PHP 8.2 is on the machine (Local by Flywheel installs one,
 or set `RELEASE_MIN_PHP_BIN`), every shipped PHP file is parsed with it first,
 which catches newer-only syntax in seconds. `RELEASE_SKIP_CI=1` releases
 without waiting, for when GitHub Actions is down and a fix cannot wait.
+
+**Static analysis.** PHPStan (level 5, `phpstan.neon.dist`, with WordPress's stubs) runs on the theme's own code
+before anything is pushed, and in CI. It finds what the suite does not run: a misspelled function in an error path,
+a wrong argument count, a value a WordPress function does not take. Run it by hand with
+`php -d memory_limit=2G tests/vendor/bin/phpstan analyse`.
 
 ## Packaging a zip
 

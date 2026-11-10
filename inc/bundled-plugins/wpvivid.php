@@ -227,7 +227,10 @@ function devbase_wpvivid_lock_down() {
 
 	return $removed;
 }
-add_action( 'init', 'devbase_wpvivid_lock_down', PHP_INT_MAX );
+// A wrapper: the function's return value (what it removed) is for its direct callers, not for the hook.
+add_action( 'init', function () {
+	devbase_wpvivid_lock_down();
+}, PHP_INT_MAX );
 
 /** The cloud storage sign-in handlers WPvivid puts on `init` (Dropbox, Google Drive, OneDrive): nothing here signs in to a cloud. */
 add_action( 'init', function () {

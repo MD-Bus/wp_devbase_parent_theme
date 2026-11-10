@@ -30,6 +30,17 @@ add_action( 'acf/init', function () {
 				'name'  => '',
 				'type'  => 'tab',
 			),
+			// When what is set here is printed (inc/theme-settings/tracking/inject.php).
+			array(
+				'key'     => 'field_devbase_tracking_when',
+				'label'   => __( 'When tracking runs', 'devbase_parent_theme' ),
+				'name'    => '',
+				'type'    => 'message',
+				'message' => esc_html( 'production' !== wp_get_environment_type()
+					/* translators: %s: the environment type, e.g. staging. */
+					? sprintf( __( 'Off on this site: its environment is "%s", and tracking is printed only on production. Nothing below reaches the pages.', 'devbase_parent_theme' ), wp_get_environment_type() )
+					: __( 'Printed for visitors. Not printed for logged-in users who can edit posts, so the site\'s own staff do not count as visitors.', 'devbase_parent_theme' ) ),
+			),
 			array(
 				'key'         => 'field_devbase_gtm_id',
 				'label'       => __( 'Google Tag Manager ID', 'devbase_parent_theme' ),

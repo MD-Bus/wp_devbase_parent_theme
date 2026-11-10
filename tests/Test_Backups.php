@@ -73,7 +73,7 @@ class Test_Backups extends WP_UnitTestCase {
 	}
 
 	private function reset_options() {
-		foreach ( array( DEVBASE_BACKUP_JOB, DEVBASE_BACKUP_LAST, DEVBASE_BACKUP_LOCK, DEVBASE_MAINTENANCE_STATE, DEVBASE_RELAY_PLAN_OPTION, 'wpvivid_task_list', 'wpvivid_backup_list' ) as $option ) {
+		foreach ( array( DEVBASE_BACKUP_JOB, DEVBASE_BACKUP_LAST, DEVBASE_BACKUP_LAST_BYTES_OPTION, DEVBASE_BACKUP_LOCK, DEVBASE_MAINTENANCE_STATE, DEVBASE_RELAY_PLAN_OPTION, 'wpvivid_task_list', 'wpvivid_backup_list' ) as $option ) {
 			delete_option( $option );
 		}
 	}
@@ -238,6 +238,55 @@ class Test_Backups extends WP_UnitTestCase {
 		$this->assertFileDoesNotExist( $this->dir . 'site_backup_all.zip', 'Our local copy is removed once it is safe at Brand Relay.' );
 		$this->assertSame( 'ok', devbase_maintenance_state()['services']['backup']['status'] );
 		$this->assertArrayHasKey( 'last_backup_at', devbase_heartbeat_report() );
+	}
+
+	// --- free disk space, before WPvivid writes anything (1.40.0) ------------------------------------
+
+	public function test_a_backup_records_its_size_for_the_next_disk_check() {
+		devbase_backup_new_job( 'backup' );
+		devbase_backup_step( true );
+
+		$this->assertSame( strlen( $this->payload ), (int) get_option( DEVBASE_BACKUP_LAST_BYTES_OPTION ) );
+	}
+
+	public function test_a_full_disk_fails_the_job_before_wpvivid_starts() {
+		update_option( DEVBASE_BACKUP_LAST_BYTES_OPTION, 1000 * MB_IN_BYTES );
+		add_filter( 'devbase/backup/disk_free', function () {
+			return 1200 * MB_IN_BYTES; // Less than 1.5 x 1000 MiB + 100 MiB.
+		} );
+		$prepared = 0;
+		add_filter( 'devbase/backup/engine_prepare', function ( $task ) use ( &$prepared ) {
+			$prepared++;
+			return $task;
+		}, 5 );
+
+		devbase_backup_new_job( 'backup' );
+		$job = devbase_backup_step( true );
+
+		$this->assertSame( 'failed', $job['state'] );
+		$this->assertStringContainsString( 'Not enough free disk space to make a backup', $job['error'] );
+		$this->assertSame( 0, $prepared, 'WPvivid is never asked to start.' );
+		$this->assertSame( array(), $this->calls, 'Nothing is declared to Brand Relay.' );
+	}
+
+	public function test_enough_room_or_an_unknown_figure_lets_the_backup_run() {
+		update_option( DEVBASE_BACKUP_LAST_BYTES_OPTION, 1000 * MB_IN_BYTES );
+
+		add_filter( 'devbase/backup/disk_free', function () {
+			return 1700 * MB_IN_BYTES;
+		} );
+		$this->assertTrue( devbase_backup_disk_check() );
+
+		add_filter( 'devbase/backup/disk_free', '__return_false', 20 );
+		$this->assertTrue( devbase_backup_disk_check(), 'A host that does not report free space is not blocked.' );
+	}
+
+	public function test_before_the_first_backup_only_the_headroom_is_needed() {
+		add_filter( 'devbase/backup/disk_free', function () {
+			return 50 * MB_IN_BYTES;
+		} );
+
+		$this->assertStringContainsString( 'about ' . size_format( 100 * MB_IN_BYTES ) . ' needed', devbase_backup_disk_check() );
 	}
 
 	public function test_a_step_that_is_not_a_loopback_request_cannot_start_the_engine() {

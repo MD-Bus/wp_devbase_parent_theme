@@ -113,21 +113,26 @@ were released in 1.39.0, each with tests; the tenth was left as it is on purpose
 `expires_at` in (finding 8 now handles all three, but nobody has looked). Tell the OCWOF child's author about the honeypot's
 new name if that child prints its own field (the starter child does not).
 
-**Suggested by the same audit, not built** (each needs its own decision):
+**Suggested by the same audit, built and released in 1.40.0** (owner's go-ahead, 2026-11-09). Each with its own tests; the reasoning is
+in the `AGENT.md` of its folder.
 
-- **A health check after a theme update, with rollback.** Load the home page after an update and restore the previous version
-  on a fatal error. WordPress does this for nothing of a theme's.
-- **A staged rollout.** Each site waits a random few hours before installing a release, so a bad one can be withdrawn in
-  Warden before most sites have it.
-- **Mail failures on System Status and in the health report.** Today only the "Send Test Email" button records anything;
-  `wp_mail_failed` for real mail is not kept.
-- **Reply-To on form notifications**, set to the submitter's address, and a **Resend** button on a submission.
-- **Tracking only where it should run**: not on a non-production environment, not for a logged-in editor, and a filter a
-  consent plugin can use.
-- **An audit log for MCP writes**: what was changed, through which application password, with an option's previous value.
-- **WordPress's personal data export and erasure** for form submissions.
-- **Static analysis** (PHPStan) in the release gate.
-- **Free disk space checked before a backup starts** (it is checked before a download).
+| Suggestion | Built as | Where |
+| --- | --- | --- |
+| A health check after a theme update, with rollback | Home page loaded before and after; a broken update is undone from WordPress's own temporary backup and that version is never offered again | `inc/updates/rollback.php`, `tests/Test_Update_Rollback.php` |
+| A staged rollout | Each site waits its share of a 6-hour window, asks Warden again, then installs; `[urgent]` in the notes skips it | `inc/updates/rollout.php`, `tests/Test_Update_Rollout.php` |
+| Mail failures on System Status and in the health report | Every `wp_mail_failed` kept; `mail` in the report, scrubbed | `inc/theme-settings/smtp/failures.php`, `tests/Test_Mail_Log.php` |
+| Reply-To on form notifications, and a Resend button | Reply-To from the submitter's email field; Resend for administrators | `inc/forms/dispatch/`, `tests/Test_Form_Reply_Resend_Privacy.php` |
+| Tracking only where it should run | Off on non-production and for logged-in staff; `devbase/tracking/enabled` for consent | `inc/theme-settings/tracking/inject.php`, `tests/Test_Tracking_Gate.php` |
+| An audit log for MCP writes | Every changing ability call, with the application password and previous option values | `inc/abilities/audit-log.php`, `tests/Test_MCP_Audit_Log.php` |
+| Personal data export and erasure for form submissions | WordPress's own exporter and eraser | `inc/forms/privacy.php`, `tests/Test_Form_Reply_Resend_Privacy.php` |
+| Static analysis in the release gate | PHPStan level 5, release check 8c and CI | `phpstan.neon.dist`, `bin/release.sh`, `tests/Test_Release_Script.php` |
+| Free disk space checked before a backup starts | 1.5 × the last backup + 100 MiB | `inc/backups/backups.php`, `tests/Test_Backups.php` |
+
+**Open on these.** Warden has no "urgent" field on a release, so the rollout reads `[urgent]` from the notes (or `urgent: true`
+if Warden ever sends it): worth a real field in Warden. The rollback has not yet been seen on a real broken release: try it on a
+staging site with a release whose `functions.php` fatals, by an unattended update and from Dashboard > Updates. It checks the home
+page only, not wp-admin. PHPStan runs at level 5; level 6 and up want typed docblocks across the theme. Brand Relay could show the
+report's new `mail` and `theme_rollbacks` fields.
 
 ## Considered
 
@@ -184,9 +189,6 @@ would fix that.
 through a different API (an assessment with a Cloud project and API key) and
 loads a different script, so it is not supported. Worth building only if a client
 needs Enterprise specifically; Turnstile avoids the Cloud project entirely.
-
-**Per-destination retry for form dispatch.** A failed webhook is recorded
-but not retried. Worth building when a client is actually affected.
 
 ## Not planned
 

@@ -19,7 +19,7 @@
 # publishes nothing), the script waits for CI on that exact commit, and the tag
 # is created and pushed only if CI is green.
 #
-# Checks, in order (1 to 8 run before anything is written):
+# Checks, in order (1 to 8c run before anything is written):
 #   1. on the release branch (main), with a clean tree — untracked files
 #      count, ignored ones (tests/vendor/, AGENT.md) don't
 #   2. style.css carries an X.Y.Z version (and the argument, if given, matches)
@@ -33,6 +33,7 @@
 #   8. the test suite passes (on this machine's PHP)
 #   8b. when a PHP of the minimum version is on this machine, every PHP file
 #      the theme ships parses on it (a head start on check 9, not a gate)
+#   8c. PHPStan finds nothing (phpstan.neon.dist: level 5, the theme's own code)
 #   9. after a confirmation, the branch is pushed and the Tests workflow on
 #      that commit is green (PHP 8.2 and 8.4)
 #
@@ -262,6 +263,23 @@ else
 	echo "==> No PHP ${MIN_PHP:-(minimum unknown)} on this machine: syntax on the minimum version is left to CI (check 9)"
 fi
 
+# --- 8c. Static analysis (PHPStan, phpstan.neon.dist) ----------------------
+#
+# What the suite does not run: a misspelled function in an error path, a wrong
+# argument count, a type a WordPress function does not take. Level and paths
+# are in phpstan.neon.dist; the vendored plugins are scanned for their symbols,
+# never analysed. Installed with the test tooling (tests/composer.json).
+
+echo "==> Static analysis (PHPStan)"
+
+if [ ! -x "tests/vendor/bin/phpstan" ]; then
+	fail "tests/vendor/bin/phpstan not found." \
+		"Run 'composer install' inside tests/ once (see tests/AGENT.md)."
+fi
+if ! php -d memory_limit=2G tests/vendor/bin/phpstan analyse --no-progress --configuration phpstan.neon.dist; then
+	fail "PHPStan found the problem(s) above. Nothing was tagged."
+fi
+
 # --- 9. CI on this commit (helpers; used below) ----------------------------
 
 SHA="$(git rev-parse HEAD)"
@@ -318,7 +336,7 @@ ci_state() {
 
 COMMIT="$(git rev-parse --short HEAD)"
 echo ""
-echo "Checks 1 to 8 passed: $TAG at $COMMIT ($(git log -1 --format=%s))"
+echo "Checks 1 to 8c passed: $TAG at $COMMIT ($(git log -1 --format=%s))"
 
 if [ "$DRY_RUN" -eq 1 ]; then
 	if [ -n "$SLUG" ]; then

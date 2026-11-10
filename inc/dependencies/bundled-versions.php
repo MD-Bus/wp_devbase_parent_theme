@@ -38,7 +38,7 @@ function devbase_bundled_versions() {
 	}
 
 	// Shipped but not running: say so, so nobody reads the version as "this site's SEO".
-	if ( function_exists( 'devbase_tsf_disabled' ) && devbase_tsf_disabled() && isset( $versions['The SEO Framework'] ) ) {
+	if ( function_exists( 'devbase_tsf_disabled' ) && devbase_tsf_disabled() ) {
 		$versions['The SEO Framework'] .= ' ' . __( '(disabled)', 'devbase_parent_theme' );
 	}
 

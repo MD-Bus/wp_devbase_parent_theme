@@ -290,6 +290,54 @@ function devbase_forms_dispatch_finish( $post_id, $retry_at ) {
 }
 
 /**
+ * Sends a submission again to every destination that applies to it, now, from the start: the old
+ * log and tries are cleared. For an administrator who knows a notification went missing (sent to spam,
+ * a webhook that answered 200 and lost it) or who fixed a destination after its tries ran out.
+ *
+ * @param int $post_id A form_data post ID.
+ * @return bool False when the post is not a submission.
+ */
+function devbase_forms_resend( $post_id ) {
+	$post_id = (int) $post_id;
+
+	if ( 'form_data' !== get_post_type( $post_id ) ) {
+		return false;
+	}
+
+	wp_clear_scheduled_hook( DEVBASE_FORMS_RETRY_HOOK, array( $post_id ) );
+	delete_post_meta( $post_id, '_devbase_dispatch_log' );
+	update_post_meta( $post_id, '_devbase_dispatched', 'pending' );
+	update_post_meta( $post_id, '_devbase_resent_at', time() );
+
+	devbase_forms_dispatch( $post_id );
+
+	return true;
+}
+
+/** The address of the Resend link on a submission (a GET with a nonce, like WordPress's own Trash link). */
+function devbase_forms_resend_url( $post_id ) {
+	return wp_nonce_url(
+		add_query_arg( array( 'action' => 'devbase_forms_resend', 'post' => (int) $post_id ), admin_url( 'admin-post.php' ) ),
+		'devbase_forms_resend_' . (int) $post_id
+	);
+}
+
+add_action( 'admin_post_devbase_forms_resend', function () {
+	$post_id = isset( $_GET['post'] ) ? absint( $_GET['post'] ) : 0;
+
+	check_admin_referer( 'devbase_forms_resend_' . $post_id );
+
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_die( esc_html__( 'You are not allowed to resend this submission.', 'devbase_parent_theme' ), 403 );
+	}
+
+	$done = devbase_forms_resend( $post_id );
+
+	wp_safe_redirect( add_query_arg( 'devbase_resent', $done ? '1' : '0', get_edit_post_link( $post_id, 'url' ) ?: admin_url() ) );
+	exit;
+} );
+
+/**
  * Stores the dispatch log for the Submission meta box
  * (inc/forms/form-data-admin-display.php) to read. wp_slash() is required here:
  * update_post_meta() runs its value through wp_unslash() before storing

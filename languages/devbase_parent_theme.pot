@@ -787,3 +787,89 @@ msgstr ""
 
 msgid "A destination that failed will be tried again."
 msgstr ""
+
+msgid "Nothing has been changed through MCP yet."
+msgstr ""
+
+msgid "What"
+msgstr ""
+
+msgid "Who (application password)"
+msgstr ""
+
+msgid "Fields"
+msgstr ""
+
+msgid "Before"
+msgstr ""
+
+msgid "Form submissions"
+msgstr ""
+
+msgid "Submitted"
+msgstr ""
+
+msgid "Form submission %d could not be deleted."
+msgstr ""
+
+msgid "No mail has failed to send."
+msgstr ""
+
+msgid "Last failure %1$s, to %2$s: %3$s"
+msgstr ""
+
+msgid "%d failure in the last 7 days."
+msgid_plural "%d failures in the last 7 days."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Last mail sent %s."
+msgstr ""
+
+msgid "No mail sent since this was installed."
+msgstr ""
+
+msgid "%1$s %2$s broke the home page after it was installed, so version %3$s was put back. %2$s will not be installed again."
+msgstr ""
+
+msgid "%1$s %2$s broke the home page after it was installed, and the previous version could not be put back. The site needs attention."
+msgstr ""
+
+msgid "You are not allowed to resend this submission."
+msgstr ""
+
+msgid "Sent again to every destination. The log below is the new attempt."
+msgstr ""
+
+msgid "Resend"
+msgstr ""
+
+msgid "Sends this submission again to every destination that applies to its form. Last resent %s."
+msgstr ""
+
+msgid "Sends this submission again to every destination that applies to its form."
+msgstr ""
+
+msgid "Version %s broke the home page here and was rolled back. It will not be installed again; the next release will."
+msgstr ""
+
+msgid "Version %1$s is out. This site installs it after %2$s (staged rollout)."
+msgstr ""
+
+msgid "Mail Delivery"
+msgstr ""
+
+msgid "MCP Activity"
+msgstr ""
+
+msgid "The last 20 changes made through MCP (kept 90 days), with the values an options page had before."
+msgstr ""
+
+msgid "When tracking runs"
+msgstr ""
+
+msgid "Off on this site: its environment is \"%s\", and tracking is printed only on production. Nothing below reaches the pages."
+msgstr ""
+
+msgid "Printed for visitors. Not printed for logged-in users who can edit posts, so the site's own staff do not count as visitors."
+msgstr ""

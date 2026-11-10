@@ -106,6 +106,9 @@ function devbase_inject_theme_updates( $transient ) {
 			? devbase_warden_pending_update( $response, $installed )
 			: null;
 
+		// Staged rollout, and never a version this site rolled back (inc/updates/rollout.php).
+		$update = devbase_update_gate( $stylesheet, $licence, $installed, $update );
+
 		if ( null === $update ) {
 			// Listing the theme under no_update is what makes WordPress
 			// show its auto-update toggle on Appearance > Themes at all —

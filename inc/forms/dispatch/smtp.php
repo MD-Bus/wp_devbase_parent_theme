@@ -50,10 +50,55 @@ function devbase_forms_dispatch_smtp( array $row, $form_name, array $content ) {
 		$form_name
 	);
 
-	$sent = wp_mail( $row['to_email'], $subject, $html, array( 'Content-Type: text/html; charset=UTF-8' ) );
+	$headers  = array( 'Content-Type: text/html; charset=UTF-8' );
+	$reply_to = devbase_forms_reply_to( $content, $form_name );
+
+	// Pressing Reply answers the person who filled in the form, not the site's own From address.
+	if ( '' !== $reply_to ) {
+		$headers[] = 'Reply-To: ' . $reply_to;
+	}
+
+	$sent = wp_mail( $row['to_email'], $subject, $html, $headers );
 
 	$message = sprintf( 'SMTP "%s" (%s): %s', $label, $row['to_email'], $sent ? 'sent' : 'failed' );
 	error_log( '[Dev Base Forms] ' . $message );
 
 	return array( 'success' => $sent, 'label' => $label, 'message' => $message );
+}
+
+/**
+ * The submitter's address for a notification's Reply-To: the field named `email`, else the first
+ * field whose name contains "email", when its value is a valid address. '' when there is none.
+ *
+ * Only a value that passes is_email() is used, and it is re-checked after the filter, so a
+ * submitted value can never carry a line break into the mail headers.
+ *
+ * @param array  $content   The submission's field => [aria_label, value] map.
+ * @param string $form_name The form.
+ * @return string
+ */
+function devbase_forms_reply_to( array $content, $form_name = '' ) {
+	$names = array_keys( $content );
+	usort( $names, function ( $a, $b ) {
+		return ( 'email' !== strtolower( (string) $a ) ) <=> ( 'email' !== strtolower( (string) $b ) );
+	} );
+
+	$found = '';
+
+	foreach ( $names as $name ) {
+		if ( false === stripos( (string) $name, 'email' ) || ! is_array( $content[ $name ] ) ) {
+			continue;
+		}
+
+		$value = $content[ $name ]['value'] ?? '';
+
+		if ( is_string( $value ) && is_email( trim( $value ) ) ) {
+			$found = trim( $value );
+			break;
+		}
+	}
+
+	$found = (string) apply_filters( 'devbase/forms/reply_to', $found, $content, $form_name );
+
+	return ( '' !== $found && is_email( $found ) && ! preg_match( '/[\r\n,;<>]/', $found ) ) ? $found : '';
 }

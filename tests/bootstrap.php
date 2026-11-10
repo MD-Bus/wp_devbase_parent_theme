@@ -34,6 +34,10 @@ tests_add_filter( 'devbase/tsf/enabled', '__return_true' );
 tests_add_filter( 'devbase/maintenance/sync_plugins_on_ping', '__return_false' );
 tests_add_filter( 'devbase/maintenance/spawn_cron', '__return_false' );
 
+// The staged rollout holds a new release back for up to 6 hours (inc/updates/rollout.php). Off for the suite, whose
+// update tests expect a release to be offered at once; Test_Update_Rollout sets its own window.
+tests_add_filter( 'devbase/updates/rollout_window', '__return_zero' );
+
 /**
  * Rebuilds the REST server so routes include post types registered after it
  * was first built.

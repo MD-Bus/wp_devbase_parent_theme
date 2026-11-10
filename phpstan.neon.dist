@@ -1,0 +1,16 @@
+# Static analysis of the theme's own PHP (bin/release.sh check 8c). The vendored plugins are scanned
+# for their symbols only, never analysed. Run: php tests/vendor/bin/phpstan analyse
+includes:
+	- tests/vendor/szepeviktor/phpstan-wordpress/extension.neon
+parameters:
+	level: 5
+	phpVersion: 80200
+	paths:
+		- functions.php
+		- languages/i18n.php
+		- inc
+	scanDirectories:
+		- vendor/secure-custom-fields
+		- vendor/autodescription
+		- vendor/admin-site-enhancements
+	treatPhpDocTypesAsCertain: false

@@ -592,6 +592,30 @@ function devbase_backup_refusal( $code, array $data ) {
 	return sprintf( 'Brand Relay refused the backup (HTTP %d%s).', $code, '' !== $error ? ', ' . $error : '' );
 }
 
+/** The size in bytes of the last backup WPvivid made here (what the next one is expected to need). */
+const DEVBASE_BACKUP_LAST_BYTES_OPTION = 'devbase_backup_last_bytes';
+
+/**
+ * Whether the disk has room for a backup: one and a half times the last backup, plus 100 MiB of
+ * headroom (the 100 MiB alone before the first backup, whose size is not known). Filter
+ * `devbase/backup/disk_needed` changes the figure; a host that does not report free space passes.
+ *
+ * @return true|string True, or why not (for the job's failure message).
+ */
+function devbase_backup_disk_check() {
+	$last   = (int) get_option( DEVBASE_BACKUP_LAST_BYTES_OPTION, 0 );
+	$needed = (int) apply_filters( 'devbase/backup/disk_needed', (int) ceil( $last * 1.5 ) + 100 * MB_IN_BYTES, $last );
+
+	wp_mkdir_p( devbase_backup_dir() );
+	$free = apply_filters( 'devbase/backup/disk_free', function_exists( 'disk_free_space' ) ? @disk_free_space( devbase_backup_dir() ) : false ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+
+	if ( false === $free || null === $free || $free >= $needed ) {
+		return true;
+	}
+
+	return sprintf( 'Not enough free disk space to make a backup: about %s needed, %s free.', size_format( $needed ), size_format( (int) $free ) );
+}
+
 /**
  * One state of a backup job.
  *
@@ -607,6 +631,13 @@ function devbase_backup_backup_step( array $job, $deadline, $admin_request ) {
 			$ready = devbase_backup_engine_ready();
 			if ( true !== $ready ) {
 				return devbase_backup_fail( $job, $ready );
+			}
+
+			// Before WPvivid writes anything: a disk that fills up part-way leaves a broken archive and can
+			// take the site down with it (sessions, caches, uploads all stop writing).
+			$room = devbase_backup_disk_check();
+			if ( true !== $room ) {
+				return devbase_backup_fail( $job, $room );
 			}
 
 			$task = apply_filters( 'devbase/backup/engine_prepare', null );
@@ -664,6 +695,9 @@ function devbase_backup_backup_step( array $job, $deadline, $admin_request ) {
 			// Known to the job before anything can go wrong, so a failure can remove our local copy.
 			$job['files'] = $files;
 			devbase_backup_save( $job );
+
+			// What the next backup's disk check measures against.
+			update_option( DEVBASE_BACKUP_LAST_BYTES_OPTION, array_sum( array_column( $files, 'size' ) ), false );
 
 			if ( count( $files ) > DEVBASE_BACKUP_MAX_FILES ) {
 				return devbase_backup_fail( $job, sprintf( 'WPvivid made %d files, and Brand Relay takes at most %d in one backup.', count( $files ), DEVBASE_BACKUP_MAX_FILES ) );
@@ -824,7 +858,7 @@ function devbase_backup_start_download( $relay_id ) {
 		wp_mkdir_p( devbase_backup_dir() );
 		$free = @disk_free_space( devbase_backup_dir() ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 		if ( false !== $free && $free < $total + 100 * MB_IN_BYTES ) {
-			return new WP_Error( 'disk', sprintf( 'Not enough free disk space: %s needed, %s free.', size_format( $total ), size_format( $free ) ) );
+			return new WP_Error( 'disk', sprintf( 'Not enough free disk space: %s needed, %s free.', size_format( $total ), size_format( (int) $free ) ) );
 		}
 
 		$job = devbase_backup_new_job( 'download', array(

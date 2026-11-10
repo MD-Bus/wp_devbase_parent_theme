@@ -92,6 +92,23 @@ class Test_Release_Script extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'WARNING: RELEASE_SKIP_CI=1', $script );
 	}
 
+	public function test_static_analysis_runs_before_anything_is_pushed_and_fails_the_release() {
+		$script = $this->script();
+
+		$phpstan = $this->position( $script, 'tests/vendor/bin/phpstan analyse' );
+		$push    = $this->position( $script, 'git push "$REMOTE" "$BRANCH"' );
+
+		$this->assertLessThan( $push, $phpstan, 'PHPStan is a local check: it runs before the branch is pushed.' );
+		$this->assertStringContainsString( 'PHPStan found the problem(s) above. Nothing was tagged.', $script );
+		$this->assertFileExists( dirname( __DIR__ ) . '/phpstan.neon.dist' );
+		$this->assertStringContainsString( 'phpstan analyse', (string) file_get_contents( dirname( __DIR__ ) . '/.github/workflows/tests.yml' ), 'CI runs it too.' );
+	}
+
+	public function test_the_phpstan_config_never_ships() {
+		$this->assertStringContainsString( '/phpstan.neon.dist      export-ignore', (string) file_get_contents( dirname( __DIR__ ) . '/.gitattributes' ) );
+		$this->assertStringContainsString( "--exclude='phpstan.neon.dist'", (string) file_get_contents( dirname( __DIR__ ) . '/bin/build-zip.sh' ) );
+	}
+
 	public function test_the_script_is_valid_shell() {
 		exec( 'bash -n ' . escapeshellarg( get_template_directory() . '/bin/release.sh' ) . ' 2>&1', $output, $code );
 

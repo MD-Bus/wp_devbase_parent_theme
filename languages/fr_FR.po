@@ -789,3 +789,89 @@ msgstr "Une destination en échec sera réessayée dans environ %s."
 
 msgid "A destination that failed will be tried again."
 msgstr "Une destination en échec sera réessayée."
+
+msgid "Nothing has been changed through MCP yet."
+msgstr "Rien n'a encore été modifié par MCP."
+
+msgid "What"
+msgstr "Quoi"
+
+msgid "Who (application password)"
+msgstr "Qui (mot de passe d'application)"
+
+msgid "Fields"
+msgstr "Champs"
+
+msgid "Before"
+msgstr "Avant"
+
+msgid "Form submissions"
+msgstr "Envois de formulaire"
+
+msgid "Submitted"
+msgstr "Envoyé le"
+
+msgid "Form submission %d could not be deleted."
+msgstr "L'envoi de formulaire %d n'a pas pu être supprimé."
+
+msgid "No mail has failed to send."
+msgstr "Aucun e-mail n'a échoué."
+
+msgid "Last failure %1$s, to %2$s: %3$s"
+msgstr "Dernier échec le %1$s, à %2$s : %3$s"
+
+msgid "%d failure in the last 7 days."
+msgid_plural "%d failures in the last 7 days."
+msgstr[0] "%d échec ces 7 derniers jours."
+msgstr[1] "%d échecs ces 7 derniers jours."
+
+msgid "Last mail sent %s."
+msgstr "Dernier e-mail envoyé le %s."
+
+msgid "No mail sent since this was installed."
+msgstr "Aucun e-mail envoyé depuis l'installation."
+
+msgid "%1$s %2$s broke the home page after it was installed, so version %3$s was put back. %2$s will not be installed again."
+msgstr "%1$s %2$s a cassé la page d'accueil après son installation : la version %3$s a été remise en place. %2$s ne sera plus installée."
+
+msgid "%1$s %2$s broke the home page after it was installed, and the previous version could not be put back. The site needs attention."
+msgstr "%1$s %2$s a cassé la page d'accueil après son installation, et la version précédente n'a pas pu être remise en place. Le site demande une intervention."
+
+msgid "You are not allowed to resend this submission."
+msgstr "Vous n'avez pas le droit de renvoyer cet envoi."
+
+msgid "Sent again to every destination. The log below is the new attempt."
+msgstr "Renvoyé à toutes les destinations. Le journal ci-dessous est celui du nouvel envoi."
+
+msgid "Resend"
+msgstr "Renvoyer"
+
+msgid "Sends this submission again to every destination that applies to its form. Last resent %s."
+msgstr "Renvoie cet envoi à toutes les destinations de son formulaire. Dernier renvoi le %s."
+
+msgid "Sends this submission again to every destination that applies to its form."
+msgstr "Renvoie cet envoi à toutes les destinations de son formulaire."
+
+msgid "Version %s broke the home page here and was rolled back. It will not be installed again; the next release will."
+msgstr "La version %s a cassé la page d'accueil ici et a été retirée. Elle ne sera plus installée ; la prochaine version le sera."
+
+msgid "Version %1$s is out. This site installs it after %2$s (staged rollout)."
+msgstr "La version %1$s est sortie. Ce site l'installe après le %2$s (déploiement progressif)."
+
+msgid "Mail Delivery"
+msgstr "Envoi des e-mails"
+
+msgid "MCP Activity"
+msgstr "Activité MCP"
+
+msgid "The last 20 changes made through MCP (kept 90 days), with the values an options page had before."
+msgstr "Les 20 dernières modifications faites par MCP (gardées 90 jours), avec les valeurs qu'avait la page d'options avant."
+
+msgid "When tracking runs"
+msgstr "Quand le suivi s'exécute"
+
+msgid "Off on this site: its environment is \"%s\", and tracking is printed only on production. Nothing below reaches the pages."
+msgstr "Désactivé sur ce site : son environnement est « %s », et le suivi n'est ajouté qu'en production. Rien de ce qui suit n'arrive sur les pages."
+
+msgid "Printed for visitors. Not printed for logged-in users who can edit posts, so the site's own staff do not count as visitors."
+msgstr "Ajouté pour les visiteurs. Pas pour les utilisateurs connectés qui peuvent modifier des articles : l'équipe du site ne compte pas comme visiteurs."

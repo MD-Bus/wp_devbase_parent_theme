@@ -111,6 +111,11 @@ jobs:
         working-directory: ${{ env.THEME_DIR }}
         run: php tests/vendor/bin/phpunit --configuration phpunit.xml.dist
 
+      - name: Static analysis (PHPStan)
+        if: matrix.php == '8.4'
+        working-directory: ${{ env.THEME_DIR }}
+        run: php -d memory_limit=2G tests/vendor/bin/phpstan analyse --no-progress --configuration phpstan.neon.dist
+
   release-ready:
     name: Release-ready (vendor/ matches composer.lock)
     runs-on: ubuntu-latest

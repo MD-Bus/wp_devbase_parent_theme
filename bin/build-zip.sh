@@ -109,6 +109,7 @@ rsync -a "$THEME_DIR/" "$BUILD_DIR/" \
 	--exclude='vendor' \
 	--exclude='tests' \
 	--exclude='phpunit.xml.dist' \
+	--exclude='phpstan.neon.dist' \
 	--exclude='.phpunit.result.cache' \
 	--exclude='bin' \
 	--exclude='/bundled-plugins/.build' \

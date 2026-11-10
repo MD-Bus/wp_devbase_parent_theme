@@ -51,7 +51,10 @@ add_action( 'switch_theme', function () {
 	wp_clear_scheduled_hook( 'devbase_forms_retention_purge' );
 } );
 
-add_action( 'devbase_forms_retention_purge', 'devbase_forms_run_retention_purge' );
+// A wrapper: the count the function returns is for the "Run Purge Now" button, not for the hook.
+add_action( 'devbase_forms_retention_purge', function () {
+	devbase_forms_run_retention_purge();
+} );
 
 /**
  * Runs the configured retention policy once. Safe to call directly (the

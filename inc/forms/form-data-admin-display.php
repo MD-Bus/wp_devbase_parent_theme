@@ -45,6 +45,21 @@ function devbase_forms_render_submission_meta_box( $post ) {
 
 	echo '<h3>' . esc_html__( 'Dispatch Log', 'devbase_parent_theme' ) . '</h3>';
 
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- only says what the Resend link did.
+	if ( isset( $_GET['devbase_resent'] ) && '1' === $_GET['devbase_resent'] ) {
+		echo '<div class="notice notice-success inline"><p>' . esc_html__( 'Sent again to every destination. The log below is the new attempt.', 'devbase_parent_theme' ) . '</p></div>';
+	}
+
+	if ( current_user_can( 'manage_options' ) && '' !== (string) $form_name ) {
+		$resent = (int) get_post_meta( $post->ID, '_devbase_resent_at', true );
+
+		echo '<p><a class="button" href="' . esc_url( devbase_forms_resend_url( $post->ID ) ) . '">' . esc_html__( 'Resend', 'devbase_parent_theme' ) . '</a> ';
+		echo '<span class="description">' . esc_html( $resent
+			/* translators: %s: a date and time. */
+			? sprintf( __( 'Sends this submission again to every destination that applies to its form. Last resent %s.', 'devbase_parent_theme' ), wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $resent ) )
+			: __( 'Sends this submission again to every destination that applies to its form.', 'devbase_parent_theme' ) ) . '</span></p>';
+	}
+
 	if ( empty( $log ) || ! is_array( $log ) ) {
 		echo '<p>' . esc_html__( 'Not dispatched yet.', 'devbase_parent_theme' ) . '</p>';
 		return;

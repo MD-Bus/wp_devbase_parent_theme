@@ -149,6 +149,14 @@ add_action( 'acf/init', function () {
 				'type'    => 'message',
 				'message' => esc_html( devbase_smtp_last_test_message() ),
 			),
+			// Every mail the site sends, not only the test button (inc/theme-settings/smtp/failures.php).
+			array(
+				'key'     => 'field_devbase_status_mail',
+				'label'   => __( 'Mail Delivery', 'devbase_parent_theme' ),
+				'name'    => '',
+				'type'    => 'message',
+				'message' => esc_html( devbase_mail_status_message() ),
+			),
 			array(
 				'key'          => 'field_devbase_status_dispatch',
 				'label'        => __( 'Form Notifications', 'devbase_parent_theme' ),
@@ -245,6 +253,15 @@ add_action( 'acf/init', function () {
 				'rows'         => 14,
 				'new_lines'    => '',
 				'instructions' => __( 'What an AI assistant connected through MCP should know before it writes on this site: who the site is for, the tone to write in, and how pages are put together (which block starts a page, which ends it, what each block is for, how long the text should be). It reads this first. Plain text; it cannot change it.', 'devbase_parent_theme' ),
+			),
+			// What MCP clients changed (inc/abilities/audit-log.php). Read-only; built with its own escaping.
+			array(
+				'key'          => 'field_devbase_mcp_activity',
+				'label'        => __( 'MCP Activity', 'devbase_parent_theme' ),
+				'name'         => '',
+				'type'         => 'message',
+				'message'      => function_exists( 'devbase_abilities_audit_html' ) ? devbase_abilities_audit_html() : '', // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'instructions' => __( 'The last 20 changes made through MCP (kept 90 days), with the values an options page had before.', 'devbase_parent_theme' ),
 			),
 
 			// Tab: SEO. A tab of its own that is always visible (unlike Credit and Management, which hidden-tabs.js keeps

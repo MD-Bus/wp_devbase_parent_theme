@@ -102,7 +102,20 @@ function devbase_licence_status_row( $stylesheet, $licence ) {
 		? devbase_warden_pending_update( $response, $installed )
 		: null;
 
-	if ( null !== $update ) {
+	$waiting     = ( null !== $update && function_exists( 'devbase_update_rollout_waiting' ) ) ? devbase_update_rollout_waiting( $stylesheet, $update ) : null;
+	$rolled_back = ( null !== $update && function_exists( 'devbase_update_version_rolled_back' ) ) && devbase_update_version_rolled_back( $stylesheet, (string) $update['version'] );
+
+	if ( $rolled_back ) {
+		/* translators: %s: a version number. */
+		$update_cell = sprintf( esc_html__( 'Version %s broke the home page here and was rolled back. It will not be installed again; the next release will.', 'devbase_parent_theme' ), esc_html( (string) $update['version'] ) );
+	} elseif ( null !== $waiting ) {
+		$update_cell = sprintf(
+			/* translators: 1: a version number, 2: a date and time. */
+			esc_html__( 'Version %1$s is out. This site installs it after %2$s (staged rollout).', 'devbase_parent_theme' ),
+			esc_html( $waiting['version'] ),
+			esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $waiting['due'] ) )
+		);
+	} elseif ( null !== $update ) {
 		/* translators: %s: the new version number available. */
 		$update_cell = sprintf( esc_html__( 'Version %s available', 'devbase_parent_theme' ), esc_html( (string) $update['version'] ) );
 	} elseif ( ! $valid ) {

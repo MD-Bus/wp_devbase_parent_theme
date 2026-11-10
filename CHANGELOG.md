@@ -10,6 +10,46 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.40.0] — 2026-11-09
+
+The nine features the November 2026 reliability audit suggested (`ROADMAP.md`, "Reliability audit").
+
+**Upgrade notes.**
+- **Tracking stops on non-production sites and for logged-in staff.** A staging site (`WP_ENVIRONMENT_TYPE` other than
+  `production`) prints none of the Tracking page, and nor does any page seen by a logged-in user who can edit posts. A site
+  that relied on either returns `true` from the `devbase/tracking/enabled` filter.
+- **A new theme release reaches sites over 6 hours**, not at once (staged rollout). Put `[urgent]` in a release's notes in
+  Warden to skip the wait; `devbase/updates/rollout_window` returning 0 turns it off.
+- The rollback protects updates *from* this version on: the update to it still runs the previous version's code.
+
+### Added
+- **Health check and rollback after a theme update** (`inc/updates/rollback.php`). The home page is loaded before and after
+  an update of either of our themes; an update that broke it is undone from WordPress's own temporary backup, and that
+  version is never offered again. An administrator notice for a week, a line on the Licence status tab, and
+  `theme_rollbacks` in the health report. A check that cannot be made never rolls back.
+- **Staged rollout** (`inc/updates/rollout.php`). Each site waits its own share of a 6-hour window from the release's
+  publication, asks Warden again when the wait is over (a withdrawn release is not installed from a cached answer), and
+  installs at that moment through a WP-Cron event. The Licence status tab says when.
+- **Mail failures on System Status and in the health report** (`inc/theme-settings/smtp/failures.php`). Every
+  `wp_mail_failed` is kept (last 20), with the time of the last mail sent; the report's `mail` field has counts and a
+  scrubbed error, no recipient.
+- **Reply-To on form notifications**, set to the submitter's address, and a **Resend** button on a submission
+  (administrators), which sends it again to every destination from the start.
+- **Form submissions in WordPress's personal data export and erasure** (`inc/forms/privacy.php`). Matched by exact
+  address in any submitted value; erasing deletes the submission.
+- **An MCP activity log** (`inc/abilities/audit-log.php`): every successful call to an ability that changes something,
+  with the user, the application password, the target and an options page's previous values. Last 200, 90 days. Shown
+  under Miscellaneous > MCP Access > MCP Activity.
+- **Tracking only where it should run**, with the `devbase/tracking/enabled` filter for a consent plugin, and a line on the
+  Tracking page saying when it runs.
+- **Free disk space is checked before a backup starts**: 1.5 times the last backup plus 100 MiB, or the job fails in words
+  before WPvivid writes anything.
+- **PHPStan** (level 5, `phpstan.neon.dist`) in the release gate (`bin/release.sh` check 8c) and in CI.
+
+### Fixed
+- Three things PHPStan found: a float passed to `size_format()` in the download disk check, an always-true `isset()` on the
+  bundled versions, and two action callbacks returning a value (the retention purge, the WPvivid lockdown), now wrapped.
+
 ## [1.39.0] — 2026-11-09
 
 Nine fixes from the November 2026 reliability audit (tracked in `ROADMAP.md`, "Reliability audit").

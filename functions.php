@@ -47,6 +47,8 @@ require_once __DIR__ . '/inc/abilities/options-pages.php';
 require_once __DIR__ . '/inc/abilities/blocks.php';
 require_once __DIR__ . '/inc/abilities/media.php';
 require_once __DIR__ . '/inc/abilities/site-guide.php';
+// Every change made through an ability: who, through which application password, what it was before.
+require_once __DIR__ . '/inc/abilities/audit-log.php';
 
 // Hides Posts and Comments from the wp-admin menu while this theme is active.
 require_once __DIR__ . '/inc/hide-admin-menu-items.php';
@@ -77,6 +79,9 @@ require_once __DIR__ . '/inc/legacy-mcp-oauth-cleanup.php';
 // inc/updates/AGENT.md.
 require_once __DIR__ . '/inc/updates/warden.php';
 require_once __DIR__ . '/inc/updates/theme-updates.php';
+// Each site waits its share of a window before installing a release; a broken update is rolled back.
+require_once __DIR__ . '/inc/updates/rollout.php';
+require_once __DIR__ . '/inc/updates/rollback.php';
 
 // Provisions the Warden address, signing key and licence keys from Brand Relay,
 // only when pinged (signed) or when an administrator saves the Licence page.
@@ -125,6 +130,9 @@ require_once __DIR__ . '/inc/theme-settings/smtp/mailer.php';
 // AJAX handler for the "Send Test Email" button on the SMTP Settings page.
 require_once __DIR__ . '/inc/theme-settings/smtp/test.php';
 
+// Every mail failure (wp_mail_failed), for System Status and the health report.
+require_once __DIR__ . '/inc/theme-settings/smtp/failures.php';
+
 // Registers the Security Settings sub-page (Turnstile / reCAPTCHA tabs).
 require_once __DIR__ . '/inc/theme-settings/security/settings.php';
 
@@ -164,6 +172,9 @@ require_once __DIR__ . '/inc/theme-settings/destinations/settings.php';
 // Schedules and runs the daily retention purge (off unless enabled on
 // the Miscellaneous > Retention Policy tab below).
 require_once __DIR__ . '/inc/forms/retention.php';
+
+// Form submissions in Tools > Export / Erase Personal Data.
+require_once __DIR__ . '/inc/forms/privacy.php';
 
 // Aggregates recent dispatch successes/failures across submissions, for
 // the Miscellaneous > System Status tab below.
