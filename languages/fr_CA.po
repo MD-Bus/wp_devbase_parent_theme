@@ -831,11 +831,11 @@ msgstr "Dernier courriel envoyé le %s."
 msgid "No mail sent since this was installed."
 msgstr "Aucun courriel envoyé depuis l'installation."
 
-msgid "%1$s %2$s broke the home page after it was installed, so version %3$s was put back. %2$s will not be installed again."
-msgstr "%1$s %2$s a cassé la page d'accueil après son installation : la version %3$s a été remise en place. %2$s ne sera plus installée."
+msgid "%1$s %2$s broke the site after it was installed, so version %3$s was put back. %2$s will not be installed again."
+msgstr "%1$s %2$s a cassé le site après son installation : la version %3$s a été remise en place. %2$s ne sera plus installée."
 
-msgid "%1$s %2$s broke the home page after it was installed, and the previous version could not be put back. The site needs attention."
-msgstr "%1$s %2$s a cassé la page d'accueil après son installation, et la version précédente n'a pas pu être remise en place. Le site demande une intervention."
+msgid "%1$s %2$s broke the site after it was installed, and the previous version could not be put back. The site needs attention."
+msgstr "%1$s %2$s a cassé le site après son installation, et la version précédente n'a pas pu être remise en place. Le site demande une intervention."
 
 msgid "You are not allowed to resend this submission."
 msgstr "Vous n'avez pas le droit de renvoyer cet envoi."
@@ -852,8 +852,8 @@ msgstr "Renvoie cet envoi à toutes les destinations de son formulaire. Dernier 
 msgid "Sends this submission again to every destination that applies to its form."
 msgstr "Renvoie cet envoi à toutes les destinations de son formulaire."
 
-msgid "Version %s broke the home page here and was rolled back. It will not be installed again; the next release will."
-msgstr "La version %s a cassé la page d'accueil ici et a été retirée. Elle ne sera plus installée ; la prochaine version le sera."
+msgid "Version %s broke the site here and was rolled back. It will not be installed again; the next release will."
+msgstr "La version %s a cassé le site ici et a été retirée. Elle ne sera plus installée ; la prochaine version le sera."
 
 msgid "Version %1$s is out. This site installs it after %2$s (staged rollout)."
 msgstr "La version %1$s est sortie. Ce site l'installe après le %2$s (déploiement progressif)."

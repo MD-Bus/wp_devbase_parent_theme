@@ -107,7 +107,7 @@ function devbase_licence_status_row( $stylesheet, $licence ) {
 
 	if ( $rolled_back ) {
 		/* translators: %s: a version number. */
-		$update_cell = sprintf( esc_html__( 'Version %s broke the home page here and was rolled back. It will not be installed again; the next release will.', 'devbase_parent_theme' ), esc_html( (string) $update['version'] ) );
+		$update_cell = sprintf( esc_html__( 'Version %s broke the site here and was rolled back. It will not be installed again; the next release will.', 'devbase_parent_theme' ), esc_html( (string) $update['version'] ) );
 	} elseif ( null !== $waiting ) {
 		$update_cell = sprintf(
 			/* translators: 1: a version number, 2: a date and time. */

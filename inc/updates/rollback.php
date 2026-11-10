@@ -4,8 +4,9 @@
 // for a fatal error and puts the old version back; it does nothing of the kind for a theme. This does it
 // for our two themes, whoever started the update (unattended, Dashboard > Updates, WP-CLI):
 //
-//   1. Before the new files go in (upgrader_pre_install), the home page is loaded once: the baseline.
-//   2. After the update (upgrader_process_complete), it is loaded again.
+//   1. Before the new files go in (upgrader_pre_install), the home page and wp-admin/admin-ajax.php are
+//      loaded once: the baseline (see devbase_update_health_urls()).
+//   2. After the update (upgrader_process_complete), they are loaded again.
 //   3. If the second load ends in a fatal error, and either the first did not or the error is in the
 //      updated theme's own files, the previous version is put back from the copy WordPress itself keeps
 //      during an update (upgrade-temp-backup/, restore_temp_backup()). Nothing is copied by us.
@@ -17,8 +18,14 @@
 // would otherwise undo every update.
 //
 // A rolled-back version is remembered and never offered again (devbase_update_gate() in rollout.php);
-// the next release is. It is recorded (the last 10), shown to administrators for a week, on the Licence
-// status tab, and in the health report as `theme_rollbacks`.
+// the next release is. It is recorded (the last 10), said on the update screen itself (Dashboard > Updates
+// otherwise ends on WordPress's own "updated successfully"), shown to administrators for a week, on the
+// Licence status tab, and in the health report as `theme_rollbacks`.
+//
+// Tried end to end on a throwaway site (2026-11-10, a fake Warden signing with a test key, everything else
+// real): a release whose functions.php fatals was put back both by the unattended updater (from wp-cron.php)
+// and from Dashboard > Updates; a release that broke wp-admin only was not, which is why admin-ajax.php is
+// checked as well now.
 //
 // The check runs in the PHP process that did the update, so it is the OLD version's code that runs it.
 // It protects updates from the first release that contains it onwards.
@@ -68,17 +75,56 @@ function devbase_update_rollback_themes( $hook_extra ) {
 }
 
 /**
- * Loads the home page and reports how it ended.
+ * The pages the check loads. The home page, and wp-admin/admin-ajax.php: it loads the whole admin side
+ * (is_admin(), admin_init) without a login, so a release that breaks only wp-admin is caught too. Seen on a
+ * throwaway site (2026-11-10): such a release passed a home-page-only check and left the administrator on an
+ * HTTP 500 at /wp-admin/, unable even to reach Dashboard > Updates. Every handler the themes put on admin_init
+ * is a no-op for an anonymous AJAX request (each checks a capability or skips AJAX), and admin-ajax.php is
+ * reached anonymously by every visitor's browser anyway. `devbase/updates/health_check_urls` (string[]).
  *
- * @return array{result: string, error: string, file: string} result is ok, fatal or unknown.
+ * @return string[]
+ */
+function devbase_update_health_urls() {
+	return array_values( array_filter( (array) apply_filters( 'devbase/updates/health_check_urls', array( home_url( '/' ), admin_url( 'admin-ajax.php' ) ) ), 'is_string' ) );
+}
+
+/**
+ * Loads each page of devbase_update_health_urls() and reports the worst: a fatal error on any page is fatal
+ * (and stops there), else a page that could not be checked is unknown, else ok.
+ *
+ * @return array{result: string, error: string, file: string, url: string} result is ok, fatal or unknown.
  */
 function devbase_update_health_check() {
 	$pre = apply_filters( 'devbase/updates/health_check', null );
 
 	if ( is_array( $pre ) ) {
-		return $pre + array( 'result' => 'unknown', 'error' => '', 'file' => '' );
+		return $pre + array( 'result' => 'unknown', 'error' => '', 'file' => '', 'url' => '' );
 	}
 
+	$worst = array( 'result' => 'ok', 'error' => '', 'file' => '', 'url' => '' );
+
+	foreach ( devbase_update_health_urls() as $url ) {
+		$check = devbase_update_health_load( $url ) + array( 'url' => $url );
+
+		if ( 'fatal' === $check['result'] ) {
+			return $check;
+		}
+
+		if ( 'unknown' === $check['result'] && 'ok' === $worst['result'] ) {
+			$worst = $check;
+		}
+	}
+
+	return $worst;
+}
+
+/**
+ * Loads one page of this site the way WordPress checks an edited plugin, and reports how it ended.
+ *
+ * @param string $page The page's URL.
+ * @return array{result: string, error: string, file: string}
+ */
+function devbase_update_health_load( $page ) {
 	// During maintenance mode, the scrape key must be the one WordPress derives from it (load.php).
 	// Read, not included: WordPress writes one PHP line setting $upgrading to a timestamp.
 	$upgrading = null;
@@ -98,7 +144,7 @@ function devbase_update_health_check() {
 
 	set_transient( 'scrape_key_' . $key, $nonce, 60 );
 
-	$url       = add_query_arg( array( 'wp_scrape_key' => $key, 'wp_scrape_nonce' => $nonce ), home_url( '/' ) );
+	$url       = add_query_arg( array( 'wp_scrape_key' => $key, 'wp_scrape_nonce' => $nonce ), $page );
 	$sslverify = apply_filters( 'https_local_ssl_verify', false, $url );
 	$headers   = array( 'Cache-Control' => 'no-cache' );
 
@@ -196,7 +242,7 @@ add_action( 'upgrader_process_complete', function ( $upgrader, $hook_extra ) {
 }, 20, 2 );
 
 /**
- * Checks one updated theme and rolls it back when the update broke the home page.
+ * Checks one updated theme and rolls it back when the update broke the home page or wp-admin.
  *
  * @param WP_Upgrader $upgrader   The upgrader that ran (its temp backup is the previous version).
  * @param string      $stylesheet The theme.
@@ -259,16 +305,41 @@ function devbase_update_after( $upgrader, $stylesheet ) {
 	devbase_update_rollback_save( $state );
 
 	error_log( sprintf(
-		'devbase_parent_theme: %s %s broke the home page (%s); %s',
+		'devbase_parent_theme: %s %s broke %s (%s); %s',
 		$stylesheet,
 		$to,
+		false !== strpos( (string) ( $check['url'] ?? '' ), 'admin-ajax.php' ) ? 'wp-admin' : 'the home page',
 		$check['error'],
 		$ok ? "version {$from} was put back" : 'the previous version could not be put back: ' . ( is_wp_error( $restored ) ? $restored->get_error_message() : 'unknown error' )
 	) );
 
+	// Said on the update screen too (Dashboard > Updates prints the skin's feedback; the unattended updater's
+	// skin keeps it), which otherwise ends on WordPress's own "updated successfully".
+	$skin = is_object( $upgrader ) && property_exists( $upgrader, 'skin' ) ? $upgrader->skin : null;
+
+	if ( is_object( $skin ) && method_exists( $skin, 'feedback' ) ) {
+		$skin->feedback( esc_html( devbase_update_rollback_message( $state['log'][0] ) ) );
+	}
+
 	do_action( 'devbase/updates/rolled_back', $stylesheet, $to, $ok, $check );
 
 	return $result;
+}
+
+/**
+ * What an administrator is told about one rollback (an entry of the log).
+ *
+ * @param array $e The log entry.
+ */
+function devbase_update_rollback_message( array $e ) {
+	$theme = wp_get_theme( (string) ( $e['theme'] ?? '' ) );
+	$name  = $theme->exists() ? $theme->get( 'Name' ) : (string) ( $e['theme'] ?? '' );
+
+	return 'rolled_back' === ( $e['result'] ?? '' )
+		/* translators: 1: theme name, 2: the new version, 3: the version put back. */
+		? sprintf( __( '%1$s %2$s broke the site after it was installed, so version %3$s was put back. %2$s will not be installed again.', 'devbase_parent_theme' ), $name, $e['to'] ?? '', $e['from'] ?? '' )
+		/* translators: 1: theme name, 2: the new version. */
+		: sprintf( __( '%1$s %2$s broke the site after it was installed, and the previous version could not be put back. The site needs attention.', 'devbase_parent_theme' ), $name, $e['to'] ?? '' );
 }
 
 /** The rollbacks of the last $days days, newest first. */
@@ -287,16 +358,7 @@ add_action( 'admin_notices', function () {
 	}
 
 	foreach ( devbase_update_recent_rollbacks( 7 ) as $e ) {
-		$theme = wp_get_theme( (string) $e['theme'] );
-		$name  = $theme->exists() ? $theme->get( 'Name' ) : (string) $e['theme'];
-
-		$text = 'rolled_back' === $e['result']
-			/* translators: 1: theme name, 2: the new version, 3: the version put back. */
-			? sprintf( __( '%1$s %2$s broke the home page after it was installed, so version %3$s was put back. %2$s will not be installed again.', 'devbase_parent_theme' ), $name, $e['to'], $e['from'] )
-			/* translators: 1: theme name, 2: the new version. */
-			: sprintf( __( '%1$s %2$s broke the home page after it was installed, and the previous version could not be put back. The site needs attention.', 'devbase_parent_theme' ), $name, $e['to'] );
-
-		printf( '<div class="notice notice-%s"><p>%s</p></div>', 'rolled_back' === $e['result'] ? 'warning' : 'error', esc_html( $text ) );
+		printf( '<div class="notice notice-%s"><p>%s</p></div>', 'rolled_back' === $e['result'] ? 'warning' : 'error', esc_html( devbase_update_rollback_message( $e ) ) );
 	}
 } );
 

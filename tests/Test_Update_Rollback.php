@@ -10,6 +10,9 @@ class Test_Update_Rollback_Upgrader {
 	/** @var true|WP_Error */
 	public $answer = true;
 
+	/** @var object|null the upgrader skin, when a test gives one */
+	public $skin = null;
+
 	public function restore_temp_backup( array $temp_backups = array() ) {
 		$this->restored[] = $temp_backups;
 
@@ -188,20 +191,75 @@ class Test_Update_Rollback extends WP_UnitTestCase {
 		$this->assertSame( 'unknown', devbase_update_health_read( $this->scrape( 'k', '{"code":"scrape_nonce_failure"}' ), 'k' )['result'] );
 	}
 
-	public function test_the_check_loads_the_home_page_with_a_scrape_key_wordpress_accepts() {
+	public function test_the_check_loads_the_home_page_and_wp_admin_with_a_scrape_key_wordpress_accepts() {
 		remove_filter( 'devbase/updates/health_check', array( $this, 'next_check' ) );
-		$seen = null;
+		$seen = array();
 
 		add_filter( 'pre_http_request', function ( $pre, $args, $url ) use ( &$seen ) {
 			parse_str( (string) wp_parse_url( $url, PHP_URL_QUERY ), $q );
-			$seen = array( 'url' => $url, 'stored' => get_transient( 'scrape_key_' . $q['wp_scrape_key'] ), 'nonce' => $q['wp_scrape_nonce'] );
+			$seen[] = array( 'url' => $url, 'stored' => get_transient( 'scrape_key_' . $q['wp_scrape_key'] ), 'nonce' => $q['wp_scrape_nonce'] );
 
 			return $this->scrape( $q['wp_scrape_key'], 'true' );
 		}, 10, 3 );
 
 		$this->assertSame( 'ok', devbase_update_health_check()['result'] );
-		$this->assertStringStartsWith( home_url( '/' ), $seen['url'] );
-		$this->assertSame( $seen['nonce'], $seen['stored'], 'wp_start_scraping_edited_file_errors() compares the nonce with this transient.' );
+		$this->assertCount( 2, $seen );
+		$this->assertStringStartsWith( home_url( '/' ) . '?', $seen[0]['url'] );
+		$this->assertStringStartsWith( admin_url( 'admin-ajax.php' ), $seen[1]['url'] );
+
+		foreach ( $seen as $load ) {
+			$this->assertSame( $load['nonce'], $load['stored'], 'wp_start_scraping_edited_file_errors() compares the nonce with this transient.' );
+		}
+	}
+
+	/** Answers the check's loads by page: $pages maps 'home' / 'admin' to the scrape JSON, or to null for no markers. */
+	private function pages( array $pages ) {
+		remove_filter( 'devbase/updates/health_check', array( $this, 'next_check' ) );
+
+		add_filter( 'pre_http_request', function ( $pre, $args, $url ) use ( $pages ) {
+			parse_str( (string) wp_parse_url( $url, PHP_URL_QUERY ), $q );
+			$json = $pages[ false !== strpos( $url, 'admin-ajax.php' ) ? 'admin' : 'home' ];
+
+			return null === $json
+				? array( 'response' => array( 'code' => 200 ), 'headers' => array(), 'body' => '<html>cached</html>' )
+				: $this->scrape( $q['wp_scrape_key'], $json );
+		}, 10, 3 );
+	}
+
+	public function test_a_release_that_breaks_only_wp_admin_is_fatal() {
+		// Seen on a throwaway site: the home page was fine, /wp-admin/ answered HTTP 500 to the administrator.
+		$this->pages( array( 'home' => 'true', 'admin' => '{"type":1,"message":"Uncaught Error: Call to undefined function x()","file":"wp-content/themes/t/functions.php"}' ) );
+
+		$check = devbase_update_health_check();
+
+		$this->assertSame( 'fatal', $check['result'] );
+		$this->assertStringContainsString( 'admin-ajax.php', $check['url'] );
+	}
+
+	public function test_a_fatal_page_outweighs_a_page_that_could_not_be_checked() {
+		$this->pages( array( 'home' => null, 'admin' => '{"type":1,"message":"Uncaught Error","file":""}' ) );
+		$this->assertSame( 'fatal', devbase_update_health_check()['result'] );
+	}
+
+	public function test_one_page_that_could_not_be_checked_is_unknown_never_ok() {
+		$this->pages( array( 'home' => 'true', 'admin' => null ) );
+		$this->assertSame( 'unknown', devbase_update_health_check()['result'] );
+	}
+
+	public function test_the_update_screen_says_the_version_was_put_back() {
+		$upgrader       = new Test_Update_Rollback_Upgrader();
+		$upgrader->skin = new class() {
+			public $said = array();
+
+			public function feedback( $text ) {
+				$this->said[] = $text;
+			}
+		};
+
+		$this->update_with( array( 'result' => 'ok' ), array( 'result' => 'fatal', 'error' => 'boom', 'file' => '' ), $upgrader );
+
+		$this->assertCount( 1, $upgrader->skin->said );
+		$this->assertStringContainsString( $this->version(), $upgrader->skin->said[0] );
 	}
 
 	public function test_an_error_file_is_matched_to_the_theme_folder_only() {
