@@ -167,4 +167,78 @@ class Test_Archive_SEO extends WP_UnitTestCase {
 
 		$this->assertSame( '', devbase_archive_seo_value( 'seo_title', array( 'pta' => self::TYPE ) ) );
 	}
+
+	// --- The sitemap ----------------------------------------------------------
+
+	/**
+	 * TSF keeps its lists of public post types for the whole request, and in the suite they were made before these
+	 * test types existed (on a site, post types register on `init`, long before a sitemap is built). Puts them in.
+	 */
+	private function refresh_tsf_post_types() {
+		$public = array_keys( get_post_types( array( 'public' => true ) ) );
+
+		\The_SEO_Framework\umemo( 'The_SEO_Framework\Helper\Post_Type::get_all_public', $public );
+		\The_SEO_Framework\umemo(
+			'The_SEO_Framework\Helper\Post_Type::get_public_pta',
+			array_values( array_filter( $public, fn( $type ) => (bool) get_post_type_object( $type )->has_archive ) )
+		);
+	}
+
+	public function test_an_archive_is_added_to_the_sitemap_with_its_newest_post_as_lastmod() {
+		$this->refresh_tsf_post_types();
+		$newest = self::factory()->post->create( array( 'post_type' => self::TYPE ) );
+		$GLOBALS['wpdb']->update( $GLOBALS['wpdb']->posts, array( 'post_modified_gmt' => '2030-01-02 03:04:05' ), array( 'ID' => $newest ) );
+
+		$urls = apply_filters( 'the_seo_framework_sitemap_additional_urls', array(), array() );
+		$url  = get_post_type_archive_link( self::TYPE );
+
+		$this->assertArrayHasKey( $url, $urls );
+		$this->assertSame( '2030-01-02 03:04:05', $urls[ $url ]['lastmod'] );
+	}
+
+	public function test_the_archive_appears_in_the_generated_sitemap() {
+		$this->refresh_tsf_post_types();
+		$sitemap = ( new \The_SEO_Framework\Sitemap\Optimized\Base() )->build_sitemap();
+
+		$this->assertStringContainsString( '<loc>' . esc_url( get_post_type_archive_link( self::TYPE ) ) . '</loc>', $sitemap );
+	}
+
+	public function test_an_empty_archive_is_left_out() {
+		register_post_type( 'devtest_seo_empty', array( 'public' => true, 'has_archive' => true, 'label' => 'Empty' ) );
+		$this->refresh_tsf_post_types();
+
+		$this->assertArrayNotHasKey( (string) get_post_type_archive_link( 'devtest_seo_empty' ), devbase_archive_sitemap_urls() );
+
+		unregister_post_type( 'devtest_seo_empty' );
+	}
+
+	public function test_a_noindex_archive_is_left_out() {
+		$type = 'devtest_seo_noindex';
+		register_post_type( $type, array( 'public' => true, 'has_archive' => true, 'label' => 'Noindex' ) );
+		self::factory()->post->create( array( 'post_type' => $type ) );
+		$this->refresh_tsf_post_types();
+
+		$noindex = function ( $meta, $post_type ) use ( $type ) {
+			if ( $type === $post_type ) {
+				$meta['noindex'] = 1;
+			}
+			return $meta;
+		};
+		add_filter( 'the_seo_framework_post_type_archive_meta', $noindex, 10, 2 );
+
+		$this->assertArrayNotHasKey( (string) get_post_type_archive_link( $type ), devbase_archive_sitemap_urls() );
+
+		remove_filter( 'the_seo_framework_post_type_archive_meta', $noindex, 10 );
+		unregister_post_type( $type );
+	}
+
+	public function test_an_archive_can_be_left_out_of_the_sitemap_by_filter() {
+		$this->refresh_tsf_post_types();
+		$this->assertArrayHasKey( (string) get_post_type_archive_link( self::TYPE ), devbase_archive_sitemap_urls() );
+		add_filter( 'devbase/archive_seo/sitemap', '__return_false' );
+
+		$this->assertArrayNotHasKey( (string) get_post_type_archive_link( self::TYPE ), devbase_archive_sitemap_urls() );
+
+		remove_filter( 'devbase/archive_seo/sitemap', '__return_false' );
+	}
 }

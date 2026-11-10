@@ -23,7 +23,12 @@
 //   what the search result says. A value filled here wins over TSF's own "Post Type Archive
 //   Settings" for the same archive: use this tab, not both.
 //
-// Filters: `devbase/archive_seo/enabled` ( bool, $post_type ) switches it off for a type.
+// THE SITEMAP. TSF's sitemap lists posts only, never an archive. Every archive is added to it through
+// `the_seo_framework_sitemap_additional_urls` (see devbase_archive_sitemap_urls()), unless TSF has its type
+// disabled, it is noindex, or it has no published posts. This does not depend on the fields above.
+//
+// Filters: `devbase/archive_seo/enabled` ( bool, $post_type ) switches the fields off for a type;
+// `devbase/archive_seo/sitemap` ( bool, $post_type ) leaves its archive out of the sitemap.
 
 /**
  * Adds the SEO fields to an archive's options page. Called once per archive from the loop in
@@ -160,4 +165,53 @@ add_filter( 'the_seo_framework_custom_field_description', function ( $descriptio
 	return $own;
 }, 10, 2 );
 
-endif; // devbase_tsf_disabled(): neither filter is registered while TSF is switched off.
+/**
+ * The post type archives that belong in the sitemap, as url => [ 'lastmod' => GMT datetime ]. TSF's optimized
+ * sitemap lists posts only: an archive is not a post, so it never appears there on its own. Included: every
+ * public post type with an archive that TSF supports (its type not disabled in TSF's Post Types settings) and
+ * that is not noindex (TSF's "Post Type Archive Settings" or its global robots settings), and that has at least
+ * one published post (an empty archive is a thin page). `lastmod` is the newest modified date among its posts.
+ * `devbase/archive_seo/sitemap` ( bool, $post_type ) leaves one out.
+ */
+function devbase_archive_sitemap_urls() {
+	global $wpdb;
+
+	if ( ! function_exists( 'tsf' ) ) {
+		return array();
+	}
+
+	$urls = array();
+
+	foreach ( get_post_types( array( 'public' => true, 'has_archive' => true ) ) as $post_type ) {
+		if ( ! tsf()->post_type()->is_pta_supported( $post_type ) || ! apply_filters( 'devbase/archive_seo/sitemap', true, $post_type ) ) {
+			continue;
+		}
+
+		$robots = tsf()->robots()->get_generated_meta( array( 'id' => 0, 'tax' => '', 'pta' => $post_type, 'uid' => 0 ), array( 'noindex' ) );
+
+		if ( ! empty( $robots['noindex'] ) ) {
+			continue;
+		}
+
+		$lastmod = $wpdb->get_var( $wpdb->prepare(
+			"SELECT MAX(post_modified_gmt) FROM {$wpdb->posts} WHERE post_type = %s AND post_status = 'publish'",
+			$post_type
+		) );
+
+		$url = tsf()->uri()->get_bare_pta_url( $post_type );
+
+		if ( ! $lastmod || ! $url ) {
+			continue;
+		}
+
+		$urls[ $url ] = array( 'lastmod' => $lastmod );
+	}
+
+	return $urls;
+}
+
+add_filter( 'the_seo_framework_sitemap_additional_urls', function ( $urls ) {
+	return array_merge( (array) $urls, devbase_archive_sitemap_urls() );
+} );
+
+endif; // devbase_tsf_disabled(): none of these filters is registered while TSF is switched off.
