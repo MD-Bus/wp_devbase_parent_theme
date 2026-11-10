@@ -79,7 +79,7 @@ function devbase_credit_brand_url() {
 		return '';
 	}
 
-	$url = defined( 'DEVBASE_CREDIT_BRAND_URL' ) ? (string) DEVBASE_CREDIT_BRAND_URL : (string) get_field( 'credit_brand_url', 'option' );
+	$url = defined( 'DEVBASE_CREDIT_BRAND_URL' ) ? (string) DEVBASE_CREDIT_BRAND_URL : (string) get_field( 'field_devbase_credit_brand_url', 'option' );
 	$url = esc_url_raw( trim( (string) apply_filters( 'devbase/credit/brand_url', $url ) ), array( 'http', 'https' ) );
 
 	if ( '' === $url ) {

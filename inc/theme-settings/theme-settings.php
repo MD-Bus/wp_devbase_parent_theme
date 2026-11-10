@@ -9,6 +9,25 @@
 // inc/i18n.php for how translations are loaded) — e.g. a French
 // translation file could map this to "Réglages du thème" without any
 // code change here.
+/**
+ * Gives a read-only message field its text only when the field is shown (`acf/prepare_field`, which SCF runs while
+ * rendering a form, never for get_field()). The field groups are registered on `acf/init`, which runs on EVERY request,
+ * front end included: a status message built in the group array ran its option reads and queries for every visitor
+ * (about 16 queries a page, measured 2026-11-10). Register the field with an empty `message` and pass its builder here.
+ *
+ * @param string   $key   The message field's key.
+ * @param callable $build Returns the message HTML, escaped as the field expects.
+ */
+function devbase_message_when_shown( $key, callable $build ) {
+	add_filter( "acf/prepare_field/key={$key}", function ( $field ) use ( $build ) {
+		if ( is_array( $field ) ) {
+			$field['message'] = (string) $build();
+		}
+
+		return $field;
+	} );
+}
+
 add_action( 'acf/init', function () {
 	if ( ! function_exists( 'acf_add_options_page' ) ) {
 		return;

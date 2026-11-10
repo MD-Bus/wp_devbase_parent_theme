@@ -45,7 +45,7 @@ add_action( 'acf/init', function () {
 			'key'      => 'field_devbase_licence_status',
 			'label'    => __( 'Licence and updates', 'devbase_parent_theme' ),
 			'type'     => 'message',
-			'message'  => devbase_licence_status_html(),
+			'message'  => '', // devbase_message_when_shown(), below.
 			'esc_html' => 0,
 		),
 		// Manual trigger. Nothing on a client site needs this: every check it
@@ -143,14 +143,14 @@ add_action( 'acf/init', function () {
 			'key'      => 'field_devbase_heartbeat_status',
 			'label'    => __( 'Site health', 'devbase_parent_theme' ),
 			'type'     => 'message',
-			'message'  => devbase_heartbeat_status_html(),
+			'message'  => '',
 			'esc_html' => 0,
 		),
 		array(
 			'key'      => 'field_devbase_events_status',
 			'label'    => __( 'Error tracking', 'devbase_parent_theme' ),
 			'type'     => 'message',
-			'message'  => devbase_events_status_html(),
+			'message'  => '',
 			'esc_html' => 0,
 		),
 	);
@@ -170,6 +170,12 @@ add_action( 'acf/init', function () {
 		),
 	) );
 } );
+
+// The Status tab and the two Remote setup status lines, worked out only when this page is shown, not on every
+// request (see devbase_message_when_shown()). Each builds its own escaped HTML.
+devbase_message_when_shown( 'field_devbase_licence_status', 'devbase_licence_status_html' );
+devbase_message_when_shown( 'field_devbase_heartbeat_status', 'devbase_heartbeat_status_html' );
+devbase_message_when_shown( 'field_devbase_events_status', 'devbase_events_status_html' );
 
 // ---------------------------------------------------------------------------
 // Accessors. Every one of these is read by inc/updates/; nothing else in the

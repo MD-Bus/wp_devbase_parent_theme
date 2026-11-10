@@ -46,11 +46,16 @@ function devbase_tracking_off_reason() {
 	return '';
 }
 
+// Every value here is read BY FIELD KEY, as in ../schema/organization.php. By name, SCF first reads the
+// `_options_{name}` reference row, and when it names a key this theme no longer has (a site saved before the
+// rename has `field_boostway_...`) it then searches the database for the field: three queries per value on
+// every page instead of one.
+
 // Google Tag Manager <head> snippet + GA4 gtag.js, right before </head>.
 function devbase_tracking_head() {
 	$analytics = devbase_tracking_enabled( 'analytics' );
-	$gtm_id = get_field( 'gtm_id', 'option' );
-	$ga4_id = get_field( 'ga4_id', 'option' );
+	$gtm_id = get_field( 'field_devbase_gtm_id', 'option' );
+	$ga4_id = get_field( 'field_devbase_ga4_id', 'option' );
 
 	if ( $analytics && ! empty( $gtm_id ) ) {
 		printf(
@@ -66,7 +71,7 @@ function devbase_tracking_head() {
 		);
 	}
 
-	$header_scripts = get_field( 'header_scripts', 'option' );
+	$header_scripts = get_field( 'field_devbase_header_scripts', 'option' );
 	if ( ! empty( $header_scripts ) && devbase_tracking_enabled( 'scripts' ) ) {
 		echo "<!-- Custom Header Scripts -->\n" . $header_scripts . "\n<!-- End Custom Header Scripts -->\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
@@ -81,7 +86,7 @@ add_action( 'wp_head', 'devbase_tracking_head' );
 // etc.) needs the same call, or this stays inert, same as WordPress
 // core's own contract for this hook.
 function devbase_tracking_body_open() {
-	$gtm_id = get_field( 'gtm_id', 'option' );
+	$gtm_id = get_field( 'field_devbase_gtm_id', 'option' );
 
 	if ( empty( $gtm_id ) || ! devbase_tracking_enabled( 'analytics' ) ) {
 		return;
@@ -96,7 +101,7 @@ add_action( 'wp_body_open', 'devbase_tracking_body_open' );
 
 // Custom footer scripts, right before </body>.
 function devbase_tracking_footer() {
-	$footer_scripts = get_field( 'footer_scripts', 'option' );
+	$footer_scripts = get_field( 'field_devbase_footer_scripts', 'option' );
 
 	if ( empty( $footer_scripts ) || ! devbase_tracking_enabled( 'scripts' ) ) {
 		return;

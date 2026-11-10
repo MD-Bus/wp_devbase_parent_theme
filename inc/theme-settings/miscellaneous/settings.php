@@ -123,7 +123,7 @@ add_action( 'acf/init', function () {
 				'label'             => __( 'Status', 'devbase_parent_theme' ),
 				'name'              => '',
 				'type'              => 'message',
-				'message'           => esc_html( devbase_forms_retention_last_run_message() ),
+				'message'           => '', // devbase_message_when_shown(), below the group.
 				'conditional_logic' => $retention_enabled_condition,
 			),
 
@@ -147,7 +147,7 @@ add_action( 'acf/init', function () {
 				'label'   => __( 'SMTP', 'devbase_parent_theme' ),
 				'name'    => '',
 				'type'    => 'message',
-				'message' => esc_html( devbase_smtp_last_test_message() ),
+				'message' => '',
 			),
 			// Every mail the site sends, not only the test button (inc/theme-settings/smtp/failures.php).
 			array(
@@ -155,7 +155,7 @@ add_action( 'acf/init', function () {
 				'label'   => __( 'Mail Delivery', 'devbase_parent_theme' ),
 				'name'    => '',
 				'type'    => 'message',
-				'message' => esc_html( devbase_mail_status_message() ),
+				'message' => '',
 			),
 			array(
 				'key'          => 'field_devbase_status_dispatch',
@@ -166,7 +166,7 @@ add_action( 'acf/init', function () {
 				// fields here — this one legitimately contains a real
 				// HTML failure table (built with its own per-cell
 				// esc_html() calls in status.php), not just plain text.
-				'message'      => devbase_forms_dispatch_status_message(), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'message'      => '',
 				'instructions' => __( 'Checks the most recent 50 dispatch attempts across all submissions.', 'devbase_parent_theme' ),
 			),
 			// What the forms' honeypot discarded (inc/helpers/forms/submit.php). A discarded submission is
@@ -176,14 +176,14 @@ add_action( 'acf/init', function () {
 				'label'   => __( 'Spam Trap', 'devbase_parent_theme' ),
 				'name'    => '',
 				'type'    => 'message',
-				'message' => esc_html( devbase_form_honeypot_status_message() ),
+				'message' => '',
 			),
 			array(
 				'key'     => 'field_devbase_status_retention',
 				'label'   => __( 'Retention Policy', 'devbase_parent_theme' ),
 				'name'    => '',
 				'type'    => 'message',
-				'message' => esc_html( devbase_forms_retention_last_run_message() ),
+				'message' => '',
 			),
 			// The bundled dependency versions. They change only with a
 			// theme release (see inc/dependencies/bundled-versions.php),
@@ -193,7 +193,7 @@ add_action( 'acf/init', function () {
 				'label'        => __( 'Bundled Dependencies', 'devbase_parent_theme' ),
 				'name'         => '',
 				'type'         => 'message',
-				'message'      => esc_html( devbase_bundled_versions_message() ),
+				'message'      => '',
 				'instructions' => __( 'Shipped with the theme and updated only by a theme update.', 'devbase_parent_theme' ),
 			),
 
@@ -260,7 +260,7 @@ add_action( 'acf/init', function () {
 				'label'        => __( 'MCP Activity', 'devbase_parent_theme' ),
 				'name'         => '',
 				'type'         => 'message',
-				'message'      => function_exists( 'devbase_abilities_audit_html' ) ? devbase_abilities_audit_html() : '', // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'message'      => '',
 				'instructions' => __( 'The last 20 changes made through MCP (kept 90 days), with the values an options page had before.', 'devbase_parent_theme' ),
 			),
 
@@ -345,6 +345,19 @@ add_action( 'acf/init', function () {
 		),
 	) );
 } );
+
+// The read-only status lines, worked out only when this page is shown (see devbase_message_when_shown()).
+// Re-evaluated on every load of the screen, never cached, as before.
+devbase_message_when_shown( 'field_devbase_retention_last_run', fn() => esc_html( devbase_forms_retention_last_run_message() ) );
+devbase_message_when_shown( 'field_devbase_status_smtp', fn() => esc_html( devbase_smtp_last_test_message() ) );
+devbase_message_when_shown( 'field_devbase_status_mail', fn() => esc_html( devbase_mail_status_message() ) );
+// Deliberately NOT esc_html()'d: a real HTML failure table, escaped per cell in status.php.
+devbase_message_when_shown( 'field_devbase_status_dispatch', 'devbase_forms_dispatch_status_message' );
+devbase_message_when_shown( 'field_devbase_status_honeypot', fn() => esc_html( devbase_form_honeypot_status_message() ) );
+devbase_message_when_shown( 'field_devbase_status_retention', fn() => esc_html( devbase_forms_retention_last_run_message() ) );
+devbase_message_when_shown( 'field_devbase_status_dependencies', fn() => esc_html( devbase_bundled_versions_message() ) );
+// Built with its own escaping (inc/abilities/audit-log.php).
+devbase_message_when_shown( 'field_devbase_mcp_activity', fn() => function_exists( 'devbase_abilities_audit_html' ) ? devbase_abilities_audit_html() : '' );
 
 // Dynamic choices for "Applies To" — see inc/forms/registry/choices.php.
 add_filter( 'acf/load_field/key=field_devbase_retention_apply_to', function ( $field ) {

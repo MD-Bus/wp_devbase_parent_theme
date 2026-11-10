@@ -55,6 +55,29 @@ class Test_Tracking_Gate extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'footerPixel', $html );
 	}
 
+	public function test_a_site_saved_under_the_old_field_keys_is_read_with_one_query_per_value() {
+		// A site saved before the rename has `field_boostway_...` in the reference row next to each value. By name,
+		// SCF then searched the database for that field: three queries per value on every page.
+		foreach ( array( 'gtm_id', 'ga4_id', 'header_scripts', 'footer_scripts' ) as $name ) {
+			update_option( "_options_{$name}", "field_boostway_{$name}" );
+		}
+		$this->environment( 'production' );
+		wp_cache_flush();
+
+		$sql   = array();
+		$watch = function ( $query ) use ( &$sql ) {
+			$sql[] = $query;
+			return $query;
+		};
+		add_filter( 'query', $watch );
+		$html = $this->page();
+		remove_filter( 'query', $watch );
+
+		$this->assertStringContainsString( 'GTM-TEST1', $html );
+		$this->assertStringContainsString( 'footerPixel', $html );
+		$this->assertSame( array(), preg_grep( "/'_options_|acf-field/", $sql ), 'No reference row read, no field searched for.' );
+	}
+
 	public function test_nothing_is_printed_on_staging_or_local() {
 		foreach ( array( 'staging', 'local', 'development' ) as $type ) {
 			$this->environment( $type );
