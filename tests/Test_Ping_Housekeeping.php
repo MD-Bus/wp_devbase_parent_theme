@@ -242,6 +242,23 @@ class Test_Ping_Housekeeping extends WP_UnitTestCase {
 		$this->assertSame( devbase_relay_time( 1793823580262 ), devbase_backup_time( 1793823580262 ), 'The backup list reads times the same way.' );
 	}
 
+	public function test_the_plan_dates_in_the_form_brand_relay_sends_them() {
+		// Brand Relay 0.43.0 (app/lib/plans.ts, subscriptionAnswer()) sends the `licence` dates of /v1/site as
+		// new Date(ms).toISOString(): ISO 8601, UTC, with milliseconds. An expiry is the last millisecond of its day.
+		$this->assertSame( gmmktime( 23, 59, 59, 1, 31, 2027 ), devbase_relay_time( '2027-01-31T23:59:59.999Z' ) );
+		$this->assertSame( gmmktime( 0, 0, 0, 11, 10, 2026 ), devbase_relay_time( '2026-11-10T00:00:00.000Z' ) );
+
+		$this->plan( array( 'health' ), array(
+			'starts_at'  => gmdate( 'Y-m-d\T00:00:00.000\Z', time() - DAY_IN_SECONDS ),
+			'expires_at' => gmdate( 'Y-m-d\T23:59:59.999\Z', time() + DAY_IN_SECONDS ),
+		) );
+		$this->assertTrue( devbase_relay_service_in_force( 'health' ) );
+		$this->assertSame( '', devbase_relay_plan()['problem'] ?? '', 'Nothing unreadable was recorded.' );
+
+		$this->plan( array( 'health' ), array( 'expires_at' => gmdate( 'Y-m-d\T23:59:59.999\Z', time() - 2 * DAY_IN_SECONDS ) ) );
+		$this->assertFalse( devbase_relay_service_in_force( 'health' ), 'Ended two days ago.' );
+	}
+
 	public function test_an_expiry_in_milliseconds_is_an_expiry() {
 		// Read with strtotime() alone, a number was "no date": the plan never ended.
 		$this->plan( array( 'health' ), array( 'expires_at' => ( time() - 60 ) * 1000 ) );
