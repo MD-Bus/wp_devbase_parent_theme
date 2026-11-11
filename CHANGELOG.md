@@ -10,6 +10,11 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.41.1] — 2026-11-11
+
+### Changed
+- The SEO Framework (vendored) updated from 5.2.0 to 5.2.1.
+
 ## [1.41.0] — 2026-11-10
 
 **Upgrade notes.**
