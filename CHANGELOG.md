@@ -10,6 +10,11 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.42.2] — 2026-11-11
+
+### Changed
+- No code change: a release to test that "[urgent]" in Warden's release notes skips the staged rollout.
+
 ## [1.42.1] — 2026-11-11
 
 ### Fixed
