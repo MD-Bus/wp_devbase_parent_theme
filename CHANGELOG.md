@@ -10,6 +10,13 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.41.2] — 2026-11-11
+
+### Changed
+- Error tracking no longer reports deprecation notices that come from a bundled plugin (WPvivid, WooCommerce). WPvivid's old Google/Guzzle
+  libraries raised the same ~25 PHP 8.4 deprecations on every daily run, so Brand Relay showed them again each day with nothing to fix here.
+  Warnings, notices and fatals from those plugins are still kept. `devbase/events/ignore_deprecations_in` changes the list of directories.
+
 ## [1.41.1] — 2026-11-11
 
 ### Changed

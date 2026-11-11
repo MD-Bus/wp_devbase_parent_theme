@@ -258,6 +258,20 @@ class Test_Events extends WP_UnitTestCase {
 		$this->assertFalse( devbase_events_flush(), 'Flushed once: the request has nothing left.' );
 	}
 
+	public function test_a_deprecation_from_a_bundled_plugin_is_not_kept_but_its_warnings_are() {
+		$dir = WP_PLUGIN_DIR . '/wpvivid-backuprestore/vendor/guzzlehttp/promises/src/Promise.php';
+		$this->warn( E_DEPRECATED, 'Implicitly marking parameter $waitFn as nullable is deprecated', $dir, 22 );
+		$this->warn( E_USER_DEPRECATED, 'Old thing', WP_PLUGIN_DIR . '/woocommerce/includes/a.php', 3 );
+		$this->warn( E_WARNING, 'Undefined array key "x"', $dir, 30 );
+		$this->warn( E_DEPRECATED, 'Function foo() is deprecated', WP_PLUGIN_DIR . '/some-client-plugin/b.php', 7 );
+
+		$this->assertTrue( devbase_events_flush() );
+
+		$queue = $this->queue();
+		$this->assertCount( 2, $queue, 'Only the bundled plugins\' deprecations are left out.' );
+		$this->assertSame( array( 'warning', 'notice' ), array_column( $queue, 'level' ) );
+	}
+
 	public function test_the_same_place_in_one_request_is_one_event_with_a_count() {
 		foreach ( range( 1, 500 ) as $i ) {
 			$this->warn( E_WARNING, "Undefined array key $i" );

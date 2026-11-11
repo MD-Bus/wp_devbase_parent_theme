@@ -294,6 +294,49 @@ function &devbase_events_state( $what = 'notes', $value = null ) {
 	return $notes;
 }
 
+/**
+ * Whether a deprecation comes from a plugin this theme bundles (WPvivid, WooCommerce): code we ship but cannot edit, whose
+ * deprecations (WPvivid's old Google/Guzzle libraries on PHP 8.4, say) fire again on every run and would be reported every day
+ * for nothing anyone can fix here. Only deprecations: a bundled plugin's warnings, notices and fatals are still kept.
+ * `devbase/events/ignore_deprecations_in` ( array of directories ) can change the list. Looked up once, only when a
+ * deprecation happens, so the handler stays cheap.
+ */
+function devbase_events_is_bundled_deprecation( $errno, $file ) {
+	static $dirs = null;
+
+	if ( E_DEPRECATED !== $errno && E_USER_DEPRECATED !== $errno ) {
+		return false;
+	}
+
+	if ( null === $dirs ) {
+		$dirs = array();
+
+		if ( function_exists( 'devbase_bundled_plugins' ) && defined( 'WP_PLUGIN_DIR' ) ) {
+			foreach ( devbase_bundled_plugins() as $def ) {
+				$folder = isset( $def['file'] ) ? dirname( (string) $def['file'] ) : '';
+
+				if ( '' !== $folder && '.' !== $folder ) {
+					$dirs[] = str_replace( '\\', '/', WP_PLUGIN_DIR ) . '/' . $folder . '/';
+				}
+			}
+		}
+
+		$dirs = array_map( function ( $dir ) {
+			return rtrim( str_replace( '\\', '/', (string) $dir ), '/' ) . '/';
+		}, (array) apply_filters( 'devbase/events/ignore_deprecations_in', $dirs ) );
+	}
+
+	$file = str_replace( '\\', '/', (string) $file );
+
+	foreach ( $dirs as $dir ) {
+		if ( 0 === strpos( $file, $dir ) ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 /** The PHP error handler. Notes the error, then hands it on exactly as PHP or the earlier handler would have. */
 function devbase_events_handler( $errno, $errstr, $errfile = '', $errline = 0 ) {
 	static $busy = false;
@@ -302,7 +345,7 @@ function devbase_events_handler( $errno, $errstr, $errfile = '', $errline = 0 ) 
 		$busy = true;
 
 		// `@` leaves only the fatal bits in error_reporting(): leave those errors alone.
-		if ( ( error_reporting() & ~4437 ) && null !== devbase_events_level( $errno ) ) {
+		if ( ( error_reporting() & ~4437 ) && null !== devbase_events_level( $errno ) && ! devbase_events_is_bundled_deprecation( $errno, $errfile ) ) {
 			$notes = &devbase_events_state( 'notes' );
 			$key   = $errno . '|' . $errfile . ':' . $errline;
 
