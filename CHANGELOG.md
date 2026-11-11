@@ -10,6 +10,19 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.42.0] — 2026-11-11
+
+### Added
+- **Two Management switches: Hide Registered Forms and Hide Form Data** (Theme Settings > Miscellaneous > Management), one for each menu. Both off by default.
+  When on, the menu leaves the admin menu; forms, storage and sending are untouched, and the screen still opens by its address.
+  `devbase/forms/hide_ui` decides it in code.
+- **Silent failures are now errors in Brand Relay.** While the plan has error tracking, three things that used to break without a sound are
+  queued as events of their own and sent like any PHP error: a mail that `wp_mail()` failed to send (type `mail`), a form submission that
+  could not be delivered, because a destination used up its tries or none applies (type `form`, one issue per form and kind of
+  destination), and a theme update that was rolled back (type `update`). Messages are stable so repeats group into one issue; the
+  reason goes in the event's context, scrubbed, and no recipient or submitted data is ever sent. `devbase_events_report()` is the one
+  function that does it.
+
 ## [1.41.2] — 2026-11-11
 
 ### Changed

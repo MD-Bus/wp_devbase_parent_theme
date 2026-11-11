@@ -210,6 +210,7 @@ function devbase_forms_dispatch( $post_id ) {
 			$form_name
 		);
 		error_log( '[Dev Base Forms] ' . $message );
+		devbase_forms_report_failure( (string) $form_name, 'no destination', '' );
 		devbase_forms_save_dispatch_log( $post_id, array(
 			array( 'success' => false, 'label' => __( 'No destinations configured', 'devbase_parent_theme' ), 'message' => $message ),
 		) );
@@ -248,6 +249,11 @@ function devbase_forms_dispatch( $post_id ) {
 		$result['key']      = $key;
 		$result['attempts'] = $tries + 1;
 
+		// Out of tries: the submission will not reach this destination. A lead that is lost without a sound.
+		if ( empty( $result['success'] ) && $result['attempts'] >= $max ) {
+			devbase_forms_report_failure( $form_name, $type, isset( $result['message'] ) ? (string) $result['message'] : '' );
+		}
+
 		if ( empty( $result['success'] ) && $result['attempts'] < $max ) {
 			$retry_at = 0 === $retry_at ? $result['attempts'] : min( $retry_at, $result['attempts'] );
 		}
@@ -262,11 +268,26 @@ function devbase_forms_dispatch( $post_id ) {
 			$post_id
 		);
 		error_log( '[Dev Base Forms] ' . $message );
+		devbase_forms_report_failure( (string) $form_name, 'no matching destination', '' );
 		$results[] = array( 'success' => false, 'label' => __( 'No matching destination', 'devbase_parent_theme' ), 'message' => $message );
 	}
 
 	devbase_forms_save_dispatch_log( $post_id, $results );
 	devbase_forms_dispatch_finish( $post_id, $retry_at );
+}
+
+/**
+ * Tells Brand Relay (error tracking) that a submission was not delivered. The message is stable per form and kind of
+ * destination, so a form that keeps failing is one issue with a count, not one per submission; no submitted data goes with it.
+ *
+ * @param string $form_name The form's name.
+ * @param string $kind      smtp, webhook, or what is missing.
+ * @param string $reason    Why, as the destination said it (scrubbed on the way).
+ */
+function devbase_forms_report_failure( $form_name, $kind, $reason ) {
+	if ( function_exists( 'devbase_events_report' ) ) {
+		devbase_events_report( 'form', sprintf( 'Form delivery failed: %s (%s)', $form_name, $kind ), array( 'form' => $form_name, 'destination' => $kind, 'reason' => $reason ) );
+	}
 }
 
 /**

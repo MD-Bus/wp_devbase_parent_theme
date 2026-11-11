@@ -159,3 +159,25 @@ add_action( 'init', function () {
 		'menu_icon'           => 'dashicons-email-alt',
 	) );
 } );
+
+/**
+ * Whether the Registered Forms menu, and the Form Data menu, are hidden: Theme Settings > Miscellaneous > Management, a switch
+ * for each. OFF by default (a site that already uses them keeps them). Hidden, not blocked: the screens open by their address,
+ * and forms, storage and sending are untouched. `devbase/forms/hide_ui` ( bool, which is `registered_form` or `form_data` ) can
+ * decide it in code.
+ *
+ * @param string $which registered_form or form_data.
+ */
+function devbase_forms_ui_hidden( $which ) {
+	$option = 'form_data' === $which ? 'hide_form_data_ui' : 'hide_registered_forms_ui';
+
+	return (bool) apply_filters( 'devbase/forms/hide_ui', devbase_switch_enabled( $option ), $which );
+}
+
+add_action( 'admin_menu', function () {
+	foreach ( array( 'registered_form', 'form_data' ) as $type ) {
+		if ( devbase_forms_ui_hidden( $type ) ) {
+			remove_menu_page( 'edit.php?post_type=' . $type );
+		}
+	}
+}, PHP_INT_MAX );

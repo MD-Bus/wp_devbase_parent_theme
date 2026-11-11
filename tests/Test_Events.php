@@ -272,6 +272,59 @@ class Test_Events extends WP_UnitTestCase {
 		$this->assertSame( array( 'warning', 'notice' ), array_column( $queue, 'level' ) );
 	}
 
+	// --- Failures that are not PHP errors: mail, forms ------------------------------------
+
+	public function test_a_silent_failure_is_queued_as_an_error_of_its_own_type() {
+		$this->assertTrue( devbase_events_report( 'mail', 'A mail failed to send', array( 'reason' => 'SMTP connect() failed for jane@example.com' ) ) );
+
+		$queue = $this->queue();
+		$this->assertCount( 1, $queue );
+		$this->assertSame( 'mail', $queue[0]['type'] );
+		$this->assertSame( 'error', $queue[0]['level'] );
+		$this->assertSame( 'A mail failed to send', $queue[0]['message'] );
+		$this->assertSame( 'SMTP connect() failed for [email]', $queue[0]['context']['reason'], 'No address leaves the site.' );
+	}
+
+	public function test_a_silent_failure_is_not_queued_when_the_plan_lacks_error_tracking() {
+		$this->plan( array( 'health' ) );
+
+		$this->assertFalse( devbase_events_report( 'mail', 'A mail failed to send' ) );
+		$this->assertCount( 0, $this->queue() );
+	}
+
+	public function test_a_failed_wp_mail_is_an_error_for_brand_relay() {
+		do_action( 'wp_mail_failed', new WP_Error( 'wp_mail_failed', 'Could not instantiate mail function.', array( 'to' => array( 'client@example.com' ) ) ) );
+
+		$queue = $this->queue();
+		$this->assertCount( 1, $queue );
+		$this->assertSame( 'mail', $queue[0]['type'] );
+		$this->assertStringNotContainsString( 'client@example.com', wp_json_encode( $queue ), 'The recipient is not sent.' );
+	}
+
+	public function test_the_same_silent_failure_is_one_event_not_one_per_occurrence() {
+		devbase_events_report( 'form', 'Form delivery failed: Contact (smtp)', array( 'form' => 'Contact' ) );
+		devbase_events_report( 'form', 'Form delivery failed: Contact (smtp)', array( 'form' => 'Contact' ) );
+		devbase_events_report( 'form', 'Form delivery failed: Quote (smtp)', array( 'form' => 'Quote' ) );
+
+		$this->assertCount( 2, $this->queue(), 'One per form and kind of destination.' );
+	}
+
+	public function test_a_submission_with_nowhere_to_go_is_an_error_for_brand_relay() {
+		$post_id = self::factory()->post->create( array( 'post_type' => 'form_data', 'post_status' => 'publish' ) );
+		update_post_meta( $post_id, 'form_name', 'Contact' );
+		update_post_meta( $post_id, 'content', wp_json_encode( array( 'name' => 'Jane' ) ) );
+		add_filter( 'acf/load_value/name=destinations', '__return_empty_array' );
+
+		devbase_forms_dispatch( $post_id );
+
+		remove_filter( 'acf/load_value/name=destinations', '__return_empty_array' );
+		$queue = $this->queue();
+		$this->assertCount( 1, $queue );
+		$this->assertSame( 'form', $queue[0]['type'] );
+		$this->assertSame( 'Form delivery failed: Contact (no destination)', $queue[0]['message'] );
+		$this->assertStringNotContainsString( 'Jane', wp_json_encode( $queue ), 'Nothing the visitor typed is sent.' );
+	}
+
 	public function test_the_same_place_in_one_request_is_one_event_with_a_count() {
 		foreach ( range( 1, 500 ) as $i ) {
 			$this->warn( E_WARNING, "Undefined array key $i" );

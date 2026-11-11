@@ -125,6 +125,45 @@ function devbase_events_build( array $error ) {
 	);
 }
 
+/**
+ * Reports a failure that is not a PHP error: mail that did not send, a form submission that could not be delivered, an
+ * update that was rolled back. Things that break silently (nothing fatal, nothing logged for the site owner) and would
+ * otherwise only be found when a client asks where their enquiry went. It becomes an event of its own `type` ('mail',
+ * 'form', 'update'), queued and sent like any other, so Brand Relay groups it into one issue and alerts on it.
+ *
+ * Only while the plan has error tracking in force. Keep $message STABLE (no ids, no recipients): it is what groups the
+ * repeats into one issue; what varies goes in $context (short strings, scrubbed here and again by Brand Relay).
+ *
+ * @param string               $type    A short word: mail, form, update.
+ * @param string               $message What failed, in one stable sentence.
+ * @param array<string,string> $context Extra facts: the reason, the form's name. Never a recipient or the content of a message.
+ * @param string               $level   error (default) or warning.
+ * @return bool Whether it was queued.
+ */
+function devbase_events_report( $type, $message, array $context = array(), $level = 'error' ) {
+	if ( ! function_exists( 'devbase_relay_service_in_force' ) || ! devbase_relay_service_in_force( 'events' ) ) {
+		return false;
+	}
+
+	try {
+		$base = devbase_events_build( array( 'message' => $message ) );
+		unset( $base['context']['plugin'], $base['context']['theme'] );
+
+		foreach ( $context as $key => $value ) {
+			$base['context'][ preg_replace( '/[^a-z0-9_.-]/', '_', strtolower( (string) $key ) ) ] = devbase_events_scrub( (string) $value, 200 );
+		}
+
+		$base['type']  = preg_replace( '/[^a-z0-9_.-]/', '_', strtolower( (string) $type ) ) ?: 'app';
+		$base['level'] = in_array( $level, array( 'error', 'warning' ), true ) ? $level : 'error';
+		$base['file']  = '';
+		$base['line']  = 0;
+
+		return devbase_events_enqueue( array( $base ) );
+	} catch ( Throwable $e ) {
+		return false; // Never let reporting a failure be a failure.
+	}
+}
+
 /** Two errors are the same when their kind, place and message (numbers aside) are. */
 function devbase_events_fingerprint( array $event ) {
 	return md5( $event['type'] . '|' . $event['file'] . '|' . $event['line'] . '|' . preg_replace( '/\d+/', '#', $event['message'] ) );

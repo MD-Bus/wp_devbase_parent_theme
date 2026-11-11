@@ -321,6 +321,16 @@ function devbase_update_after( $upgrader, $stylesheet ) {
 		$skin->feedback( esc_html( devbase_update_rollback_message( $state['log'][0] ) ) );
 	}
 
+	// A release that broke the site is an error for Brand Relay too (the site itself was put right, or could not be).
+	if ( function_exists( 'devbase_events_report' ) ) {
+		devbase_events_report(
+			'update',
+			$ok ? 'A theme update broke the site and was rolled back: ' . $stylesheet : 'A theme update broke the site and could not be rolled back: ' . $stylesheet,
+			array( 'version' => $to, 'reason' => $state['log'][0]['error'] ),
+			$ok ? 'warning' : 'error'
+		);
+	}
+
 	do_action( 'devbase/updates/rolled_back', $stylesheet, $to, $ok, $check );
 
 	return $result;

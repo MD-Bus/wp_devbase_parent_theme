@@ -52,6 +52,11 @@ function devbase_mail_record_failure( $error ) {
 	$log['failures'] = array_slice( $log['failures'], 0, DEVBASE_MAIL_LOG_KEEP );
 
 	update_option( DEVBASE_MAIL_LOG_OPTION, $log, false );
+
+	// Also an error for Brand Relay: a form notification, a password reset or an order mail that never leaves is silent.
+	if ( function_exists( 'devbase_events_report' ) ) {
+		devbase_events_report( 'mail', 'A mail failed to send', array( 'reason' => (string) $error->get_error_message() ) );
+	}
 }
 add_action( 'wp_mail_failed', 'devbase_mail_record_failure' );
 

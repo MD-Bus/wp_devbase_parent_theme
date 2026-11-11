@@ -333,6 +333,24 @@ add_action( 'acf/init', function () {
 				'default_value' => 1,
 				'instructions'  => __( 'When on (the default), the Custom Fields menu and its screens (field groups, post types, taxonomies, options pages, tools) are hidden and closed, so nobody changes the site\'s structure by accident. Everything the theme built keeps working, and the Theme Settings pages stay. Turn it off here to edit field groups.', 'devbase_parent_theme' ),
 			),
+			array(
+				'key'           => 'field_devbase_hide_registered_forms_ui',
+				'label'         => __( 'Hide Registered Forms', 'devbase_parent_theme' ),
+				'name'          => 'hide_registered_forms_ui',
+				'type'          => 'true_false',
+				'ui'            => 1,
+				'default_value' => 0,
+				'instructions'  => __( 'Off by default. When on, the Registered Forms menu is hidden from the admin menu. Forms keep working. Hidden is not blocked: the screen still opens by its address.', 'devbase_parent_theme' ),
+			),
+			array(
+				'key'           => 'field_devbase_hide_form_data_ui',
+				'label'         => __( 'Hide Form Data', 'devbase_parent_theme' ),
+				'name'          => 'hide_form_data_ui',
+				'type'          => 'true_false',
+				'ui'            => 1,
+				'default_value' => 0,
+				'instructions'  => __( 'Off by default. When on, the Form Data menu (the stored submissions) is hidden from the admin menu. Submissions are still stored and sent. Hidden is not blocked: the screen still opens by its address, for whoever needs a submission.', 'devbase_parent_theme' ),
+			),
 		),
 		'location' => array(
 			array(
@@ -455,4 +473,14 @@ function devbase_switch_on( $name ) {
 	$raw = get_option( 'options_' . $name, null );
 
 	return null === $raw || false === $raw || '' === $raw ? true : (bool) (int) $raw;
+}
+
+/**
+ * A Management switch that is OFF until someone saves it on (the opposite of devbase_switch_on()), for a
+ * switch that would otherwise change what a site already shows. Reads the saved option, like its sibling.
+ *
+ * @param string $name The field name (hide_registered_forms_ui, hide_form_data_ui).
+ */
+function devbase_switch_enabled( $name ) {
+	return (bool) (int) get_option( 'options_' . $name, 0 );
 }
