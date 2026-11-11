@@ -157,6 +157,19 @@ class Test_Update_Rollout extends WP_UnitTestCase {
 		$this->assertFalse( devbase_update_release_urgent( array( 'notes' => 'Not so urgent.' ) ), 'Only the marker, not the word.' );
 	}
 
+	public function test_urgent_in_wardens_public_release_notes_skips_the_wait() {
+		$release = $this->release( '99.0.0', 0, array( 'changelog' => 'Fixes a login bug. [urgent]' ) );
+
+		$this->assertSame( 0, devbase_update_rollout_due_at( get_template(), $release ) );
+	}
+
+	public function test_the_wait_counts_from_wardens_released_at() {
+		$release = $this->release( '99.0.0', 0, array( 'released_at' => gmdate( 'c', time() - 7 * HOUR_IN_SECONDS ) ) );
+		unset( $release['uploaded_at'] );
+
+		$this->assertLessThan( time(), devbase_update_rollout_due_at( get_template(), $release ), 'Released 7 hours ago: past the 6-hour window.' );
+	}
+
 	public function test_a_publication_time_far_ahead_is_not_believed() {
 		$release = $this->release( '99.0.0', -30 * DAY_IN_SECONDS );
 
@@ -244,6 +257,49 @@ class Test_Update_Rollout extends WP_UnitTestCase {
 		$row = devbase_licence_status_row( get_template(), self::LICENCE );
 		$this->assertStringContainsString( esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $due ) ), $row );
 		$this->assertStringContainsString( '99.0.0', $row );
+	}
+
+	public function test_make_available_skips_the_wait_for_that_release_only() {
+		$release = $this->release( '99.0.0', 0 );
+		$due     = devbase_update_rollout_due_at( get_template(), $release );
+		if ( $due <= time() ) {
+			$this->markTestSkipped( 'This site address falls in the first seconds of the window.' );
+		}
+		devbase_warden_check( get_template(), self::LICENCE, devbase_update_installed_version( get_template() ), true );
+		$this->assertNull( $this->offered() );
+
+		$this->assertSame( '99.0.0', devbase_update_make_available( get_template() ) );
+		$this->assertSame( 0, devbase_update_rollout_due_at( get_template(), $release ) );
+		$this->assertSame( '99.0.0', $this->offered() );
+		$this->assertFalse( wp_next_scheduled( DEVBASE_UPDATE_ROLLOUT_HOOK, array( get_template() ) ), 'The wake-up is no longer needed.' );
+
+		$next = $this->release( '99.1.0', 0 );
+		$this->assertGreaterThan( 0, devbase_update_rollout_due_at( get_template(), $next ), 'The next release waits again.' );
+	}
+
+	public function test_make_available_does_nothing_when_nothing_is_waiting() {
+		$this->release( '99.0.0', 7 * HOUR_IN_SECONDS );
+		devbase_warden_check( get_template(), self::LICENCE, devbase_update_installed_version( get_template() ), true );
+
+		$this->assertNull( devbase_update_make_available( get_template() ) );
+	}
+
+	public function test_the_make_available_button_is_off_until_the_management_switch_is_on() {
+		$release = $this->release( '99.0.0', 0 );
+		if ( devbase_update_rollout_due_at( get_template(), $release ) <= time() ) {
+			$this->markTestSkipped( 'This site address falls in the first seconds of the window.' );
+		}
+		devbase_warden_check( get_template(), self::LICENCE, devbase_update_installed_version( get_template() ), true );
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+
+		$this->assertFalse( devbase_update_make_available_enabled() );
+		$this->assertStringNotContainsString( 'Make available now', devbase_licence_status_row( get_template(), self::LICENCE ) );
+
+		update_option( 'options_allow_make_available', '1' );
+		$this->assertTrue( devbase_update_make_available_enabled() );
+		$this->assertStringContainsString( 'Make available now', devbase_licence_status_row( get_template(), self::LICENCE ) );
+
+		delete_option( 'options_allow_make_available' );
 	}
 
 	public function test_the_due_event_refreshes_the_update_list() {

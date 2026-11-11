@@ -7,14 +7,14 @@
 //   - The wait is a fixed share of the window per site and per release (a hash of the site's address,
 //     the theme and the version), so the same sites are not always first and a site's place does not
 //     change between two checks.
-//   - It counts from the release's `uploaded_at` (Warden's), or from when this site first saw the
+//   - It counts from the release's `released_at` (Warden's; `uploaded_at` is read too), or from when this site first saw the
 //     release when Warden sends none, or a time this site cannot believe (more than a day ahead).
 //   - When the wait is over, Warden is asked again before anything is offered, so a release withdrawn
 //     meanwhile is not installed from a 12-hour-old cached answer. If Warden cannot be reached then, the
 //     cached answer stands, as everywhere else (fail-soft).
 //   - A single WP-Cron event at the due time refreshes the update list and runs WordPress's unattended
 //     updates, so the install does not wait for core's next twice-daily check.
-//   - Skipped for an urgent release: `urgent: true` in Warden's release, or "[urgent]" in its notes.
+//   - Skipped for an urgent release: `urgent: true` in Warden's release, or "[urgent]" in its release notes (its `changelog`).
 //     The filter `devbase/updates/rollout_window` sets the window in seconds; 0 turns staging off.
 //
 // Also here: a version this site rolled back (inc/updates/rollback.php) is never offered again; the
@@ -30,7 +30,11 @@ function devbase_update_rollout_window() {
 
 /** Whether a release skips the wait. */
 function devbase_update_release_urgent( array $release ) {
-	$urgent = ! empty( $release['urgent'] ) || false !== stripos( (string) ( $release['notes'] ?? '' ), '[urgent]' );
+	// Warden's check answer carries the public release notes as `changelog` (its internal `notes` never leave Warden), so
+	// "[urgent]" is looked for in both.
+	$urgent = ! empty( $release['urgent'] )
+		|| false !== stripos( (string) ( $release['changelog'] ?? '' ), '[urgent]' )
+		|| false !== stripos( (string) ( $release['notes'] ?? '' ), '[urgent]' );
 
 	return (bool) apply_filters( 'devbase/updates/release_urgent', $urgent, $release );
 }
@@ -77,7 +81,15 @@ function devbase_update_rollout_due_at( $stylesheet, array $release ) {
 	}
 
 	$entry = devbase_update_rollout_entry( $stylesheet, (string) $release['version'] );
-	$start = ! empty( $release['uploaded_at'] ) ? strtotime( (string) $release['uploaded_at'] ) : false;
+
+	// An administrator pressed "Make available now" for this very version (the entry starts afresh with each new version).
+	if ( ! empty( $entry['released_now'] ) ) {
+		return 0;
+	}
+
+	// Warden's check answer says `released_at`; `uploaded_at` is what its file list says.
+	$when  = (string) ( $release['released_at'] ?? $release['uploaded_at'] ?? '' );
+	$start = '' !== $when ? strtotime( $when ) : false;
 
 	if ( ! $start || $start > time() + DAY_IN_SECONDS ) {
 		$start = (int) $entry['seen_at'];
@@ -162,6 +174,67 @@ function devbase_update_rollout_waiting( $stylesheet, $release ) {
 
 	return $due > time() ? array( 'version' => (string) $release['version'], 'due' => $due ) : null;
 }
+
+// --- Make available now ---------------------------------------------------------------------------------
+//
+// An administrator can skip the wait for THIS site and THIS release: a button on the Licence status tab, there only while
+// Theme Settings > Miscellaneous > Management > "Allow Make available now" is on (off by default, so a client's administrator
+// does not bypass the staging unless it was handed to them). It marks the release as released here, refreshes the update list,
+// and sends the administrator to Dashboard > Updates, where the update is now offered like any other. It installs nothing by itself.
+
+/** Whether the "Make available now" button is offered. */
+function devbase_update_make_available_enabled() {
+	return (bool) apply_filters( 'devbase/updates/make_available_enabled', devbase_switch_enabled( 'allow_make_available' ) );
+}
+
+/** The address of the button (a GET with a nonce, like the form Resend link). */
+function devbase_update_make_available_url( $stylesheet ) {
+	return wp_nonce_url(
+		add_query_arg( array( 'action' => 'devbase_make_available', 'theme' => $stylesheet ), admin_url( 'admin-post.php' ) ),
+		'devbase_make_available_' . $stylesheet
+	);
+}
+
+/**
+ * Skips the wait for the release this track is waiting on .
+ *
+ * @return string|null The version released, or null when nothing is waiting.
+ */
+function devbase_update_make_available( $stylesheet ) {
+	$state     = devbase_warden_get_state( $stylesheet );
+	$response  = isset( $state['response'] ) && is_array( $state['response'] ) ? $state['response'] : array();
+	$installed = devbase_update_installed_version( $stylesheet );
+	$release   = ( $response && null !== $installed ) ? devbase_warden_pending_update( $response, $installed ) : null;
+
+	if ( null === $release || null === devbase_update_rollout_waiting( $stylesheet, $release ) ) {
+		return null;
+	}
+
+	$entry                 = devbase_update_rollout_entry( $stylesheet, (string) $release['version'] );
+	$entry['released_now'] = time();
+	devbase_update_rollout_save( $stylesheet, $entry );
+
+	wp_clear_scheduled_hook( DEVBASE_UPDATE_ROLLOUT_HOOK, array( $stylesheet ) );
+	delete_site_transient( 'update_themes' );
+	wp_update_themes();
+
+	return (string) $release['version'];
+}
+
+add_action( 'admin_post_devbase_make_available', function () {
+	$stylesheet = isset( $_GET['theme'] ) ? sanitize_text_field( wp_unslash( $_GET['theme'] ) ) : '';
+
+	check_admin_referer( 'devbase_make_available_' . $stylesheet );
+
+	if ( ! current_user_can( 'update_themes' ) || ! devbase_update_make_available_enabled() ) {
+		wp_die( esc_html__( 'You are not allowed to release this update.', 'devbase_parent_theme' ), 403 );
+	}
+
+	devbase_update_make_available( $stylesheet );
+
+	wp_safe_redirect( admin_url( 'update-core.php' ) );
+	exit;
+} );
 
 // The due time: refresh the theme update list (our filter now offers the release), then run
 // WordPress's unattended updates, as core's own twice-daily event does.

@@ -115,6 +115,10 @@ function devbase_licence_status_row( $stylesheet, $licence ) {
 			esc_html( $waiting['version'] ),
 			esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $waiting['due'] ) )
 		);
+
+		if ( function_exists( 'devbase_update_make_available_enabled' ) && devbase_update_make_available_enabled() && current_user_can( 'update_themes' ) ) {
+			$update_cell .= '<br><a class="button button-small" href="' . esc_url( devbase_update_make_available_url( $stylesheet ) ) . '">' . esc_html__( 'Make available now', 'devbase_parent_theme' ) . '</a>';
+		}
 	} elseif ( null !== $update ) {
 		/* translators: %s: the new version number available. */
 		$update_cell = sprintf( esc_html__( 'Version %s available', 'devbase_parent_theme' ), esc_html( (string) $update['version'] ) );

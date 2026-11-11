@@ -334,6 +334,15 @@ add_action( 'acf/init', function () {
 				'instructions'  => __( 'When on (the default), the Custom Fields menu and its screens (field groups, post types, taxonomies, options pages, tools) are hidden and closed, so nobody changes the site\'s structure by accident. Everything the theme built keeps working, and the Theme Settings pages stay. Turn it off here to edit field groups.', 'devbase_parent_theme' ),
 			),
 			array(
+				'key'           => 'field_devbase_allow_make_available',
+				'label'         => __( 'Allow Make available now', 'devbase_parent_theme' ),
+				'name'          => 'allow_make_available',
+				'type'          => 'true_false',
+				'ui'            => 1,
+				'default_value' => 0,
+				'instructions'  => __( 'Off by default. When on, the Licence status tab shows a Make available now button beside a release that is waiting for its staged rollout. It skips the wait on this site only: the update then appears on Dashboard > Updates like any other, and nothing is installed until you update it. Turn it off to keep the staging for everyone on this site.', 'devbase_parent_theme' ),
+			),
+			array(
 				'key'           => 'field_devbase_hide_registered_forms_ui',
 				'label'         => __( 'Hide Registered Forms', 'devbase_parent_theme' ),
 				'name'          => 'hide_registered_forms_ui',

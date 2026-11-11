@@ -10,6 +10,19 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.42.1] — 2026-11-11
+
+### Fixed
+- **Staged rollout read the wrong Warden fields.** Warden's check answer carries a release's public notes as `changelog` and its time as `released_at`; the
+  theme looked for `notes` and `uploaded_at`, which that answer does not hold. So "[urgent]" in a release's notes in Warden never skipped the wait, and the
+  wait counted from when the site first saw the release. Both fields are now read (the old names too). From the version that has this, a release with
+  "[urgent]" in its Warden release notes is offered at once.
+
+### Added
+- **Make available now.** A button on the Licence status tab, beside a release that is waiting for its staged rollout, skips the wait on that site for that
+  release: the update appears on Dashboard > Updates like any other, and nothing is installed until you update it. It is there only while the new
+  Management switch **Allow Make available now** is on; off by default. `devbase/updates/make_available_enabled` decides it in code.
+
 ## [1.42.0] — 2026-11-11
 
 ### Added
