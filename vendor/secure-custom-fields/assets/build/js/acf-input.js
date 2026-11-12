@@ -5196,9 +5196,13 @@ __webpack_require__.r(__webpack_exports__);
         return;
       }
 
-      // Wait until the list can be scrolled
-      const $list = this.$list('choices');
+      // Load the next page when the list is scrolled to the bottom. Posts the current user can't read are
+      // left out of results, so a page may add too few choices to scroll, or none, so this also runs
+      // after each page loads, and when a hidden field is shown.
+      var $list = this.$list('choices');
       if (!$list.is(':visible')) {
+        // Fields inside a Group, or in a meta box that was collapsed, aren't sent the showField event, so
+        // also resume once the list comes into view.
         if (!this.get('waitingForView')) {
           this.set('waitingForView', true);
           acf.onceInView($list, this.proxy(function () {
@@ -5208,8 +5212,6 @@ __webpack_require__.r(__webpack_exports__);
         }
         return;
       }
-
-      // Scrolled to bottom
       var scrollTop = Math.ceil($list.scrollTop());
       var scrollHeight = Math.ceil($list[0].scrollHeight);
       var innerHeight = Math.ceil($list.innerHeight());
@@ -5369,7 +5371,7 @@ __webpack_require__.r(__webpack_exports__);
 
       // add to this.o
       const ajaxData = this.getAjaxData();
-      const ajaxDataJson = JSON.stringify(ajaxData);
+      const query = JSON.stringify(ajaxData);
 
       // clear html if is new query
       var $choiceslist = this.$list('choices');
@@ -5383,18 +5385,18 @@ __webpack_require__.r(__webpack_exports__);
       this.set('loading', true);
 
       // callback
-      var onComplete = function (jqXHR, status) {
+      const onComplete = function (jqXHR, status) {
         this.set('loading', false);
         $loading.remove();
 
-        // Keep loading while the list doesn't fill up, unless the query has changed
-        if ('success' === status && JSON.stringify(this.getAjaxData()) === ajaxDataJson) {
+        // Only page on if the search hasn't changed since this page was requested.
+        if ('success' === status && JSON.stringify(this.getAjaxData()) === query) {
           this.maybeFetchMore();
         }
       };
       var onSuccess = function (json) {
-        // This page's posts were all left out, but later pages may have more
-        if (json && json.more && !(json.results && json.results.length)) {
+        // A page can be empty when the current user can't read any of its posts, so keep paging.
+        if (json && json.more && (!json.results || !json.results.length)) {
           this.set('more', true);
           return;
         }
@@ -5404,7 +5406,7 @@ __webpack_require__.r(__webpack_exports__);
           // prevent pagination
           this.set('more', false);
 
-          // add message
+          // add message, also when earlier pages were empty
           if (!$choiceslist.find('.acf-rel-item').length) {
             this.$list('choices').append('<li>' + acf.__('No matches found') + '</li>');
           }
@@ -10017,7 +10019,8 @@ __webpack_require__.r(__webpack_exports__);
         $prevGroup = $group;
       });
 
-      // Remove the "No results" message once a later page has added options
+      // A page can be empty when the current user can't read any of its posts. Select2 then shows
+      // its "No results found" message, and doesn't remove it when later pages add results.
       const $results = $('.select2-container--open .select2-results__options').first();
       if ($results.children('.select2-results__option:not(.select2-results__message):not(.loading-results)').length) {
         $results.children('.select2-results__message').remove();
