@@ -10,6 +10,12 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.42.3] — 2026-11-12
+
+### Changed
+- Dependencies: Secure Custom Fields 6.9.8 -> 6.9.9 (a security release: taxonomy, profile and Gallery saves now check the user's permissions, and SCF never reads
+  or writes the user metadata WordPress uses for roles, capabilities or sign-in) and the bundled WooCommerce 11.2.2 -> 11.3.0 (Dependabot pull requests 10 and 11, merged).
+
 ## [1.42.2] — 2026-11-11
 
 ### Changed
