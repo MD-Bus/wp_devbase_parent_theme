@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8efe40f3c2b2815efab70c7ece07527a",
+    "content-hash": "bd597ff41340ac668fdda7f26a60840c",
     "packages": [
         {
             "name": "composer/installers",
@@ -154,15 +154,15 @@
         },
         {
             "name": "wp-plugin/woocommerce",
-            "version": "11.2.2",
+            "version": "11.3.0",
             "source": {
                 "type": "svn",
                 "url": "https://plugins.svn.wordpress.org/woocommerce/",
-                "reference": "tags/11.2.2"
+                "reference": "tags/11.3.0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/woocommerce.11.2.2.zip"
+                "url": "https://downloads.wordpress.org/plugin/woocommerce.11.3.0.zip"
             },
             "require": {
                 "composer/installers": "~1.0|~2.0"
@@ -181,7 +181,7 @@
                 "issues": "https://wordpress.org/support/plugin/woocommerce",
                 "source": "https://plugins.svn.wordpress.org/woocommerce"
             },
-            "time": "2026-11-04T21:34:49+00:00"
+            "time": "2026-11-11T16:56:56+00:00"
         },
         {
             "name": "wp-plugin/wpvivid-backuprestore",
