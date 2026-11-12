@@ -105,6 +105,25 @@ if ( $devbase_tsf_hide_branding ) {
 	add_filter( 'the_seo_framework_indicator_sitemap', '__return_false' );
 }
 
+// Jetpack's SEO output is switched off (WordPress.com hosting always has Jetpack, and it prints a second set of social tags). Jetpack's
+// Open Graph tags go beside TSF's, and Jetpack picks the first picture on the page for og:image: on a home page with a hero background
+// that made Facebook show the hero instead of the social image set in TSF (Twitter/X read TSF's own tag, so the two disagreed). Off here:
+// its Open Graph and Twitter card tags, and its SEO Tools and Sitemaps modules (TSF does both jobs), which can then not be switched on.
+// Only filters, so nothing runs and nothing is checked on a site without Jetpack. Jetpack's Site Accelerator (the image CDN) is not SEO and
+// stays. `devbase/tsf/disable_jetpack_seo` (bool, default true) leaves Jetpack alone. Only the theme's own copy of TSF (the returns above).
+if ( apply_filters( 'devbase/tsf/disable_jetpack_seo', true ) ) {
+	add_filter( 'jetpack_enable_open_graph', '__return_false' );
+	add_filter( 'jetpack_disable_twitter_cards', '__return_true' );
+	add_filter( 'jetpack_get_available_modules', 'devbase_tsf_remove_jetpack_seo_modules' );
+}
+
+/** Takes Jetpack's SEO Tools and Sitemaps modules out of the list it can switch on. */
+function devbase_tsf_remove_jetpack_seo_modules( $modules ) {
+	unset( $modules['seo-tools'], $modules['sitemaps'] );
+
+	return $modules;
+}
+
 // The organization is described on the theme's Organization Details page (inc/theme-settings/schema/), which replaces what TSF
 // holds for it. So TSF's own "Presence" tab (this website represents an Organization or a Person, its name, logo and nine profile
 // links) is taken out of its Schema settings box, through TSF's `the_seo_framework_schema_settings_tabs` filter: two places for the

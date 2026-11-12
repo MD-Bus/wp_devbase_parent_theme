@@ -60,6 +60,17 @@ class Test_TSF_Loader extends WP_UnitTestCase {
 		$this->assertFalse( The_SEO_Framework\Admin\Utils::display_extension_suggestions() );
 	}
 
+	// --- Jetpack's SEO output is switched off (only for the theme's copy) ----------------
+
+	public function test_jetpacks_social_tags_and_seo_modules_are_switched_off() {
+		$this->assertFalse( apply_filters( 'jetpack_enable_open_graph', true ) );
+		$this->assertTrue( apply_filters( 'jetpack_disable_twitter_cards', false ) );
+
+		$modules = apply_filters( 'jetpack_get_available_modules', array( 'seo-tools' => '1', 'sitemaps' => '1', 'photon' => '1' ) );
+
+		$this->assertSame( array( 'photon' ), array_keys( $modules ), 'Site Accelerator stays; SEO Tools and Sitemaps go.' );
+	}
+
 	// --- TSF's own organization fields are hidden (only for the theme's copy) ------------
 
 	public function test_tsfs_presence_tab_is_removed_and_the_other_schema_tabs_stay() {

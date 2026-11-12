@@ -10,6 +10,14 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.43.0] — 2026-11-12
+
+### Added
+- **Jetpack's SEO output is switched off while The SEO Framework runs from the theme.** On WordPress.com hosting Jetpack printed its own Open Graph tags next to
+  TSF's and took the picture from the first image on the page, so sharing a home page with a hero background on Facebook showed the hero instead of the social image
+  set in TSF. Jetpack's Open Graph and Twitter card tags are now off, and its SEO Tools and Sitemaps modules can no longer be switched on (TSF does both jobs). Its image
+  CDN stays. No "is Jetpack installed" check is needed: these are filters. `devbase/tsf/disable_jetpack_seo` (default true) leaves Jetpack alone.
+
 ## [1.42.3] — 2026-11-12
 
 ### Changed
