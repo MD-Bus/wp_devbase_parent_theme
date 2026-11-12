@@ -6,7 +6,7 @@
         }
     ],
     "require": {
-        "wp-plugin/woocommerce": "11.2.2",
+        "wp-plugin/woocommerce": "11.3.0",
         "wp-plugin/wpvivid-backuprestore": "0.9.140"
     },
     "extra": {
