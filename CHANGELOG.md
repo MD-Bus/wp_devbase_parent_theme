@@ -10,6 +10,14 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.45.1] — 2026-11-15
+
+### Fixed
+- **WooCommerce's "Multipart" emails went to Brevo as plain text.** With that email type WooCommerce sends the HTML body
+  as `multipart/alternative` and adds the text part itself through PHPMailer, which the Email API route never runs, so
+  customers would have seen raw HTML. `multipart/alternative` is now sent as HTML. WooCommerce's default type (HTML) was
+  already right; a test now covers both, set through the `wp_mail_content_type` filter as WooCommerce does.
+
 ## [1.45.0] — 2026-11-15
 
 ### Added

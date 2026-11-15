@@ -229,7 +229,9 @@ function devbase_mail_api_message( array $atts, array $settings ) {
 		'reply_to'    => devbase_mail_api_addresses( $reply_to ),
 		'subject'     => (string) ( $atts['subject'] ?? '' ),
 		'body'        => (string) ( $atts['message'] ?? '' ),
-		'html'        => 'text/html' === strtolower( $content_type ),
+		// multipart/alternative is WooCommerce's "Multipart" email type: the body is the HTML, and WooCommerce adds the
+		// plain-text part itself in phpmailer_init, which an API route never runs. The service gets the HTML.
+		'html'        => in_array( strtolower( $content_type ), array( 'text/html', 'multipart/alternative' ), true ),
 		'charset'     => $charset,
 		'headers'     => $custom,
 		'attachments' => $files,

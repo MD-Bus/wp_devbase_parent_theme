@@ -156,6 +156,32 @@ class Test_Mail_API extends WP_UnitTestCase {
 		unlink( $file );
 	}
 
+	public function test_html_set_through_the_content_type_filter_as_woocommerce_does() {
+		$this->brevo_on();
+
+		// WooCommerce: the filter on during its send, and its header with "\r\n" line ends.
+		$type = function () {
+			return 'text/html';
+		};
+		add_filter( 'wp_mail_content_type', $type );
+		wp_mail( 'customer@example.test', 'Your order', '<h1>Thanks</h1>', "Content-Type: text/html\r\nReply-to: Shop <shop@nonprofit.test>\r\n" );
+		remove_filter( 'wp_mail_content_type', $type );
+
+		$this->assertSame( '<h1>Thanks</h1>', $this->requests[0]['body']['htmlContent'] );
+		$this->assertSame( array( 'email' => 'shop@nonprofit.test', 'name' => 'Shop' ), $this->requests[0]['body']['replyTo'] );
+
+		// WooCommerce's "Multipart" email type: the body is HTML.
+		$multipart = function () {
+			return 'multipart/alternative';
+		};
+		add_filter( 'wp_mail_content_type', $multipart );
+		wp_mail( 'customer@example.test', 'Your order', '<h1>Thanks</h1>' );
+		remove_filter( 'wp_mail_content_type', $multipart );
+
+		$this->assertSame( '<h1>Thanks</h1>', $this->requests[1]['body']['htmlContent'] );
+		$this->assertArrayNotHasKey( 'textContent', $this->requests[1]['body'] );
+	}
+
 	public function test_the_site_name_is_the_sender_name_when_none_is_saved() {
 		$this->brevo_on();
 		update_field( 'mail_api_from_name', '', 'option' );
