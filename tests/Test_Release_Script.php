@@ -45,6 +45,19 @@ class Test_Release_Script extends WP_UnitTestCase {
 		$this->assertSame( 1, substr_count( $script, 'git tag -a' ), 'One place creates the tag.' );
 	}
 
+	public function test_the_tag_carries_a_title_and_the_changelog_not_the_bare_version() {
+		$script = $this->script();
+
+		$this->assertStringNotContainsString( '-m "$VERSION"', $script, 'v1.44.0 went out annotated "1.44.0" and nothing else.' );
+		$this->assertStringContainsString( 'git tag -a "$TAG" --cleanup=verbatim -m "$TAG_MESSAGE"', $script );
+		$this->assertStringContainsString( 'changelog_section "$VERSION"', substr( $script, strpos( $script, 'TAG_MESSAGE=' ) ), 'The body is the CHANGELOG section.' );
+		$this->assertLessThan(
+			$this->position( $script, 'git push "$REMOTE" "$BRANCH"' ),
+			$this->position( $script, 'TAG_MESSAGE=' ),
+			'A release commit without a headline is refused before anything is pushed.'
+		);
+	}
+
 	public function test_the_tag_is_never_pushed_together_with_the_branch() {
 		$script = $this->script();
 

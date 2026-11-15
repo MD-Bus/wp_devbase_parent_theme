@@ -37,7 +37,7 @@
 #   9. after a confirmation, the branch is pushed and the Tests workflow on
 #      that commit is green (PHP 8.2 and 8.4)
 #
-# Then: `git tag -a vX.Y.Z -m X.Y.Z` and a push of the tag alone. The commit it
+# Then: `git tag -a vX.Y.Z` (titled "vX.Y.Z: <headline>", the CHANGELOG section as its body) and a push of the tag alone. The commit it
 # points to is already on the branch, so the tag never lands on GitHub without
 # it. A failed push removes the local tag so the script can simply be run
 # again; so does a red CI, with nothing tagged and nothing published.
@@ -197,6 +197,20 @@ if ! changelog_section "$VERSION" | grep -q '[^[:space:]]'; then
 	fail "the [$VERSION] section in CHANGELOG.md is empty."
 fi
 echo "    ok: $FIRST_RELEASE"
+
+# The tag's annotation is what people read about the release (git show, the
+# tag page on GitHub): a title and the notes, never the bare version number.
+# Title: "vX.Y.Z: <headline>", the headline taken from the release commit's
+# subject ("Release X.Y.Z: <headline>"). Body: this version's CHANGELOG section.
+# Checked here, before anything is pushed.
+RELEASE_SUBJECT="$(git log -1 --format=%s)"
+HEADLINE="${RELEASE_SUBJECT#Release $VERSION: }"
+if [ "$HEADLINE" = "$RELEASE_SUBJECT" ] || [ -z "$(printf '%s' "$HEADLINE" | tr -d '[:space:]')" ]; then
+	fail "the release commit's subject is '$RELEASE_SUBJECT'." \
+		"It must read 'Release $VERSION: <headline>': the headline becomes the tag's title."
+fi
+TAG_MESSAGE="$(printf 'v%s: %s\n\n%s\n' "$VERSION" "$HEADLINE" "$(changelog_section "$VERSION" | sed '/./,$!d')")"
+echo "    ok: tag title 'v$VERSION: $HEADLINE'"
 
 # --- 6. Not behind the remote ----------------------------------------------
 
@@ -428,7 +442,7 @@ fi
 
 # --- Tag and push ----------------------------------------------------------
 
-git tag -a "$TAG" -m "$VERSION"
+git tag -a "$TAG" --cleanup=verbatim -m "$TAG_MESSAGE"
 
 if ! git push "$REMOTE" "refs/tags/$TAG"; then
 	git tag -d "$TAG" >/dev/null

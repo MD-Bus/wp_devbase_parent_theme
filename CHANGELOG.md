@@ -10,6 +10,20 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.44.1] — 2026-11-15
+
+### Fixed
+- **The first row of a repeater in the Theme Settings app hid its "add row" button.** SCF draws a row's add and duplicate
+  buttons 8px above the row, and the app clipped the repeater table (`overflow: hidden`) to round its corners, so on the
+  first row they were cut off. The corners are now rounded on the corner cells, the table is no longer clipped, and those
+  buttons sit just inside the row. Repeater rows also have more room at their top and bottom (24px) and between their
+  fields (18px).
+
+### Changed
+- `bin/release.sh` annotates the tag with a title and the release notes ("vX.Y.Z: <headline>", taken from the release
+  commit's subject, then this version's CHANGELOG section) instead of the bare version number, and refuses a release commit
+  whose subject is not "Release X.Y.Z: <headline>" before anything is pushed.
+
 ## [1.44.0] — 2026-11-15
 
 ### Added

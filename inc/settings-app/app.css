@@ -190,16 +190,53 @@
 	padding: 0 14px !important;
 }
 
-/* A repeater row: a little more room inside its cells, and the row number column centred. */
+/* A repeater row: a little more room inside its cells, more at the top and bottom of each row, and the row number
+   column centred. */
 .devbase-app .acf-repeater .acf-row > .acf-fields > .acf-field,
 .devbase-app .acf-repeater .acf-row > td.acf-fields > .acf-field {
-	padding: 16px 16px;
+	padding: 18px 16px;
 }
 
+.devbase-app .acf-repeater .acf-row > .acf-fields > .acf-field:first-child,
+.devbase-app .acf-repeater .acf-row > td.acf-fields > .acf-field:first-child {
+	padding-top: 24px;
+}
+
+.devbase-app .acf-repeater .acf-row > .acf-fields > .acf-field:last-child,
+.devbase-app .acf-repeater .acf-row > td.acf-fields > .acf-field:last-child {
+	padding-bottom: 24px;
+}
+
+/* Rounded corners WITHOUT overflow: hidden. SCF puts a row's "add row" and "duplicate" buttons 8px above the row
+   (top: 0; margin-top: -8px), so clipping the table hid them on the first row. The corner cells are rounded instead. */
 .devbase-app .acf-repeater .acf-table {
 	border-color: var(--da-line);
+	border-collapse: separate;
 	border-radius: 10px;
-	overflow: hidden;
+}
+
+.devbase-app .acf-repeater .acf-table > thead > tr:first-child > th:first-child,
+.devbase-app .acf-repeater .acf-table > tbody > .acf-row:first-child > td:first-child {
+	border-top-left-radius: 10px;
+}
+
+.devbase-app .acf-repeater .acf-table > thead > tr:first-child > th:last-child,
+.devbase-app .acf-repeater .acf-table > tbody > .acf-row:first-child > td:last-child {
+	border-top-right-radius: 10px;
+}
+
+.devbase-app .acf-repeater .acf-table > tbody > .acf-row:nth-last-child(2) > td:first-child {
+	border-bottom-left-radius: 10px;
+}
+
+.devbase-app .acf-repeater .acf-table > tbody > .acf-row:nth-last-child(2) > td:last-child {
+	border-bottom-right-radius: 10px;
+}
+
+/* The top buttons sit inside the row, never across its top border. The remove button stays centred (SCF's -minus). */
+.devbase-app .acf-repeater .acf-row-handle .acf-icon:not(.-minus) {
+	top: 10px;
+	margin-top: 0;
 }
 
 .devbase-app .acf-repeater .acf-row-handle {
