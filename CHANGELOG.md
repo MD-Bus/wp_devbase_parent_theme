@@ -10,6 +10,24 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.46.1] — 2026-11-15
+
+### Fixed
+- **Pages listed in wp-admin showed a "Featured Image" column of broken images.** It is Admin Site Enhancements'
+  column (its "show featured image column", which the theme switches on). Two faults, both fixed in
+  `inc/dependencies/ase/ase.php` without touching ASE's files:
+  - its placeholder image was addressed with `plugins_url()`, which for a file in the theme's `vendor/` gave
+    `/wp-content/plugins/<the server's file path>`. A `plugins_url` filter now points such addresses into the theme,
+    for any vendored plugin;
+  - the column showed on every type that supports `thumbnail`, pages included by WordPress's default, although the
+    theme offers no featured images (no `post-thumbnails` support, so no Featured image box in the editor). It is now
+    dropped wherever the theme does not support featured images; a child that adds `post-thumbnails` support keeps it.
+- **WooCommerce's product list had a one-letter-wide "Excerpt" column**, the product's short description running down
+  the page one character per line. It is ASE's excerpt column, which has no width of its own and was squeezed out by
+  WooCommerce's ten columns. It is now left off the product list (filter `devbase/ase/no_excerpt_column`); other lists
+  keep it. The product image column stays.
+  Tests: `tests/Test_ASE_Featured_Column.php`.
+
 ## [1.46.0] — 2026-11-15
 
 ### Changed
