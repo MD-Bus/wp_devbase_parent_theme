@@ -33,14 +33,14 @@ stops managing the bundled WooCommerce (the update locks lift; it stays installe
 and active), an administrator gets a notice, and updating it, security fixes included,
 becomes the client's choice. Chosen over moving plugins out of vendor/ on expiry.
 
-**1. Housekeeping.** (1.19.0, with the licence-lapse rule, is released.) Remove the local test
-leftovers (the dev server, the `theme-test-2` API key, the `ocwof.local` slot in
-Warden, the stray `* 2.php` files in the OCWOF child). Write the live cutover
-checklist: add `warden_licence_key` to the live Brand Relay, remove the two old
-params, trigger a sync, then check both themes under their tags. First find out
-which Brand Relay is deployed. The repo is no longer the question (2026-11-10: `origin/main` is 0.42.0, `develop` and the
-latest tag 0.43.0, so both are past the 0.18 the services below need); what is still unknown is what the live worker runs.
-It has no version endpoint, and no Cloudflare account wrangler can see has a worker named `brand-relay`.
+**1. Housekeeping.** (1.19.0, with the licence-lapse rule, is released.) Done 2026-11-15: the stray `* 2.*` files
+(iCloud duplicate copies from late October, already git-ignored) are gone from the OCWOF child and from the parent copy
+installed on the OCWOF site, moved to the Trash; the live cutover checklist is written (`docs/live-cutover.md`); and the
+live Brand Relay is found and runs 0.45.0, deployed by hand from `develop` (GitHub's `main` is still 0.42.0; where it
+runs is in the private notes).
+Still open, and the owner's to do because they are records in the live services: delete the `theme-test-2` key in
+Brand Relay and the `ocwof.local` slot in Warden, then run the cutover checklist per site. No dev server was left
+running.
 
 **2. Heartbeat (done in 1.23.0).** Site health reports, sent when Brand Relay's signed ping names `health`: Brand Relay is the clock,
 because most sites get few visits and many have cron off. The plan is pulled before anything is sent. See
@@ -60,21 +60,29 @@ was tried by the owner and works. See `inc/backups/AGENT.md`. Open: should a lap
 which a backup does not carry, so a restored site would need it entered again (not checked); a restored WordPress.com site has no usable
 passwords, since its users sign in through WordPress.com, so the client needs a password reset after a restore (a note in the client guide).
 
-**5. Warden follow-ups.** Decide whether a batch check (one request for both
-tags, installed versions keyed by tag) is worth it; it saves one request per 12
-hours. Move the children's kill switch from the status name `suspended` to
-`valid: false`, since statuses now belong to each app. Lock whichever is chosen
-in a parent test.
+**5. Warden follow-ups.**
+- *Batch check* (one request for both tags): decided against (2026-11-15). It saves two requests a day per site and
+  would need a new Warden endpoint and a second answer shape in the updater, whose signature checks are the part that
+  matters most.
+- *"Urgent" field*: done in Warden 0.6.3 as a **Mark as urgent** button that writes the `[urgent]` marker the theme
+  already reads. A separate flag would add nothing the button does not do.
+- *Kill switch on `valid: false`*: not planned (owner's decision, 2026-11-15). The children keep locking on the status
+  `suspended`, which works. Warden's `valid: false` also covers an expired licence, an unknown key and `blocked` (its
+  abuse protection), so locking on it would take sites offline where the licence-lapse rule keeps them up. Not to be
+  reopened without the owner asking.
 
-**6. The first real WooCommerce version update.** The bundled zip is already at 11.2.2. Bump the pin, build the zip,
-release, and watch a site with the shop on take the new version at the end of
-the request without a fatal error, while WordPress offers no update of its own.
+**6. The first real WooCommerce version update (released: 1.42.3).** Dependabot's pull request 10 moved the bundled
+zip from 11.2.2 to 11.3.0, released in 1.42.3 (2026-11-12). Still to do: watch a site with the shop on take the new
+version at the end of the request without a fatal error, while WordPress offers no update of its own. No shop site
+runs the parent yet.
 
 **7. Watch upstream.** WordPress/ai is adding `core/content-create`,
 `core/content-update` and `core/content-delete` (pull request 1025, open), and
 core proposes `core/read-content` and `core/manage-content` for 7.1 and 7.2
 or later. Neither covers custom fields, options pages or blocks, so our
-abilities stay. Revisit our post abilities if those ship with meta support.
+abilities stay. Revisit our post abilities if those ship with meta support. Checked 2026-11-15: pull request 1025 is
+still open (last updated 2026-10-29); issue 1305 (an ability for a post's featured image and other non-content fields)
+is the one to watch.
 
 **8. SEO through The SEO Framework (released: 1.37.0).** The theme's own SEO code is gone and The SEO Framework
 (TSF, `autodescription`, free, no premium version, GPLv3) is vendored like Secure Custom Fields and loaded by
@@ -86,9 +94,10 @@ and each archive's **SEO** tab (handed to TSF through its custom title and descr
 values keep working, read by field key. TSF's branding and promotion are switched off from the theme (`devbase/tsf/hide_branding`). Measured 2026-11-10 on dev-blueprint
 (post and page, anonymous): TSF on adds 23 queries, about 0.3 MB of peak memory, 2.3 to 3.2 KB of `<head>`, and no measurable
 time (17 ms against 18 to 20 ms locally). All 23 queries are the theme's own Organization Details values (SCF options are saved with
-`autoload` off, so each is its own query), not TSF's. Open: saving the front-end option pages (Organization Details, Tracking,
-Miscellaneous) with `autoload` on would remove most of them; it needs a one-time switch of existing rows and every writer (the
-admin page and the MCP options ability's `update_field()`) to keep the flag. A site with SEOPress (or another listed SEO plugin)
+`autoload` off, so each is its own query), not TSF's. Done after 1.45.1 (`inc/theme-settings/autoload.php`): the values public pages read (Organization Details, Tracking,
+two from Miscellaneous) are switched to `autoload` after any write, whoever writes them, and existing rows once.
+Measured on dev-blueprint: from about 38 single-option queries per public page to 14; what is left is the theme's own
+state (licence, plan, check times), core and plugins. A site with SEOPress (or another listed SEO plugin)
 active never loads TSF at all (`devbase_tsf_conflicting_plugin()`, `Test_TSF_Disable`), so there is no double output to try.
 Known risks: one maintainer and bursty releases (a 10-month gap before 5.2.0). The loader depends on TSF internals (its
 `plugins_loaded` start-up callback and its asset URL constant) and our hooks on its filters, none of which are a promised

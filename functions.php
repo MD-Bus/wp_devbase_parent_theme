@@ -121,6 +121,9 @@ require_once __DIR__ . '/inc/theme-settings/licence/settings.php';
 // update check immediately instead of waiting for its daily schedule.
 require_once __DIR__ . '/inc/theme-settings/licence/check-ajax.php';
 
+// Keeps the settings every public page reads (Organization Details, Tracking) autoloaded: one query, not one each.
+require_once __DIR__ . '/inc/theme-settings/autoload.php';
+
 // Sending through an email service's API (Email > Email API tab), and the services: Brevo.
 require_once __DIR__ . '/inc/theme-settings/smtp/api.php';
 require_once __DIR__ . '/inc/theme-settings/smtp/api-brevo.php';

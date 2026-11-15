@@ -10,6 +10,22 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.46.0] — 2026-11-15
+
+### Changed
+- **The settings every public page reads are autoloaded: about 24 fewer database queries per page.** SCF saves options
+  with autoload off, so each Organization Details value (each repeater row too) and each Tracking value was its own
+  query on every page. `inc/theme-settings/autoload.php` switches those options to autoload after any write (the
+  settings app, the classic pages, MCP's `update_field()`, WP-CLI) through WordPress's `added_option` /
+  `updated_option`, and switches the existing rows once, again whenever the set changes (Organization Details exists
+  only while The SEO Framework is on). Secrets and admin-only text are left alone. Filter
+  `devbase/settings/autoload_fields` for a child theme's own front-end page. Measured on dev-blueprint: from about 38
+  single-option queries per public page to 14. Tests: `tests/Test_Option_Autoload.php`.
+
+### Added
+- `docs/live-cutover.md`: the checklist for moving each live site to the single `warden_licence_key` provisioned by
+  Brand Relay.
+
 ## [1.45.1] — 2026-11-15
 
 ### Fixed
