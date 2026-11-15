@@ -79,7 +79,9 @@ add_action( 'acf/init', function () {
 						'required'      => 1,
 						'default_value' => 'smtp',
 						'choices'       => array(
-							'smtp'    => __( 'SMTP (email)', 'devbase_parent_theme' ),
+							// The value stays 'smtp' so saved rows keep working; the mail goes out the way Theme Settings
+							// > Email sends (SMTP or the Email API), since it is sent with wp_mail().
+							'smtp'    => __( 'Email', 'devbase_parent_theme' ),
 							'webhook' => __( 'Webhook', 'devbase_parent_theme' ),
 						),
 						'wrapper'       => array( 'width' => '50' ),

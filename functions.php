@@ -121,7 +121,11 @@ require_once __DIR__ . '/inc/theme-settings/licence/settings.php';
 // update check immediately instead of waiting for its daily schedule.
 require_once __DIR__ . '/inc/theme-settings/licence/check-ajax.php';
 
-// Registers the SMTP Settings sub-page.
+// Sending through an email service's API (Email > Email API tab), and the services: Brevo.
+require_once __DIR__ . '/inc/theme-settings/smtp/api.php';
+require_once __DIR__ . '/inc/theme-settings/smtp/api-brevo.php';
+
+// Registers the Email Settings sub-page (SMTP and Email API tabs).
 require_once __DIR__ . '/inc/theme-settings/smtp/settings.php';
 
 // Routes outgoing mail through the configured SMTP server, once enabled.

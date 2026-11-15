@@ -97,6 +97,25 @@ abandoned or a fix is not shipped, `vendor/autodescription/` is already a full c
 Not covered, as TSF's free version has none: Article, Product, FAQ, Review, Event and LocalBusiness schema, focus keywords,
 a Google News sitemap, and SEO fields over REST (MCP cannot set a page's SEO title; it can set an archive's).
 
+**9. Sending mail through an email service's API.** For hosts that block the SMTP ports (25, 465, 587), a second way of
+sending, picked on the SMTP page: "Send with" SMTP server (as now) or Email service API. It goes out over HTTPS with
+`wp_remote_post`, like the Warden and Brand Relay calls, so no host can block it without breaking the site, and it adds no
+library. A choice, not an automatic fallback: a fallback cannot tell a blocked port from a wrong password, would wait out
+the SMTP timeout first, and needs both routes set up. There is no common standard for these APIs (JMAP, RFC 8620/8621, is
+not accepted for sending by the services that matter), so each service gets one small adapter behind a single interface:
+the theme still builds the message and keeps the failure log, the health report's `mail` field, Reply-To on form
+notifications and the Send Test Email button; the adapter only turns the message into the service's request and reads its
+answer (including its own errors, such as "domain not verified" or "quota reached") back. The API key is stored like the
+SMTP password: a secret MCP never sees, left blank when the page is shown. The client still verifies their sending domain
+with the service, as they would for that service's SMTP. In order:
+
+- **Brevo first** (released: 1.45.0): free tier, popular with small nonprofits, a simple JSON API with an `api-key`
+  header. Needs only the key and the sender address.
+- **Then Postmark and Mailgun**, one release each: Postmark's `X-Postmark-Server-Token` header; Mailgun's basic-auth login,
+  form data instead of JSON, and a US or EU region.
+- **Resend and SendGrid** (Bearer token) only when a client asks.
+- **Amazon SES** not planned unless a client needs it: requests must be signed with AWS's own scheme.
+
 ## Reliability audit (November 2026)
 
 A read of the theme's own code for what could fail on a client site without anyone noticing. Ten findings; nine are fixed and

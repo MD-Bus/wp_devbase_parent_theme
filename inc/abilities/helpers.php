@@ -273,7 +273,7 @@ function devbase_abilities_protected_option_fields() {
 		// Secrets and provisioned values, wherever a page puts them (see also
 		// devbase_abilities_sensitive_options_pages(), which keeps their pages out entirely).
 		'warden_licence_key', 'warden_base_url', 'warden_public_key', 'relay_base_url', 'relay_site_key',
-		'smtp_password', 'turnstile_secret_key', 'recaptcha_secret_key', 'destinations', 'lock_remote_setup',
+		'smtp_password', 'brevo_api_key', 'turnstile_secret_key', 'recaptcha_secret_key', 'destinations', 'lock_remote_setup',
 		// Printed into every page (inc/theme-settings/tracking/inject.php), the scripts unescaped. Their
 		// page is kept out entirely; named here too for a child theme that puts them on another page.
 		'header_scripts', 'footer_scripts', 'gtm_id', 'ga4_id',

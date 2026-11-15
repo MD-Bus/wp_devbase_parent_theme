@@ -62,6 +62,7 @@ function devbase_settings_secret_keys() {
 		'field_devbase_warden_licence_key',
 		'field_devbase_relay_site_key',
 		'field_devbase_smtp_password',
+		'field_devbase_brevo_api_key',
 		'field_devbase_turnstile_secret_key',
 		'field_devbase_recaptcha_secret_key',
 	);

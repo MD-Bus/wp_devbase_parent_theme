@@ -10,6 +10,29 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.45.0] — 2026-11-15
+
+### Added
+- **Sending mail through an email service's API, Brevo first** (Theme Settings > Email > Email API tab). For hosts that
+  block the SMTP ports (25, 465, 587): mail goes out over HTTPS with `wp_remote_post`, no new library. The Email section
+  now has two tabs, SMTP (unchanged, same fields and saved values) and Email API: a banner saying when to use it, an
+  enable switch, the service (Brevo), then that service's fields (the API key) and the sender. Only one way of sending
+  can be on: the other switch is locked in the page and a save that turns on both is refused.
+- It takes over inside `wp_mail()` through WordPress's `pre_wp_mail` filter, so every mail goes this way: form
+  destinations (with the visitor's Reply-To), password resets, plugins and the Send Test Email button (one per tab).
+  `wp_mail_succeeded` and `wp_mail_failed` fire as WordPress fires them, so the failure log, System Status and the
+  health report's `mail` field work unchanged; a failure carries Brevo's own reason ("Key not found", "Sender not
+  valid"). An incomplete setup leaves WordPress's own mail alone, and SMTP wins if both are somehow on.
+- The Brevo API key is a secret like the SMTP password: drawn empty, kept when saved empty, never readable or writable
+  through MCP. A Brevo SMTP key (`xsmtpsib-`) pasted in its place is refused with the reason.
+- One adapter per service behind `devbase/mail_api/providers` (`inc/theme-settings/smtp/api.php`, `api-brevo.php`), so
+  Postmark and Mailgun are one file each. Tests: `tests/Test_Mail_API.php`. French translations for the new strings.
+
+### Changed
+- A Form Destinations row of type "SMTP (email)" is now shown as "Email" (saved rows unchanged): it sends the way
+  Theme Settings > Email sends, SMTP or the Email API. Its dispatch log lines say "Email" instead of "SMTP".
+- The "Email (SMTP)" section is now "Email", and the classic page "SMTP Settings" is "Email Settings" (same address).
+
 ## [1.44.1] — 2026-11-15
 
 ### Fixed

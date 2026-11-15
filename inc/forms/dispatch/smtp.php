@@ -5,7 +5,10 @@
 // that's the whole point of a shared dispatch layer) and sends via
 // wp_mail(). wp_mail() automatically routes through this theme's existing
 // SMTP transport (inc/theme-settings/smtp/mailer.php's phpmailer_init
-// hook) whenever smtp_enabled is on — no new mail-transport code here.
+// hook) whenever smtp_enabled is on, or through the Email API
+// (inc/theme-settings/smtp/api.php's pre_wp_mail filter) when that is on —
+// no mail-transport code here. The type is still called `smtp` in saved
+// rows; the admin sees it as "Email".
 
 /**
  * @param array  $row       A single row from Form Destinations' `destinations`
@@ -16,9 +19,9 @@
  */
 function devbase_forms_dispatch_smtp( array $row, $form_name, array $content ) {
 	if ( empty( $row['to_email'] ) ) {
-		$message = sprintf( 'SMTP destination "%s" has no To address.', $row['label'] ?? '' );
+		$message = sprintf( 'Email destination "%s" has no To address.', $row['label'] ?? '' );
 		error_log( '[Dev Base Forms] ' . $message );
-		return array( 'success' => false, 'label' => __( 'SMTP', 'devbase_parent_theme' ), 'message' => $message );
+		return array( 'success' => false, 'label' => __( 'Email', 'devbase_parent_theme' ), 'message' => $message );
 	}
 
 	$label = ! empty( $row['label'] ) ? $row['label'] : $row['to_email'];
@@ -60,7 +63,7 @@ function devbase_forms_dispatch_smtp( array $row, $form_name, array $content ) {
 
 	$sent = wp_mail( $row['to_email'], $subject, $html, $headers );
 
-	$message = sprintf( 'SMTP "%s" (%s): %s', $label, $row['to_email'], $sent ? 'sent' : 'failed' );
+	$message = sprintf( 'Email "%s" (%s): %s', $label, $row['to_email'], $sent ? 'sent' : 'failed' );
 	error_log( '[Dev Base Forms] ' . $message );
 
 	return array( 'success' => $sent, 'label' => $label, 'message' => $message );

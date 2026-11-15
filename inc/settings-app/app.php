@@ -41,9 +41,9 @@ function devbase_app_groups() {
 function devbase_app_all_sections() {
 	$sections = array(
 		'smtp'          => array(
-			'title'       => __( 'Email (SMTP)', 'devbase_parent_theme' ),
+			'title'       => __( 'Email', 'devbase_parent_theme' ),
 			'icon'        => 'dashicons-email-alt',
-			'description' => __( 'Send the site\'s email through a real mail server instead of PHP mail().', 'devbase_parent_theme' ),
+			'description' => __( 'Send the site\'s email through a mail server (SMTP) or an email service\'s API instead of PHP mail().', 'devbase_parent_theme' ),
 			'groups'      => array( 'group_devbase_notifications_smtp' ),
 			'classic'     => 'smtp-settings',
 		),

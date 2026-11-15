@@ -1036,3 +1036,93 @@ msgstr ""
 
 msgid "Not sent"
 msgstr ""
+
+msgid "Email Settings"
+msgstr ""
+
+msgid "Email"
+msgstr ""
+
+msgid "Email API"
+msgstr ""
+
+msgid "Send the site's email through a mail server (SMTP) or an email service's API instead of PHP mail()."
+msgstr ""
+
+msgid "Only one way of sending can be on. To use the Email API tab, switch this off."
+msgstr ""
+
+msgid "Use this when your host blocks the SMTP ports (25, 465 and 587)."
+msgstr ""
+
+msgid "Mail is sent over HTTPS through the email service's API, the connection the site already uses, so it works where SMTP times out. If SMTP works on your host, you can keep using SMTP."
+msgstr ""
+
+msgid "Enable Email API"
+msgstr ""
+
+msgid "Only one way of sending can be on. To use this, switch SMTP off on the SMTP tab."
+msgstr ""
+
+msgid "Service"
+msgstr ""
+
+msgid "Choose a service"
+msgstr ""
+
+msgid "An address on a domain verified with the service, or a sender it has confirmed."
+msgstr ""
+
+msgid "Left empty, the site name is used."
+msgstr ""
+
+msgid "Brevo API Key"
+msgstr ""
+
+msgid "In Brevo: Settings > SMTP & API > API Keys > Generate a new API key. It starts with xkeysib-. The SMTP key on the same screen does not work here."
+msgstr ""
+
+msgid "This is a Brevo SMTP key. The Email API needs an API key, which starts with xkeysib-."
+msgstr ""
+
+msgid "SMTP is on. Only one way of sending can be on: switch SMTP off on the SMTP tab first."
+msgstr ""
+
+msgid "The Email API is on. Only one way of sending can be on: switch it off on the Email API tab first."
+msgstr ""
+
+msgid "You must provide at least one recipient email address."
+msgstr ""
+
+msgid "The email service did not accept the message."
+msgstr ""
+
+msgid "Brevo could not be reached: %s"
+msgstr ""
+
+msgid "Brevo refused the email (HTTP %d)."
+msgstr ""
+
+msgid "Brevo refused the email: %1$s (%2$s)"
+msgstr ""
+
+msgid "The Email API is not on with a complete setup. Save changes first: the test uses the saved settings."
+msgstr ""
+
+msgid "SMTP is not on. Save changes first: the test uses the saved settings."
+msgstr ""
+
+msgid "Email API test email (%s)"
+msgstr ""
+
+msgid "This is a test email from Theme Settings > Email > Email API. If you received this, the site is sending its email through %s."
+msgstr ""
+
+msgid "Email is sent through the %s API — not tested yet. Use \"Send Test Email\" on Email > Email API."
+msgstr ""
+
+msgid "Email API (%1$s) last tested successfully: %2$s."
+msgstr ""
+
+msgid "Email API (%1$s) last test FAILED (%2$s): %3$s"
+msgstr ""
