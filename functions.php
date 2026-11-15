@@ -152,6 +152,10 @@ require_once __DIR__ . '/inc/theme-settings/schema/settings.php';
 // ... and the filter that merges them into TSF's own Organization entity in its JSON-LD graph.
 require_once __DIR__ . '/inc/theme-settings/schema/organization.php';
 
+// The Site Settings app: one screen with a sidebar that renders the field groups above section by section
+// (see inc/settings-app/AGENT.md). Groups register on acf/init, so load order against the sub-pages does not matter.
+require_once __DIR__ . '/inc/settings-app/app.php';
+
 // Registers the theme's first two CPTs: registered_form (one per form
 // name) and form_data (one per submission). Foundational — everything
 // else in inc/forms/ depends on these existing.

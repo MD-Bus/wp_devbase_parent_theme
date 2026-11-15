@@ -438,7 +438,7 @@ add_filter( 'acf/load_field/key=field_devbase_mcp_allowed_options_pages', functi
 
 // Loads the "Run Purge Now" button's JS only on this specific admin page.
 add_action( 'admin_enqueue_scripts', function ( $hook ) {
-	if ( ! isset( $_GET['page'] ) || 'miscellaneous-settings' !== $_GET['page'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	if ( ! devbase_settings_page_is( 'miscellaneous-settings' ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		return;
 	}
 

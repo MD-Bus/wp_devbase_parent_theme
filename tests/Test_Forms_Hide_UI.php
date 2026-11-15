@@ -1,5 +1,6 @@
 <?php
-// Covers the Management switch that hides the Registered Forms and Form Data menus (inc/forms/post-types.php).
+// Covers the Management switch that hides the Registered Forms and Form Data screens (inc/forms/post-types.php): the
+// classic menus are always out of the sidebar now (inc/settings-app/), the switches decide whether the app shows them.
 
 class Test_Forms_Hide_UI extends WP_UnitTestCase {
 
@@ -23,26 +24,35 @@ class Test_Forms_Hide_UI extends WP_UnitTestCase {
 		return array_column( (array) $GLOBALS['menu'], 2 );
 	}
 
-	public function test_the_forms_menus_are_shown_by_default() {
+	public function test_the_classic_forms_menus_are_always_out_of_the_sidebar() {
+		// The Theme Settings app (inc/settings-app/) replaces them, so they leave the sidebar whatever the switches say.
 		$this->assertFalse( devbase_forms_ui_hidden( 'registered_form' ) );
 		$this->assertFalse( devbase_forms_ui_hidden( 'form_data' ) );
 		$menu = $this->menu_after_admin_menu();
-		$this->assertContains( 'edit.php?post_type=registered_form', $menu );
-		$this->assertContains( 'edit.php?post_type=form_data', $menu );
+		$this->assertNotContains( 'edit.php?post_type=registered_form', $menu );
+		$this->assertNotContains( 'edit.php?post_type=form_data', $menu );
+		$this->assertContains( 'devbase-other-page', $menu );
 	}
 
-	public function test_each_switch_hides_only_its_own_menu() {
+	public function test_each_switch_hides_only_its_own_app_section() {
+		// The switches now decide whether the app SHOWS the section (the classic screens stay open at their address).
+		$ids = function () {
+			wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+
+			return array_keys( devbase_app_sections() );
+		};
+
+		$this->assertContains( 'forms', $ids() );
+		$this->assertContains( 'submissions', $ids() );
+
 		update_option( 'options_hide_registered_forms_ui', '1' );
-		$menu = $this->menu_after_admin_menu();
-		$this->assertNotContains( 'edit.php?post_type=registered_form', $menu );
-		$this->assertContains( 'edit.php?post_type=form_data', $menu );
-		$this->assertContains( 'devbase-other-page', $menu );
+		$this->assertNotContains( 'forms', $ids() );
+		$this->assertContains( 'submissions', $ids() );
 
 		delete_option( 'options_hide_registered_forms_ui' );
 		update_option( 'options_hide_form_data_ui', '1' );
-		$menu = $this->menu_after_admin_menu();
-		$this->assertContains( 'edit.php?post_type=registered_form', $menu );
-		$this->assertNotContains( 'edit.php?post_type=form_data', $menu );
+		$this->assertContains( 'forms', $ids() );
+		$this->assertNotContains( 'submissions', $ids() );
 	}
 
 	public function test_a_filter_can_decide_it_in_code() {

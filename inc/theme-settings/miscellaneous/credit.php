@@ -399,7 +399,7 @@ add_action( DEVBASE_CREDIT_HOOK, function () {
 // Saving the Miscellaneous page downloads straight away, so entering the
 // address is the whole setup.
 add_action( 'acf/save_post', function () {
-	if ( ! isset( $_GET['page'] ) || 'miscellaneous-settings' !== $_GET['page'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	if ( ! devbase_settings_page_is( 'miscellaneous-settings' ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		return;
 	}
 

@@ -1,0 +1,679 @@
+/*
+ * Theme Settings app. The frame, a skin over SCF's own markup, and the small components the read-only screens use
+ * (chips, tables, filters). No field logic here. Colours come from WordPress's admin colour scheme where it offers
+ * one (--wp-admin-theme-color), so the app follows the user's chosen scheme.
+ */
+.devbase-app {
+	--da-accent: var(--wp-admin-theme-color, #3858e9);
+	--da-accent-soft: color-mix(in srgb, var(--da-accent) 10%, #fff);
+	--da-ink: #1d2327;
+	--da-muted: #646970;
+	--da-line: #e3e5e8;
+	--da-card: #fff;
+	--da-radius: 12px;
+	max-width: 1180px;
+	margin: 20px 20px 0 0;
+	color: var(--da-ink);
+}
+
+.devbase-app__shell {
+	display: grid;
+	grid-template-columns: 250px minmax(0, 1fr);
+	gap: 24px;
+	align-items: start;
+}
+
+/* ---- sidebar ---- */
+.devbase-app__nav {
+	background: var(--da-card);
+	border: 1px solid var(--da-line);
+	border-radius: var(--da-radius);
+	padding: 14px 10px 10px;
+	position: sticky;
+	top: 44px;
+	box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+.devbase-app__brand {
+	font-size: 15px;
+	font-weight: 650;
+	letter-spacing: -0.01em;
+	padding: 4px 10px 12px;
+}
+
+.devbase-app__group {
+	margin: 14px 10px 6px;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--da-muted);
+}
+
+.devbase-app__nav ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.devbase-app__nav li {
+	margin: 0;
+}
+
+.devbase-app__nav a {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 7px 10px;
+	border-radius: 8px;
+	color: var(--da-ink);
+	text-decoration: none;
+	font-size: 13.5px;
+	line-height: 1.3;
+	transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.devbase-app__nav a:hover {
+	background: #f4f5f7;
+}
+
+.devbase-app__nav a:focus-visible {
+	outline: 2px solid var(--da-accent);
+	outline-offset: 1px;
+}
+
+.devbase-app__icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: none;
+	width: 28px;
+	height: 28px;
+	border-radius: 8px;
+	background: #f1f2f4;
+	color: #50575e;
+	font-size: 16px;
+	transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.devbase-app__nav a.is-active {
+	background: var(--da-accent-soft);
+	color: var(--da-accent);
+	font-weight: 600;
+}
+
+.devbase-app__nav a.is-active .devbase-app__icon {
+	background: var(--da-accent);
+	color: #fff;
+}
+
+/* ---- main card ---- */
+.devbase-app__main {
+	background: var(--da-card);
+	border: 1px solid var(--da-line);
+	border-radius: var(--da-radius);
+	min-width: 0;
+	box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+	/* clip, not hidden: both cut the content to the rounded corners, but hidden makes the card a scroll container,
+	   and the sticky save bar inside it then sticks to the card, never to the window (it scrolled off on long forms). */
+	overflow: clip;
+}
+
+.devbase-app__header {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 22px 28px;
+	border-bottom: 1px solid var(--da-line);
+	background: linear-gradient(180deg, #fafbfc 0%, #fff 100%);
+}
+
+.devbase-app__headicon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: none;
+	width: 40px;
+	height: 40px;
+	border-radius: 10px;
+	background: var(--da-accent-soft);
+	color: var(--da-accent);
+	font-size: 20px;
+}
+
+.devbase-app__header h2 {
+	margin: 0;
+	font-size: 19px;
+	font-weight: 650;
+	letter-spacing: -0.01em;
+	line-height: 1.25;
+}
+
+.devbase-app__header p {
+	margin: 2px 0 0;
+	color: var(--da-muted);
+	font-size: 13px;
+}
+
+.devbase-app__body {
+	padding: 22px 28px 26px;
+}
+
+.devbase-app__saved {
+	margin: 18px 28px 0;
+	padding: 10px 14px;
+	border: 1px solid #b7e4c0;
+	border-radius: 8px;
+	background: #effaf1;
+	color: #0b4a1b;
+	font-size: 13px;
+}
+
+.devbase-app__footnote {
+	margin: 18px 0 0;
+}
+
+/* ---- SCF form skin ---- */
+/* Every field keeps horizontal padding: side-by-side columns (SMTP host/port, Security keys) and the cells of a repeater
+   row (Form Destinations) need it, or labels and inputs touch the column lines. The top-level field list is pulled out
+   by the same amount, so the form's left edge still lines up with the header text. */
+.devbase-app .acf-fields > .acf-field {
+	border-top-color: #f0f1f3;
+	padding: 16px 14px;
+}
+
+.devbase-app #devbase-app-form > .acf-fields {
+	margin: 0 -14px;
+}
+
+.devbase-app #devbase-app-form > .acf-fields > .acf-tab-wrap {
+	padding: 0 14px !important;
+}
+
+/* A repeater row: a little more room inside its cells, and the row number column centred. */
+.devbase-app .acf-repeater .acf-row > .acf-fields > .acf-field,
+.devbase-app .acf-repeater .acf-row > td.acf-fields > .acf-field {
+	padding: 16px 16px;
+}
+
+.devbase-app .acf-repeater .acf-table {
+	border-color: var(--da-line);
+	border-radius: 10px;
+	overflow: hidden;
+}
+
+.devbase-app .acf-repeater .acf-row-handle {
+	vertical-align: middle;
+	color: var(--da-muted);
+}
+
+.devbase-app .acf-fields.-left > .acf-field::before {
+	display: none;
+}
+
+.devbase-app .acf-label label {
+	font-weight: 600;
+	font-size: 13px;
+}
+
+.devbase-app .acf-label .description,
+.devbase-app .acf-field .description {
+	color: var(--da-muted);
+}
+
+.devbase-app .acf-input input[type="text"],
+.devbase-app .acf-input input[type="email"],
+.devbase-app .acf-input input[type="number"],
+.devbase-app .acf-input input[type="url"],
+.devbase-app .acf-input input[type="password"],
+.devbase-app .acf-input input[type="search"],
+.devbase-app .acf-input select,
+.devbase-app .acf-input textarea {
+	border-color: #cfd3d8;
+	border-radius: 8px;
+	min-height: 38px;
+	transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.devbase-app .acf-input input:focus,
+.devbase-app .acf-input select:focus,
+.devbase-app .acf-input textarea:focus {
+	border-color: var(--da-accent);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--da-accent) 18%, transparent);
+	outline: none;
+}
+
+/* SCF tabs as a pill row. SCF's own tab CSS loads AFTER this file and styles every state (hover white, active grey,
+   borders), so each property here is !important on purpose: without it the active tab came out white text on a
+   white pill. */
+.devbase-app .acf-tab-wrap,
+.devbase-app .acf-fields > .acf-tab-wrap {
+	background: transparent !important;
+	border: 0 !important;
+	margin: 0 0 4px !important;
+	padding: 0 !important;
+}
+
+.devbase-app .acf-tab-wrap .acf-tab-group,
+.devbase-app .acf-fields > .acf-tab-wrap .acf-tab-group {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin: 0 !important;
+	padding: 0 0 14px !important;
+	border: 0 !important;
+	background: transparent !important;
+}
+
+.devbase-app .acf-tab-group li {
+	margin: 0 !important;
+}
+
+.devbase-app .acf-tab-group li a,
+.devbase-app .acf-tab-group li a:focus {
+	margin: 0 !important;
+	padding: 6px 14px !important;
+	border: 1px solid var(--da-line) !important;
+	border-radius: 999px !important;
+	background: #fff !important;
+	color: #3c434a !important;
+	font-size: 13px !important;
+	font-weight: 500 !important;
+	line-height: 20px !important;
+	box-shadow: none !important;
+	transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease !important;
+}
+
+.devbase-app .acf-tab-group li a:hover {
+	background: #f4f5f7 !important;
+	color: var(--da-ink) !important;
+}
+
+.devbase-app .acf-tab-group li a:focus-visible {
+	outline: 2px solid var(--da-accent) !important;
+	outline-offset: 2px;
+}
+
+.devbase-app .acf-tab-group li.active a,
+.devbase-app .acf-tab-group li.active a:hover,
+.devbase-app .acf-tab-group li.active a:focus {
+	border-color: var(--da-accent) !important;
+	background: var(--da-accent) !important;
+	color: #fff !important;
+}
+
+/* The first field of a form has no line above it (after a tab row, the next visible field's own line is the divider). */
+.devbase-app .acf-fields > .acf-field:first-child {
+	border-top: 0 !important;
+}
+
+/* The on/off switch, as a compact toggle. SCF's markup is kept (its script moves .-on and the hidden checkbox); only
+   the look changes. The Yes/No words are hidden visually: the knob position and colour carry the state, and the
+   field's own label says what it switches. */
+.devbase-app .acf-switch {
+	display: inline-block !important;
+	position: relative;
+	width: 42px !important;
+	height: 24px !important;
+	border: 0 !important;
+	border-radius: 999px !important;
+	background: #c3c4c7 !important;
+	transition: background-color 0.18s ease !important;
+}
+
+.devbase-app .acf-switch span.acf-switch-on,
+.devbase-app .acf-switch span.acf-switch-off {
+	position: absolute !important;
+	width: 1px !important;
+	height: 1px !important;
+	min-width: 0 !important;
+	padding: 0 !important;
+	overflow: hidden !important;
+	clip: rect(0 0 0 0) !important;
+	white-space: nowrap !important;
+}
+
+.devbase-app .acf-switch .acf-switch-slider {
+	top: 3px !important;
+	bottom: auto !important;
+	left: 3px !important;
+	right: auto !important;
+	width: 18px !important;
+	height: 18px !important;
+	border: 0 !important;
+	border-radius: 50% !important;
+	background: #fff !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25) !important;
+	transition: left 0.18s ease !important;
+}
+
+.devbase-app .acf-switch:hover,
+.devbase-app .acf-switch.-focus {
+	background: #a7aaad !important;
+}
+
+.devbase-app .acf-switch.-focus {
+	outline: 2px solid var(--da-accent);
+	outline-offset: 2px;
+}
+
+.devbase-app .acf-switch.-on,
+.devbase-app .acf-switch.-on:hover {
+	background: var(--da-accent) !important;
+}
+
+.devbase-app .acf-switch.-on .acf-switch-slider {
+	left: 21px !important;
+}
+
+/* Save bar: stays in view at the bottom of the card while a long form scrolls. */
+.devbase-app .acf-form-submit {
+	position: sticky;
+	bottom: 0;
+	z-index: 5;
+	margin: 20px -28px -26px;
+	padding: 14px 28px;
+	border-top: 1px solid var(--da-line);
+	background: rgba(255, 255, 255, 0.92);
+	backdrop-filter: blur(6px);
+}
+
+.devbase-app .acf-form-submit .button-primary {
+	border-radius: 8px;
+	padding: 0 22px;
+	min-height: 38px;
+}
+
+/* No flash of conditional fields: those that depend on a toggle stay hidden until SCF has worked out which to show
+   (app.js adds .is-ready). The animation is the safety net: if the script never runs, they appear after 2s. */
+.devbase-app:not(.is-ready) .acf-field[data-conditions] {
+	display: none;
+	animation: devbase-app-reveal 0s 2s forwards;
+}
+
+@keyframes devbase-app-reveal {
+	to {
+		display: block;
+	}
+}
+
+/* Every button in the app, SCF's own included (Add Destination, Send Test Email, Run Purge Now). */
+.devbase-app .button,
+.devbase-app .acf-button {
+	border-radius: 8px !important;
+	min-height: 34px;
+	padding: 0 14px;
+	line-height: 32px;
+}
+
+.devbase-app .acf-repeater .acf-actions {
+	margin-top: 10px;
+}
+
+/* ---- components for the read-only screens ---- */
+.devbase-chip {
+	display: inline-block;
+	padding: 2px 10px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1.6;
+	white-space: nowrap;
+	background: #f1f2f4;
+	color: #50575e;
+}
+
+.devbase-chip.-ok {
+	background: #e4f6e8;
+	color: #0b6b25;
+}
+
+.devbase-chip.-bad {
+	background: #fde8e8;
+	color: #b32d2e;
+}
+
+.devbase-chip.-warn {
+	background: #fff4d6;
+	color: #8a5a00;
+}
+
+.devbase-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13.5px;
+}
+
+.devbase-table th {
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--da-line);
+	color: var(--da-muted);
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.03em;
+	text-align: left;
+	text-transform: uppercase;
+}
+
+.devbase-table td {
+	padding: 12px;
+	border-bottom: 1px solid #f0f1f3;
+	vertical-align: top;
+}
+
+.devbase-table tbody tr:hover td {
+	background: #fafbfc;
+}
+
+.devbase-table tbody tr:last-child td {
+	border-bottom: 0;
+}
+
+.devbase-table a {
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.devbase-table code {
+	color: var(--da-muted);
+	font-size: 12px;
+	background: none;
+	padding: 0;
+}
+
+.devbase-table__summary {
+	color: #3c434a;
+	max-width: 520px;
+}
+
+.devbase-empty {
+	margin: 0;
+	padding: 36px 16px;
+	border: 1px dashed #d4d7dc;
+	border-radius: 10px;
+	color: var(--da-muted);
+	text-align: center;
+}
+
+.devbase-filters {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin: 0 0 16px;
+}
+
+.devbase-filters input[type="search"] {
+	flex: 1 1 220px;
+	min-height: 36px;
+	border-radius: 8px;
+}
+
+.devbase-filters select {
+	flex: 0 1 220px;
+	min-width: 0;
+	min-height: 36px;
+	padding-right: 28px;
+	border-radius: 8px;
+	text-overflow: ellipsis;
+}
+
+.devbase-filters .button {
+	min-height: 36px;
+	border-radius: 8px;
+}
+
+.devbase-filters__reset {
+	font-size: 13px;
+}
+
+.devbase-pager {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-top: 14px;
+	color: var(--da-muted);
+	font-size: 13px;
+}
+
+.devbase-pager__links .page-numbers {
+	display: inline-block;
+	min-width: 30px;
+	margin-left: 4px;
+	padding: 4px 8px;
+	border: 1px solid var(--da-line);
+	border-radius: 8px;
+	color: var(--da-ink);
+	text-align: center;
+	text-decoration: none;
+}
+
+.devbase-pager__links .page-numbers.current {
+	border-color: var(--da-accent);
+	background: var(--da-accent);
+	color: #fff;
+}
+
+.devbase-back {
+	margin: 0 0 16px;
+}
+
+.devbase-meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 28px;
+	margin: 0 0 8px;
+	padding: 14px 16px;
+	border: 1px solid var(--da-line);
+	border-radius: 10px;
+	background: #fafbfc;
+}
+
+.devbase-meta span {
+	display: block;
+	margin-bottom: 2px;
+	color: var(--da-muted);
+	font-size: 12px;
+}
+
+.devbase-meta .devbase-chip {
+	display: inline-block;
+	margin: 0;
+}
+
+.devbase-h3 {
+	margin: 24px 0 10px;
+	font-size: 14px;
+}
+
+.devbase-fields {
+	display: grid;
+	grid-template-columns: minmax(120px, 220px) 1fr;
+	margin: 0;
+	border: 1px solid var(--da-line);
+	border-radius: 10px;
+	overflow: hidden;
+}
+
+.devbase-fields dt,
+.devbase-fields dd {
+	margin: 0;
+	padding: 11px 14px;
+	border-bottom: 1px solid #f0f1f3;
+}
+
+.devbase-fields dt {
+	background: #fafbfc;
+	font-weight: 600;
+}
+
+.devbase-fields dd {
+	overflow-wrap: anywhere;
+}
+
+.devbase-fields dt:last-of-type,
+.devbase-fields dd:last-of-type {
+	border-bottom: 0;
+}
+
+/* ---- narrow screens ---- */
+@media (max-width: 960px) {
+	.devbase-app__shell {
+		grid-template-columns: 1fr;
+	}
+
+	.devbase-app__nav {
+		position: static;
+	}
+
+	.devbase-app__nav ul {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px;
+	}
+
+	.devbase-app__header,
+	.devbase-app__body {
+		padding-left: 18px;
+		padding-right: 18px;
+	}
+
+	.devbase-app .acf-form-submit {
+		margin-left: -18px;
+		margin-right: -18px;
+		padding-left: 18px;
+		padding-right: 18px;
+	}
+
+	.devbase-fields {
+		grid-template-columns: 1fr;
+	}
+
+	/* A wide table scrolls inside the card instead of pushing the page sideways. */
+	.devbase-table {
+		display: block;
+		overflow-x: auto;
+		white-space: nowrap;
+	}
+
+	.devbase-app .acf-field table.widefat {
+		display: block;
+		overflow-x: auto;
+	}
+
+	.devbase-table__summary {
+		white-space: normal;
+		min-width: 220px;
+	}
+
+	.devbase-filters select,
+	.devbase-filters input[type="search"] {
+		flex: 1 1 100%;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.devbase-app * {
+		transition: none !important;
+	}
+}

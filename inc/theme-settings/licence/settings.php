@@ -391,7 +391,7 @@ add_filter( 'acf/prepare_field', function ( $field ) {
 // page — same narrow enqueue as SMTP Settings' test.js and Miscellaneous's
 // purge.js, since there's no reason to ship it site-wide.
 add_action( 'admin_enqueue_scripts', function () {
-	if ( ! isset( $_GET['page'] ) || 'licence-settings' !== $_GET['page'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	if ( ! devbase_settings_page_is( 'licence-settings' ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		return;
 	}
 

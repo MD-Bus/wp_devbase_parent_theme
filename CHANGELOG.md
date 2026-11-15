@@ -10,6 +10,32 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.44.0] — 2026-11-15
+
+### Added
+- **The Theme Settings app: one wp-admin screen with a sidebar of sections** (`inc/settings-app/`). It replaces the separate Theme Settings sub-pages, the
+  Registered Forms and Form Data list screens and the Archive menu. Groups: Settings (SMTP, Security, Tracking, Form Destinations, Miscellaneous, Licence & Updates),
+  SEO (Organization Details), Forms (Registered Forms, Submissions) and Content (one section per post type archive). The fields, their storage and the rules in
+  `access.php` do not change: each section renders the existing SCF field groups with `acf_form()`. The classic screens are hidden from the menu but stay
+  registered and still open at their own addresses, so the MCP options-page abilities and the MCP Access list are unaffected.
+- **Submissions screen**: newest first, paginated, filters by form, "needs attention" (failed, retrying or nobody notified) and a search of the submitted text;
+  one submission shows its fields, the delivery log and a Resend button that returns to the app.
+- **Each section has its own capability**: administrators see everything, Editors only the Archive sections. A save guard answers 403 when a form posts to a
+  store other than its section's own, so an Editor cannot write the administrator-only settings by forging `_acf_post_id`.
+- **Pages added later show up by themselves**: an SCF options sub-page registered under Theme Settings (by the parent or a child) with a field group on it becomes
+  a section. Optional `'devbase_app' => array( group, after, icon, title, description )` on the `acf_add_options_sub_page()` call places it; filters
+  `devbase/app/sections`, `devbase/app/groups` and `devbase/app/per_page`.
+- `devbase_settings_page_is()` and `devbase_settings_page_url()`: page-gated code (script enqueues, the Licence and Miscellaneous save hooks) and links to a
+  settings page now work on both the classic page and the app section that replaces it.
+- French translations (fr_FR, fr_CA, fr_BE) for the app's 54 new strings.
+
+### Changed
+- The Theme Settings menu icon is now the "M" mark.
+- The Management switches (Miscellaneous) that hid the Registered Forms and Form Data menus now decide whether the app shows those sections.
+
+### Fixed
+- The Tracking header and footer script instructions showed an empty space where `</head>` and `</body>` should be (the text was not escaped).
+
 ## [1.43.0] — 2026-11-12
 
 ### Added

@@ -156,7 +156,7 @@ add_action( 'acf/init', function () {
 // Loads the test-button JS only on this specific admin page — no reason to
 // ship it site-wide in wp-admin.
 add_action( 'admin_enqueue_scripts', function ( $hook ) {
-	if ( ! isset( $_GET['page'] ) || 'smtp-settings' !== $_GET['page'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	if ( ! devbase_settings_page_is( 'smtp-settings' ) ) {
 		return;
 	}
 

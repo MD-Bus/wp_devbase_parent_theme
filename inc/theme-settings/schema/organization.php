@@ -305,7 +305,7 @@ add_action( 'the_seo_framework_schema_metabox_before', function () {
 		$hidden
 			? esc_html__( 'whether this website represents an organization or a person, its name, URL, logo and profile links are set on the theme\'s Organization Details page.', 'devbase_parent_theme' )
 			: esc_html__( 'the name, URL, logo and profile links filled in on the theme\'s Organization Details page replace the ones below; leave them empty there to use these.', 'devbase_parent_theme' ),
-		esc_url( admin_url( 'admin.php?page=schema-settings' ) ),
+		esc_url( devbase_settings_page_url( 'schema-settings' ) ),
 		esc_html__( 'Open Organization Details', 'devbase_parent_theme' )
 	);
 } );

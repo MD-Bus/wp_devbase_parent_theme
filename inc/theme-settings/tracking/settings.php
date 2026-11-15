@@ -70,7 +70,7 @@ add_action( 'acf/init', function () {
 				'label'       => __( 'Header Scripts', 'devbase_parent_theme' ),
 				'name'        => 'header_scripts',
 				'type'        => 'textarea',
-				'instructions' => __( 'Raw HTML/JS, output just before </head>. E.g. Meta Pixel, Hotjar.', 'devbase_parent_theme' ),
+				'instructions' => esc_html__( 'Raw HTML/JS, output just before </head>. E.g. Meta Pixel, Hotjar.', 'devbase_parent_theme' ),
 				'rows'        => 8,
 			),
 			array(
@@ -78,7 +78,7 @@ add_action( 'acf/init', function () {
 				'label'       => __( 'Footer Scripts', 'devbase_parent_theme' ),
 				'name'        => 'footer_scripts',
 				'type'        => 'textarea',
-				'instructions' => __( 'Raw HTML/JS, output just before </body>.', 'devbase_parent_theme' ),
+				'instructions' => esc_html__( 'Raw HTML/JS, output just before </body>.', 'devbase_parent_theme' ),
 				'rows'        => 8,
 			),
 		),

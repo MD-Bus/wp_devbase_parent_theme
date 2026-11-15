@@ -873,3 +873,166 @@ msgstr ""
 
 msgid "Printed for visitors. Not printed for logged-in users who can edit posts, so the site's own staff do not count as visitors."
 msgstr ""
+
+# Theme Settings app (inc/settings-app/), 1.44.0
+msgid "Settings"
+msgstr ""
+
+msgid "SEO"
+msgstr ""
+
+msgid "Forms"
+msgstr ""
+
+msgid "Content"
+msgstr ""
+
+msgid "Email (SMTP)"
+msgstr ""
+
+msgid "Send the site's email through a real mail server instead of PHP mail()."
+msgstr ""
+
+msgid "Spam protection for forms: Cloudflare Turnstile or Google reCAPTCHA."
+msgstr ""
+
+msgid "Analytics IDs and custom scripts for the site's head and footer."
+msgstr ""
+
+msgid "Organization Details"
+msgstr ""
+
+msgid "Who the business is, for search engines (schema.org)."
+msgstr ""
+
+msgid "Where each form's submissions are sent: email or webhook."
+msgstr ""
+
+msgid "Data retention, system status and MCP access."
+msgstr ""
+
+msgid "Licence key, update status and backups."
+msgstr ""
+
+msgid "That form does not belong to this section."
+msgstr ""
+
+msgid "You do not have permission to open this page."
+msgstr ""
+
+msgid "Settings sections"
+msgstr ""
+
+msgid "Settings saved."
+msgstr ""
+
+msgid "Save changes"
+msgstr ""
+
+msgid "The text and settings shown on this archive page."
+msgstr ""
+
+msgid "Every form on the site, how many submissions it has and who is notified."
+msgstr ""
+
+msgid "Submissions"
+msgstr ""
+
+msgid "What visitors sent through the site's forms, and whether each one was delivered."
+msgstr ""
+
+msgid "No forms are registered yet. A developer adds one by listing it in registered-forms.json."
+msgstr ""
+
+msgid "Last received"
+msgstr ""
+
+msgid "Sent to"
+msgstr ""
+
+msgid "Nobody is notified"
+msgstr ""
+
+msgid "form"
+msgstr ""
+
+msgid "forms"
+msgstr ""
+
+msgid "Retrying"
+msgstr ""
+
+msgid "Nobody notified"
+msgstr ""
+
+msgid "Sending"
+msgstr ""
+
+msgid "Logged only"
+msgstr ""
+
+msgid "Search what was submitted…"
+msgstr ""
+
+msgid "Search submissions"
+msgstr ""
+
+msgid "All forms"
+msgstr ""
+
+msgid "Delivery"
+msgstr ""
+
+msgid "Any delivery"
+msgstr ""
+
+msgid "Needs attention (failed, retrying or nobody notified)"
+msgstr ""
+
+msgid "Filter"
+msgstr ""
+
+msgid "Clear"
+msgstr ""
+
+msgid "No submissions match these filters."
+msgstr ""
+
+msgid "No submissions yet. They appear here as visitors send the site's forms."
+msgstr ""
+
+msgid "Received"
+msgstr ""
+
+msgid "What they sent"
+msgstr ""
+
+msgid "submission"
+msgstr ""
+
+msgid "submissions"
+msgstr ""
+
+msgid "All submissions"
+msgstr ""
+
+msgid "That submission does not exist."
+msgstr ""
+
+msgid "That submission could not be sent again."
+msgstr ""
+
+msgid "Delivery log"
+msgstr ""
+
+msgid "Sends it again to every destination that applies to its form. Last resent %s."
+msgstr ""
+
+msgid "Sends it again to every destination that applies to its form."
+msgstr ""
+
+msgid "Nothing has been sent for this submission."
+msgstr ""
+
+msgid "Not sent"
+msgstr ""

@@ -412,7 +412,7 @@ add_action( 'init', function () {
 // Saving the Licence page pulls straight away, so entering the URL and key is
 // the whole setup: no separate button.
 add_action( 'acf/save_post', function () {
-	if ( ! isset( $_GET['page'] ) || 'licence-settings' !== $_GET['page'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	if ( ! devbase_settings_page_is( 'licence-settings' ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		return;
 	}
 

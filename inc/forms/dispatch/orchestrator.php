@@ -354,6 +354,12 @@ add_action( 'admin_post_devbase_forms_resend', function () {
 
 	$done = devbase_forms_resend( $post_id );
 
+	// From the Theme Settings app (inc/settings-app/forms.php): back to that submission there, not to the classic screen.
+	if ( isset( $_GET['back'] ) && 'app' === $_GET['back'] && function_exists( 'devbase_app_url' ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- the nonce was checked above.
+		wp_safe_redirect( devbase_app_url( 'submissions', array( 'sub' => $post_id, 'resent' => $done ? '1' : '0' ) ) );
+		exit;
+	}
+
 	wp_safe_redirect( add_query_arg( 'devbase_resent', $done ? '1' : '0', get_edit_post_link( $post_id, 'url' ) ?: admin_url() ) );
 	exit;
 } );

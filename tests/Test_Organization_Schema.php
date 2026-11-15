@@ -120,7 +120,7 @@ class Test_Organization_Schema extends WP_UnitTestCase {
 		do_action( 'the_seo_framework_schema_metabox_before' );
 		$html = ob_get_clean();
 
-		$this->assertStringContainsString( admin_url( 'admin.php?page=schema-settings' ), $html );
+		$this->assertStringContainsString( esc_url( devbase_settings_page_url( 'schema-settings' ) ), $html );
 		$this->assertStringContainsString( 'Organization', $html );
 	}
 

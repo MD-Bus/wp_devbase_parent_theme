@@ -20,7 +20,7 @@
  */
 add_action( 'admin_menu', function () {
 	if ( isset( $_GET['page'] ) && 'backups-settings' === sanitize_key( wp_unslash( $_GET['page'] ) ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		wp_safe_redirect( admin_url( 'admin.php?page=licence-settings' ) );
+		wp_safe_redirect( devbase_settings_page_url( 'licence-settings' ) );
 		exit;
 	}
 } );
@@ -219,7 +219,7 @@ add_action( 'wp_ajax_devbase_backups_action', function () {
 } );
 
 add_action( 'admin_enqueue_scripts', function () {
-	if ( ! isset( $_GET['page'] ) || 'licence-settings' !== $_GET['page'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	if ( ! devbase_settings_page_is( 'licence-settings' ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		return;
 	}
 

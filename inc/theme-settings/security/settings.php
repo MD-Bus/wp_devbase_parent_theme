@@ -165,7 +165,7 @@ add_action( 'acf/validate_save_post', function () {
 
 // Loads the mutual-exclusivity toggle JS only on this specific admin page.
 add_action( 'admin_enqueue_scripts', function () {
-	if ( ! isset( $_GET['page'] ) || 'security-settings' !== $_GET['page'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	if ( ! devbase_settings_page_is( 'security-settings' ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		return;
 	}
 

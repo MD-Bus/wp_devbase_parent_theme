@@ -54,7 +54,7 @@ function devbase_forms_render_registered_form_meta_box( $post ) {
 
 	printf(
 		'<p style="margin-top:12px;"><a href="%s" class="button">%s</a></p>',
-		esc_url( admin_url( 'admin.php?page=destinations-settings' ) ),
+		esc_url( devbase_settings_page_url( 'destinations-settings' ) ),
 		esc_html__( 'Manage Form Destinations', 'devbase_parent_theme' )
 	);
 }

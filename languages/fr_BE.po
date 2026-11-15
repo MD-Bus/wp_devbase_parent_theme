@@ -875,3 +875,166 @@ msgstr "Désactivé sur ce site : son environnement est « %s », et le suivi n'
 
 msgid "Printed for visitors. Not printed for logged-in users who can edit posts, so the site's own staff do not count as visitors."
 msgstr "Ajouté pour les visiteurs. Pas pour les utilisateurs connectés qui peuvent modifier des articles : l'équipe du site ne compte pas comme visiteurs."
+
+# Theme Settings app (inc/settings-app/), 1.44.0
+msgid "Settings"
+msgstr "Réglages"
+
+msgid "SEO"
+msgstr "SEO"
+
+msgid "Forms"
+msgstr "Formulaires"
+
+msgid "Content"
+msgstr "Contenu"
+
+msgid "Email (SMTP)"
+msgstr "E-mail (SMTP)"
+
+msgid "Send the site's email through a real mail server instead of PHP mail()."
+msgstr "Envoyer les e-mails du site par un vrai serveur de messagerie plutôt que par PHP mail()."
+
+msgid "Spam protection for forms: Cloudflare Turnstile or Google reCAPTCHA."
+msgstr "Protection antispam des formulaires : Cloudflare Turnstile ou Google reCAPTCHA."
+
+msgid "Analytics IDs and custom scripts for the site's head and footer."
+msgstr "Identifiants d'analyse et scripts personnalisés pour l'en-tête et le pied de page du site."
+
+msgid "Organization Details"
+msgstr "Détails de l'organisation"
+
+msgid "Who the business is, for search engines (schema.org)."
+msgstr "Qui est l'entreprise, pour les moteurs de recherche (schema.org)."
+
+msgid "Where each form's submissions are sent: email or webhook."
+msgstr "Où sont envoyées les soumissions de chaque formulaire : e-mail ou webhook."
+
+msgid "Data retention, system status and MCP access."
+msgstr "Rétention des données, état du système et accès MCP."
+
+msgid "Licence key, update status and backups."
+msgstr "Clé de licence, état des mises à jour et sauvegardes."
+
+msgid "That form does not belong to this section."
+msgstr "Ce formulaire n'appartient pas à cette section."
+
+msgid "You do not have permission to open this page."
+msgstr "Vous n'avez pas la permission d'ouvrir cette page."
+
+msgid "Settings sections"
+msgstr "Sections des réglages"
+
+msgid "Settings saved."
+msgstr "Réglages enregistrés."
+
+msgid "Save changes"
+msgstr "Enregistrer les modifications"
+
+msgid "The text and settings shown on this archive page."
+msgstr "Le texte et les réglages affichés sur cette page d'archive."
+
+msgid "Every form on the site, how many submissions it has and who is notified."
+msgstr "Chaque formulaire du site, son nombre de soumissions et qui est averti."
+
+msgid "Submissions"
+msgstr "Soumissions"
+
+msgid "What visitors sent through the site's forms, and whether each one was delivered."
+msgstr "Ce que les visiteurs ont envoyé par les formulaires du site, et si chaque envoi a été livré."
+
+msgid "No forms are registered yet. A developer adds one by listing it in registered-forms.json."
+msgstr "Aucun formulaire n'est encore enregistré. Un développeur en ajoute un en l'inscrivant dans registered-forms.json."
+
+msgid "Last received"
+msgstr "Dernière réception"
+
+msgid "Sent to"
+msgstr "Envoyé à"
+
+msgid "Nobody is notified"
+msgstr "Personne n'est averti"
+
+msgid "form"
+msgstr "formulaire"
+
+msgid "forms"
+msgstr "formulaires"
+
+msgid "Retrying"
+msgstr "Nouvel essai prévu"
+
+msgid "Nobody notified"
+msgstr "Personne d'averti"
+
+msgid "Sending"
+msgstr "Envoi en cours"
+
+msgid "Logged only"
+msgstr "Enregistré seulement"
+
+msgid "Search what was submitted…"
+msgstr "Rechercher dans ce qui a été envoyé…"
+
+msgid "Search submissions"
+msgstr "Rechercher des soumissions"
+
+msgid "All forms"
+msgstr "Tous les formulaires"
+
+msgid "Delivery"
+msgstr "Livraison"
+
+msgid "Any delivery"
+msgstr "Toute livraison"
+
+msgid "Needs attention (failed, retrying or nobody notified)"
+msgstr "À vérifier (échec, nouvel essai prévu ou personne d'averti)"
+
+msgid "Filter"
+msgstr "Filtrer"
+
+msgid "Clear"
+msgstr "Effacer"
+
+msgid "No submissions match these filters."
+msgstr "Aucune soumission ne correspond à ces filtres."
+
+msgid "No submissions yet. They appear here as visitors send the site's forms."
+msgstr "Aucune soumission pour l'instant. Elles apparaissent ici quand les visiteurs envoient les formulaires du site."
+
+msgid "Received"
+msgstr "Reçue"
+
+msgid "What they sent"
+msgstr "Ce qui a été envoyé"
+
+msgid "submission"
+msgstr "soumission"
+
+msgid "submissions"
+msgstr "soumissions"
+
+msgid "All submissions"
+msgstr "Toutes les soumissions"
+
+msgid "That submission does not exist."
+msgstr "Cette soumission n'existe pas."
+
+msgid "That submission could not be sent again."
+msgstr "Cette soumission n'a pas pu être renvoyée."
+
+msgid "Delivery log"
+msgstr "Journal de livraison"
+
+msgid "Sends it again to every destination that applies to its form. Last resent %s."
+msgstr "La renvoie à chaque destination qui s'applique à son formulaire. Dernier renvoi : %s."
+
+msgid "Sends it again to every destination that applies to its form."
+msgstr "La renvoie à chaque destination qui s'applique à son formulaire."
+
+msgid "Nothing has been sent for this submission."
+msgstr "Rien n'a encore été envoyé pour cette soumission."
+
+msgid "Not sent"
+msgstr "Non envoyé"
