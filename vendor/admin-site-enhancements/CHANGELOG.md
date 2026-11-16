@@ -1,10 +1,44 @@
 ## Changelog
 
-**Admin and Site Enhancements (ASE) v1.0.0** was released on October 17, 2022. Since then, there have been **93 _major_ releases** (e.g. 1.1.0 ) and **214 _minor_ releases** (e.g. 4.9.1), for a **total of 307 releases**.
+**Admin and Site Enhancements (ASE) v1.0.0** was released on October 17, 2022. Since then, there have been **93 _major_ releases** (e.g. 1.1.0 ) and **215 _minor_ releases** (e.g. 4.9.1), for a **total of 308 releases**.
 
 Each **_major release_** usually corresponds with the addition of one new module/feature. Each module/feature usually is the equivalent of one (or more) single-purpose plugin. Each **_minor release_** usually contain one or more bugfix or improvements to existing modules/features.
 
 [**Upgrade to ASE Pro**](https://www.wpase.com/chnlg-to-web). **Currently on YEAR END SALE, 20% discount on new license and license upgrade**. Lifetime Deal (LTD) available.
+
+### 9.3.3 (2026.11.16) - ASE Free and Pro
+
+* **[IMPROVED in Free and Pro] Utilities >> View Admin as Role**: Screen layout changes made while viewing as another role now only last until you switch back. This covers dashboard widgets and meta box order, collapsed and hidden boxes, hidden list columns and the column count. The administrator's own layout on the dashboard and edit screens stays as it was. Props to [@lucasp1](https://wordpress.org/support/users/lucasp1/) for [reporting](https://wordpress.org/support/topic/view-admin-as-role-switch-back-and-recovery-url-stop-working-after-opening-the/#post-19063058) the issue in detail.
+
+* **[IMPROVED in Free and Pro] Log In/Out & Register >> Change Login URL**: The custom login URL now keeps the query parameters other plugins add to the login URL when it hands over to the login form. This fixes FluentAuth's two-factor authentication step, where the email verification code field was missing and users could not finish logging in. Props to [@berthold1](https://wordpress.org/support/users/berthold1/) for [reporting](https://wordpress.org/support/topic/compatibility-issue-ase-custom-login-url-and-fluentauth-2fa/) the issue.
+
+* **[IMPROVED in Free] Disable Components >> Disable All Updates**: Added an admin bar status and switcher to quickly re-enable updates and re-disable it. Props to [Edward B.](https://wordpress.org/support/users/edviser/) for [suggesting](https://wordpress.org/support/topic/suggestion-for-disble-updates-feature/) this.
+
+* **[IMPROVED and FIXED in Pro] Admin Interface >> Admin Menu Organizer**: 
+  * Custom menu separators and section headers can now take a typed color in addition to the color picker. Accepted values are hex, rgb() / rgba(), hsl() / hsla(), named colors and CSS variables.
+  * Hex backgrounds keep automatic light or dark title text, including 3-digit hex such as #999. Other background colors show a Text color choice of Light or Dark.
+  * Allow parent menu items to be dragged / repositioned as a submenu of another parent menu, effectively creating a three-level menu structure. Props to Geert L., Naazim M., Rick A., Jarosław K., Nadja v.M. and Benjamin v.d.B.
+
+* **[IMPROVED and FIXED in Pro] Utilities >> Form Builder**: Implemented the option to add BCC email addresses for email notification. Props to Simon for suggesting this improvement.
+
+* **[FIXED in Pro] Admin Interface >> Admin Columns Manager**: 
+  * Fixed a regression introduced in v9.2.1 causing columns for custom fields to show blank values.
+  * Sorting by columns that other plugins already made sortable now works again. For example, EventON's "Start Date" and "End Date" columns no longer fall back to the wrong order when Admin Columns Manager is enabled. Props to Markus F. for reporting the issue in detail and facilitating the troubleshooting process.
+  * Taxonomy columns that other plugins add and fill in themselves no longer show each term twice. For example, EventON's "Location", "Organizer" and "Event Type" columns now list their terms only once when Admin Columns Manager is enabled. Props to Markus F. for reporting the issue.
+  * Fixed an issue where a column set as the default sort did not take effect on sites where WordPress is installed in a subdirectory, e.g. example.com/sub/. The list table now correctly opens in the default sort order. Props to Markus F. for reporting the issue.
+
+* **[FIXED in Pro] Admin Interface >> Admin Logo**: The logo's hover background in the admin menu now follows the selected admin color scheme, matching how menu items are highlighted, instead of always being dark grey. With the Light scheme, hovering no longer puts a dark patch behind the logo that hides dark-colored logos. Props to Maan D. for reporting the issue in detail along with the code fix.
+
+* **[FIXED in Pro] Content Management >> Custom Content Types >> Custom Field Groups**: 
+  * Fixed an issue where WYSIWYG field can not be set to a height smaller than 150 pixels. Props to Stijn V. for reporting the issue.
+  * Removed extranous border around the WYSIWYG field. Props to Stijn V. for reporting the issue.
+
+* **[FIXED in Pro] Utilities >> Site Backup and Migration**: The Sync database export now removes WordPress's internal % placeholder before sending rows to the other site, as the full backup export already does. Before, the placeholder stayed in the destination database in place of every %. This broke percentage values in post content and styles and made serialized options containing a % unreadable. Please sync again after updating to repair sites that were synced before. Props to Matija S. for reporting the issue in detail.
+
+* **[TRANSLATION in Free and Pro]** ASE is now being translated into [41 languages](https://translate.wpase.com/):
+  * **Added new/improved translation** for:
+    * ASE Free: Updated Indonesian, Turkish, Spanish (Spain), Spanish (Chile), Slovak, Portuguese (Brazil), Polish, Norwegian, Hungarian, Galician, French, Dutch.
+  * ASE Pro: Updated Spanish (Spain), Hungarian, Slovak, Indonesian, Czech.
 
 ### 9.3.2 (2026.11.09) - ASE Free and Pro
 

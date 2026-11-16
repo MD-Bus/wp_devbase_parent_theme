@@ -342,4 +342,125 @@ class Disable_Updates {
         );
     }
 
+    /**
+     * Key in the ASE extra option that stores whether all updates are temporarily enabled (paused blocking).
+     *
+     * @since 9.3.2
+     * @var string
+     */
+    const PAUSED_KEY = 'disable_all_updates_paused';
+
+    /**
+     * Action name / nonce action for the admin bar updates toggle.
+     *
+     * @since 9.3.2
+     * @var string
+     */
+    const TOGGLE_ACTION = 'asenha_toggle_all_updates';
+
+    /**
+     * Whether the update blocking of the free "Disable All Updates" module is temporarily paused.
+     *
+     * @since 9.3.2
+     *
+     * @return bool True when updates have been temporarily enabled via the admin bar switch.
+     */
+    public function is_all_updates_paused() {
+        $options_extra = get_option( ASENHA_SLUG_U . '_extra', array() );
+        return is_array( $options_extra ) && !empty( $options_extra[self::PAUSED_KEY] );
+    }
+
+    /**
+     * Store the paused state in the ASE extra option.
+     *
+     * @since 9.3.2
+     *
+     * @param bool $paused Whether update blocking should be paused.
+     */
+    public function set_all_updates_paused( $paused ) {
+        $options_extra = get_option( ASENHA_SLUG_U . '_extra', array() );
+        if ( !is_array( $options_extra ) ) {
+            $options_extra = array();
+        }
+        $options_extra[self::PAUSED_KEY] = (bool) $paused;
+        update_option( ASENHA_SLUG_U . '_extra', $options_extra, true );
+    }
+
+    /**
+     * Add the "Updates: Disabled / Enabled" switch to the admin bar.
+     *
+     * @since 9.3.2
+     *
+     * @param \WP_Admin_Bar $wp_admin_bar Admin bar instance.
+     */
+    public function add_admin_bar_updates_toggle( $wp_admin_bar ) {
+        if ( !current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        $paused = $this->is_all_updates_paused();
+        if ( $paused ) {
+            $label = __( 'Updates: Enabled', 'admin-site-enhancements' );
+            $tooltip = __( 'All updates are temporarily enabled. Click to disable them again.', 'admin-site-enhancements' );
+        } else {
+            $label = __( 'Updates: Disabled', 'admin-site-enhancements' );
+            $tooltip = __( 'All updates are disabled. Click to temporarily enable them.', 'admin-site-enhancements' );
+        }
+        $title = '<span class="asenha-updates-label">' . esc_html( $label ) . '</span>' . '<span class="asenha-updates-switch" aria-hidden="true"><span class="asenha-updates-switch-knob"></span></span>';
+        $wp_admin_bar->add_node( array(
+            'id'     => 'asenha-updates-toggle',
+            'parent' => 'top-secondary',
+            'title'  => $title,
+            'href'   => wp_nonce_url( admin_url( 'admin-post.php?action=' . self::TOGGLE_ACTION ), self::TOGGLE_ACTION ),
+            'meta'   => array(
+                'class' => ( $paused ? 'is-enabled' : 'is-disabled' ),
+                'title' => $tooltip,
+            ),
+        ) );
+    }
+
+    /**
+     * Handle a click on the admin bar updates switch.
+     *
+     * @since 9.3.2
+     */
+    public function handle_updates_toggle() {
+        if ( !current_user_can( 'manage_options' ) ) {
+            wp_die( esc_html__( 'You do not have permission to change the update status.', 'admin-site-enhancements' ), '', array(
+                'response' => 403,
+            ) );
+        }
+        check_admin_referer( self::TOGGLE_ACTION );
+        $enable_updates = !$this->is_all_updates_paused();
+        $this->set_all_updates_paused( $enable_updates );
+        if ( $enable_updates ) {
+            // Placeholder transients saved while blocked carry a fresh last_checked; clear them so checks run right away.
+            delete_site_transient( 'update_core' );
+            delete_site_transient( 'update_plugins' );
+            delete_site_transient( 'update_themes' );
+        }
+        $redirect_to = wp_get_referer();
+        if ( empty( $redirect_to ) ) {
+            $redirect_to = admin_url();
+        }
+        wp_safe_redirect( $redirect_to );
+        exit;
+    }
+
+    /**
+     * Enqueue the admin bar switch styles for users who can see the switch.
+     *
+     * @since 9.3.2
+     */
+    public function enqueue_admin_bar_toggle_styles() {
+        if ( !is_admin_bar_showing() || !current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        wp_enqueue_style(
+            'asenha-disable-updates-admin-bar',
+            ASENHA_URL . 'assets/css/disable-updates-admin-bar.css',
+            array('admin-bar'),
+            ASENHA_VERSION
+        );
+    }
+
 }

@@ -868,50 +868,58 @@ class Admin_Site_Enhancements {
         // Disable All Updates
         if ( array_key_exists( 'disable_all_updates', $options ) && $options['disable_all_updates'] ) {
             $disable_updates = new ASENHA\Classes\Disable_Updates();
-            add_action( 'admin_init', [$disable_updates, 'disable_update_notices_version_checks'] );
-            // Disable core update
-            add_filter( 'pre_transient_update_core', [$disable_updates, 'override_version_check_info'] );
-            add_filter( 'pre_site_transient_update_core', [$disable_updates, 'override_version_check_info'] );
-            // Disable theme updates
-            add_filter( 'pre_transient_update_themes', [$disable_updates, 'override_version_check_info'] );
-            add_filter( 'pre_site_transient_update_themes', [$disable_updates, 'override_version_check_info'] );
-            add_action( 'pre_set_site_transient_update_themes', [$disable_updates, 'override_version_check_info'], 20 );
-            // Disable plugin updates
-            add_filter( 'pre_transient_update_plugins', [$disable_updates, 'override_version_check_info'] );
-            add_filter( 'pre_site_transient_update_plugins', [$disable_updates, 'override_version_check_info'] );
-            add_action( 'pre_set_site_transient_update_plugins', [$disable_updates, 'override_version_check_info'], 20 );
-            // Disable auto updates
-            add_filter( 'automatic_updater_disabled', '__return_true' );
-            if ( !defined( 'AUTOMATIC_UPDATER_DISABLED' ) ) {
-                define( 'AUTOMATIC_UPDATER_DISABLED', true );
+            // Admin bar switch to temporarily enable / re-disable all updates without turning off the module
+            add_action( 'admin_bar_menu', [$disable_updates, 'add_admin_bar_updates_toggle'], 100 );
+            add_action( 'admin_post_' . ASENHA\Classes\Disable_Updates::TOGGLE_ACTION, [$disable_updates, 'handle_updates_toggle'] );
+            add_action( 'admin_enqueue_scripts', [$disable_updates, 'enqueue_admin_bar_toggle_styles'] );
+            add_action( 'wp_enqueue_scripts', [$disable_updates, 'enqueue_admin_bar_toggle_styles'] );
+            // Only block updates when they have not been temporarily enabled via the admin bar switch
+            if ( !$disable_updates->is_all_updates_paused() ) {
+                add_action( 'admin_init', [$disable_updates, 'disable_update_notices_version_checks'] );
+                // Disable core update
+                add_filter( 'pre_transient_update_core', [$disable_updates, 'override_version_check_info'] );
+                add_filter( 'pre_site_transient_update_core', [$disable_updates, 'override_version_check_info'] );
+                // Disable theme updates
+                add_filter( 'pre_transient_update_themes', [$disable_updates, 'override_version_check_info'] );
+                add_filter( 'pre_site_transient_update_themes', [$disable_updates, 'override_version_check_info'] );
+                add_action( 'pre_set_site_transient_update_themes', [$disable_updates, 'override_version_check_info'], 20 );
+                // Disable plugin updates
+                add_filter( 'pre_transient_update_plugins', [$disable_updates, 'override_version_check_info'] );
+                add_filter( 'pre_site_transient_update_plugins', [$disable_updates, 'override_version_check_info'] );
+                add_action( 'pre_set_site_transient_update_plugins', [$disable_updates, 'override_version_check_info'], 20 );
+                // Disable auto updates
+                add_filter( 'automatic_updater_disabled', '__return_true' );
+                if ( !defined( 'AUTOMATIC_UPDATER_DISABLED' ) ) {
+                    define( 'AUTOMATIC_UPDATER_DISABLED', true );
+                }
+                if ( !defined( 'WP_AUTO_UPDATE_CORE' ) ) {
+                    define( 'WP_AUTO_UPDATE_CORE', false );
+                }
+                add_filter( 'auto_update_core', '__return_false' );
+                add_filter( 'wp_auto_update_core', '__return_false' );
+                add_filter( 'allow_minor_auto_core_updates', '__return_false' );
+                add_filter( 'allow_major_auto_core_updates', '__return_false' );
+                add_filter( 'allow_dev_auto_core_updates', '__return_false' );
+                add_filter( 'auto_update_plugin', '__return_false' );
+                add_filter( 'auto_update_theme', '__return_false' );
+                add_filter( 'auto_update_translation', '__return_false' );
+                add_filter( 'async_update_translation', '__return_false' );
+                remove_action( 'init', 'wp_schedule_update_checks' );
+                // Disable update emails
+                add_filter( 'auto_core_update_send_email', '__return_false' );
+                add_filter( 'send_core_update_notification_email', '__return_false' );
+                add_filter( 'automatic_updates_send_debug_email', '__return_false' );
+                add_filter( 'auto_plugin_update_send_email', '__return_false' );
+                add_filter( 'auto_theme_update_send_email', '__return_false' );
+                // Remove Dashboard >> Updates menu
+                add_action( 'admin_menu', [$disable_updates, 'remove_updates_menu'] );
+                $disable_updates->enable_request_and_cron_blocks( array(
+                    'core'        => true,
+                    'plugins'     => true,
+                    'themes'      => true,
+                    'auto_update' => true,
+                ) );
             }
-            if ( !defined( 'WP_AUTO_UPDATE_CORE' ) ) {
-                define( 'WP_AUTO_UPDATE_CORE', false );
-            }
-            add_filter( 'auto_update_core', '__return_false' );
-            add_filter( 'wp_auto_update_core', '__return_false' );
-            add_filter( 'allow_minor_auto_core_updates', '__return_false' );
-            add_filter( 'allow_major_auto_core_updates', '__return_false' );
-            add_filter( 'allow_dev_auto_core_updates', '__return_false' );
-            add_filter( 'auto_update_plugin', '__return_false' );
-            add_filter( 'auto_update_theme', '__return_false' );
-            add_filter( 'auto_update_translation', '__return_false' );
-            add_filter( 'async_update_translation', '__return_false' );
-            remove_action( 'init', 'wp_schedule_update_checks' );
-            // Disable update emails
-            add_filter( 'auto_core_update_send_email', '__return_false' );
-            add_filter( 'send_core_update_notification_email', '__return_false' );
-            add_filter( 'automatic_updates_send_debug_email', '__return_false' );
-            add_filter( 'auto_plugin_update_send_email', '__return_false' );
-            add_filter( 'auto_theme_update_send_email', '__return_false' );
-            // Remove Dashboard >> Updates menu
-            add_action( 'admin_menu', [$disable_updates, 'remove_updates_menu'] );
-            $disable_updates->enable_request_and_cron_blocks( array(
-                'core'        => true,
-                'plugins'     => true,
-                'themes'      => true,
-                'auto_update' => true,
-            ) );
         }
         // Disable Author Archives
         if ( array_key_exists( 'disable_author_archives', $options ) && $options['disable_author_archives'] ) {
@@ -1240,6 +1248,7 @@ class Admin_Site_Enhancements {
             add_action( 'init', [$view_admin_as_role, 'maybe_restore_administrator_from_recovery_cookie'], 1 );
             add_action( 'init', [$view_admin_as_role, 'role_switcher_to_view_admin_as'] );
             add_action( 'init', [$view_admin_as_role, 'maybe_extend_view_as_session'], 20 );
+            add_action( 'init', [$view_admin_as_role, 'maybe_isolate_screen_layout_preferences'], 20 );
             add_action( 'wp_logout', [$view_admin_as_role, 'maybe_restore_administrator_on_logout'] );
             add_action(
                 'profile_update',

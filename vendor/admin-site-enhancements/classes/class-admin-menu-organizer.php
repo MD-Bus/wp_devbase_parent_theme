@@ -27,6 +27,77 @@ class Admin_Menu_Organizer {
     private $amo_save_user_capability_cache__premium_only = array();
 
     /**
+     * Max number of parent menus that can be nested into another parent's submenu.
+     *
+     * @since 9.3.3
+     */
+    const NESTED_PARENTS_MAX__PREMIUM_ONLY = 100;
+
+    /**
+     * Slug prefix of the AMO-page placeholder row that marks a nested parent's position in its target submenu.
+     *
+     * @since 9.3.3
+     */
+    const NESTED_PLACEHOLDER_PREFIX__PREMIUM_ONLY = '__asenha_amo_nested__';
+
+    /**
+     * Parent menus nested into another parent's submenu during this request.
+     *
+     * Static because Settings_Fields_Render creates its own Admin_Menu_Organizer instance.
+     *
+     * @since 9.3.3
+     *
+     * @var array CSS ID => array( 'slug', 'target', 'menu_row', 'row_url' ).
+     */
+    private static $nested_parent_registry__premium_only = array();
+
+    /**
+     * CSS ID of the nested parent the current screen belongs to, if any.
+     *
+     * @since 9.3.3
+     *
+     * @var string
+     */
+    private static $current_nested_parent__premium_only = '';
+
+    /**
+     * Targets that had no submenu and were given one (their own page as the first row) to hold a nested parent.
+     *
+     * @since 9.3.3
+     *
+     * @var array Target slug => true.
+     */
+    private static $targets_given_submenu__premium_only = array();
+
+    /**
+     * Decoded custom_menu_new_items, keyed by a hash of the stored value so a changed option is re-read.
+     *
+     * @since 9.3.3
+     *
+     * @var array array( 'hash' => string, 'items' => array ).
+     */
+    private static $custom_menu_items_cache__premium_only = array();
+
+    /**
+     * Nested parent slug temporarily mapped in $_wp_real_parent_file while the admin menu prints.
+     *
+     * @since 9.3.3
+     *
+     * @var string
+     */
+    private static $real_parent_file_mapped_slug__premium_only = '';
+
+    /**
+     * The submenu_file value of a nested parent's screen, before it is swapped for the nested row URL.
+     * Used to find the current third-level item.
+     *
+     * @since 9.3.3
+     *
+     * @var string|null
+     */
+    private static $original_submenu_file__premium_only = null;
+
+    /**
      * Make the "Collapse Menu" toggler sticky at the bottom of the admin menu
      * 
      * @since 8.2.3
