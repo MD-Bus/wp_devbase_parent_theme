@@ -10,6 +10,13 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.47.1] — 2026-11-15
+
+### Changed
+
+- Test release for Warden's release labels: no code change. Give it the Urgent label in Warden to check that a site
+  installs it at once instead of waiting for its share of the staged rollout.
+
 ## [1.47.0] — 2026-11-15
 
 ### Changed
