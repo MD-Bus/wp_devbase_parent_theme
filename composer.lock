@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "56b7771c07d5d9474d97bacea0f27888",
+    "content-hash": "433d7ef93ed8cbb1c508280617d896bc",
     "packages": [
         {
             "name": "composer/installers",
@@ -590,15 +590,15 @@
         },
         {
             "name": "wp-plugin/admin-site-enhancements",
-            "version": "9.3.2",
+            "version": "9.3.3",
             "source": {
                 "type": "svn",
                 "url": "https://plugins.svn.wordpress.org/admin-site-enhancements/",
-                "reference": "tags/9.3.2"
+                "reference": "tags/9.3.3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/admin-site-enhancements.9.3.2.zip"
+                "url": "https://downloads.wordpress.org/plugin/admin-site-enhancements.9.3.3.zip"
             },
             "require": {
                 "composer/installers": "~1.0|~2.0"
@@ -617,7 +617,7 @@
                 "issues": "https://wordpress.org/support/plugin/admin-site-enhancements",
                 "source": "https://plugins.svn.wordpress.org/admin-site-enhancements"
             },
-            "time": "2026-11-09T00:07:07+00:00"
+            "time": "2026-11-16T00:21:46+00:00"
         },
         {
             "name": "wp-plugin/autodescription",
