@@ -10,6 +10,12 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.47.5] — 2026-11-16
+
+### Changed
+
+- **Admin and Site Enhancements 9.3.2 → 9.3.3** (Dependabot). Fixes the custom login URL dropping query parameters other plugins add (FluentAuth's two-factor step), and makes View Admin as Role layout changes last only while viewing as that role. The full theme test suite passes with it.
+
 ## [1.47.4] — 2026-11-15
 
 ### Changed
