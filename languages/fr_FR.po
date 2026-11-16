@@ -1128,3 +1128,21 @@ msgstr "API e-mail (%1$s) testée avec succès pour la dernière fois : %2$s."
 
 msgid "Email API (%1$s) last test FAILED (%2$s): %3$s"
 msgstr "API e-mail (%1$s) : dernier test ÉCHOUÉ (%2$s) : %3$s"
+
+#: inc/updates/rollout.php
+msgid "Urgent"
+msgstr "Urgent"
+
+#: inc/updates/rollout.php
+msgid "Bug fix"
+msgstr "Correctif"
+
+#: inc/updates/rollout.php
+msgid "New feature"
+msgstr "Nouvelle fonctionnalité"
+
+#. translators: %s: a list of release labels, e.g. "Urgent, Security".
+#: inc/theme-settings/licence/status.php
+#, php-format
+msgid "Labels: %s"
+msgstr "Étiquettes : %s"

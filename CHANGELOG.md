@@ -10,6 +10,20 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.47.0] — 2026-11-15
+
+### Changed
+
+- **Urgent releases come from Warden's labels.** A release with the **Urgent** label (Warden 0.7.0 and later, sent as
+  `labels` in the signed check answer) skips the staged rollout. When Warden sends labels, the release notes no longer
+  count, so a note that happens to contain `[urgent]` no longer skips the wait. A Warden older than 0.7.0 sends no
+  labels, and its `[urgent]` marker in the notes still works. The never-sent `urgent: true` field is no longer read.
+
+### Added
+
+- The Licence Status tab lists the labels of the release offered (Urgent, Security, Bug fix, New feature, or a track's
+  own label).
+
 ## [1.46.1] — 2026-11-15
 
 ### Fixed

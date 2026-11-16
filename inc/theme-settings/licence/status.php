@@ -128,6 +128,16 @@ function devbase_licence_status_row( $stylesheet, $licence ) {
 		$update_cell = esc_html__( 'Up to date.', 'devbase_parent_theme' );
 	}
 
+	// Warden's labels on the release offered (Urgent, Security, ...), so the reason an update came at once is visible.
+	if ( null !== $update && ! $rolled_back && function_exists( 'devbase_update_release_label_names' ) ) {
+		$names = devbase_update_release_label_names( $update );
+
+		if ( $names ) {
+			/* translators: %s: a list of release labels, e.g. "Urgent, Security". */
+			$update_cell .= '<br><small>' . sprintf( esc_html__( 'Labels: %s', 'devbase_parent_theme' ), esc_html( implode( ', ', $names ) ) ) . '</small>';
+		}
+	}
+
 	// A stale error alongside a good cached response is worth showing: it
 	// means we're running on a last-known-good answer, not a fresh one.
 	if ( '' !== $error ) {

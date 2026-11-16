@@ -14,7 +14,8 @@
 //     cached answer stands, as everywhere else (fail-soft).
 //   - A single WP-Cron event at the due time refreshes the update list and runs WordPress's unattended
 //     updates, so the install does not wait for core's next twice-daily check.
-//   - Skipped for an urgent release: `urgent: true` in Warden's release, or "[urgent]" in its release notes (its `changelog`).
+//   - Skipped for an urgent release: one carrying Warden's `urgent` label (`labels`, Warden 0.7.0+), or, from an older
+//     Warden that sends no labels, "[urgent]" in its release notes (its `changelog`).
 //     The filter `devbase/updates/rollout_window` sets the window in seconds; 0 turns staging off.
 //
 // Also here: a version this site rolled back (inc/updates/rollback.php) is never offered again; the
@@ -30,13 +31,43 @@ function devbase_update_rollout_window() {
 
 /** Whether a release skips the wait. */
 function devbase_update_release_urgent( array $release ) {
-	// Warden's check answer carries the public release notes as `changelog` (its internal `notes` never leave Warden), so
-	// "[urgent]" is looked for in both.
-	$urgent = ! empty( $release['urgent'] )
-		|| false !== stripos( (string) ( $release['changelog'] ?? '' ), '[urgent]' )
-		|| false !== stripos( (string) ( $release['notes'] ?? '' ), '[urgent]' );
+	// Warden 0.7.0 and later send the release's labels as a list of keys (`["urgent", "security"]`, or `[]`), inside the
+	// signed answer. When the answer has a `labels` list, it alone decides: the words of the release notes no longer count.
+	// An answer without one comes from a Warden before 0.7.0, which marked an urgent release with "[urgent]" in its public
+	// release notes (`changelog`); that is still read there, so nothing changes until Warden is upgraded.
+	if ( isset( $release['labels'] ) && is_array( $release['labels'] ) ) {
+		$urgent = in_array( 'urgent', array_map( 'strtolower', array_map( 'strval', $release['labels'] ) ), true );
+	} else {
+		$urgent = false !== stripos( (string) ( $release['changelog'] ?? '' ), '[urgent]' );
+	}
 
 	return (bool) apply_filters( 'devbase/updates/release_urgent', $urgent, $release );
+}
+
+/** The keys of a release's Warden labels (urgent, security, bug_fix, feature, or a track's own), [] when it has none. */
+function devbase_update_release_labels( array $release ) {
+	$labels = isset( $release['labels'] ) && is_array( $release['labels'] ) ? $release['labels'] : array();
+
+	return array_values( array_filter( array_map( 'sanitize_key', array_map( 'strval', $labels ) ) ) );
+}
+
+/**
+ * A release's labels as words to show: Warden's four default labels by name, a track's own label from its key
+ * (`long_term_support`: "Long term support"). Warden sends keys only; the names and colours stay in Warden.
+ *
+ * @return string[]
+ */
+function devbase_update_release_label_names( array $release ) {
+	$known = array(
+		'urgent'   => __( 'Urgent', 'devbase_parent_theme' ),
+		'security' => __( 'Security', 'devbase_parent_theme' ),
+		'bug_fix'  => __( 'Bug fix', 'devbase_parent_theme' ),
+		'feature'  => __( 'New feature', 'devbase_parent_theme' ),
+	);
+
+	return array_map( function ( $key ) use ( $known ) {
+		return $known[ $key ] ?? ucfirst( str_replace( '_', ' ', $key ) );
+	}, devbase_update_release_labels( $release ) );
 }
 
 /** @return array<string, array{version:string, seen_at:int, rechecked_at:int}> */

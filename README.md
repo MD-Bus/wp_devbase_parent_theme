@@ -480,7 +480,7 @@ the submission.
 | `devbase/abilities/audit_records` | Whether a call to an ability is recorded in the MCP activity log. |
 | `devbase/backup/disk_needed` | Bytes free that a backup needs to start (default 1.5 × the last backup + 100 MiB). |
 | `devbase/updates/rollout_window` | Seconds over which sites spread a new release (default 6 hours; 0 installs at once). |
-| `devbase/updates/release_urgent` | Whether a release skips the staged rollout (default: `[urgent]` in its Warden notes). |
+| `devbase/updates/release_urgent` | Whether a release skips the staged rollout (default: it carries Warden's `urgent` label). |
 | `devbase/updates/rollback_enabled` | `false` turns off the health check and rollback after a theme update. |
 | `devbase/maintenance/spawn_cron` | `false` stops a Brand Relay ping from starting WordPress's scheduled tasks. |
 | `devbase/maintenance/sync_plugins_on_ping` | `false` stops a ping from applying a pending bundled-plugin change. |
@@ -753,7 +753,7 @@ when something goes wrong:
 window, counted from when the release was published in Warden, so a bad release can be withdrawn there before most
 sites have it. When its wait is over a site asks Warden again before installing, so a withdrawn release is not taken
 from a cached answer, and it installs then rather than at WordPress's next twice-daily check. The Licence status tab
-says when the site will install it. For a release that cannot wait, put `[urgent]` in its notes in Warden.
+says when the site will install it. For a release that cannot wait, give it the **Urgent** label in Warden (0.7.0 and later); the Status tab shows a release's labels.
 
 **Health check and rollback.** WordPress checks a plugin's update for a fatal error and puts the old version back;
 it does nothing of the kind for a theme. For our two themes, the home page and the admin side

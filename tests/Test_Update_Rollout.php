@@ -149,18 +149,42 @@ class Test_Update_Rollout extends WP_UnitTestCase {
 		$this->assertSame( '99.0.0', $this->offered() );
 	}
 
-	public function test_an_urgent_release_does_not_wait() {
-		$this->release( '99.0.0', 0, array( 'notes' => 'Fixes the contact form. [urgent]' ) );
-		$this->assertSame( '99.0.0', $this->offered() );
-
-		$this->assertTrue( devbase_update_release_urgent( array( 'urgent' => true ) ) );
-		$this->assertFalse( devbase_update_release_urgent( array( 'notes' => 'Not so urgent.' ) ), 'Only the marker, not the word.' );
-	}
-
-	public function test_urgent_in_wardens_public_release_notes_skips_the_wait() {
-		$release = $this->release( '99.0.0', 0, array( 'changelog' => 'Fixes a login bug. [urgent]' ) );
+	public function test_a_release_with_wardens_urgent_label_does_not_wait() {
+		$release = $this->release( '99.0.0', 0, array( 'labels' => array( 'security', 'urgent' ) ) );
 
 		$this->assertSame( 0, devbase_update_rollout_due_at( get_template(), $release ) );
+		$this->assertSame( '99.0.0', $this->offered() );
+	}
+
+	public function test_other_labels_or_none_keep_the_wait() {
+		$this->assertFalse( devbase_update_release_urgent( array( 'labels' => array() ) ) );
+		$this->assertFalse( devbase_update_release_urgent( array( 'labels' => array( 'security', 'bug_fix' ) ) ) );
+
+		$release = $this->release( '99.0.0', 0, array( 'labels' => array( 'bug_fix' ) ) );
+		$this->assertNotSame( 0, devbase_update_rollout_due_at( get_template(), $release ), 'A bug fix waits its share of the window like any release.' );
+	}
+
+	public function test_with_labels_sent_the_release_notes_no_longer_count() {
+		$this->assertFalse(
+			devbase_update_release_urgent( array( 'labels' => array(), 'changelog' => 'Fixes a login bug. [urgent]' ) ),
+			'Warden 0.7.0+ decides with labels only.'
+		);
+	}
+
+	public function test_an_older_warden_without_labels_still_marks_urgent_in_the_release_notes() {
+		$release = $this->release( '99.0.0', 0, array( 'changelog' => 'Fixes a login bug. [urgent]' ) );
+		unset( $release['labels'] );
+
+		$this->assertSame( 0, devbase_update_rollout_due_at( get_template(), $release ) );
+		$this->assertFalse( devbase_update_release_urgent( array( 'changelog' => 'Not so urgent.' ) ), 'Only the marker, not the word.' );
+	}
+
+	public function test_label_names_for_the_status_tab() {
+		$this->assertSame(
+			array( __( 'Urgent', 'devbase_parent_theme' ), __( 'Bug fix', 'devbase_parent_theme' ), 'Long term support' ),
+			devbase_update_release_label_names( array( 'labels' => array( 'urgent', 'bug_fix', 'long_term_support', '' ) ) )
+		);
+		$this->assertSame( array(), devbase_update_release_label_names( array() ) );
 	}
 
 	public function test_the_wait_counts_from_wardens_released_at() {

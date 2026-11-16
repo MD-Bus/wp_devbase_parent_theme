@@ -64,8 +64,8 @@ passwords, since its users sign in through WordPress.com, so the client needs a 
 - *Batch check* (one request for both tags): decided against (2026-11-15). It saves two requests a day per site and
   would need a new Warden endpoint and a second answer shape in the updater, whose signature checks are the part that
   matters most.
-- *"Urgent" field*: done in Warden 0.6.3 as a **Mark as urgent** button that writes the `[urgent]` marker the theme
-  already reads. A separate flag would add nothing the button does not do.
+- *"Urgent" field*: done as Warden 0.7.0's release labels. The theme reads `labels` from 1.47.0 (the `urgent` label
+  skips the rollout; the Status tab lists the labels) and keeps the `[urgent]` text only for a Warden that sends no labels.
 - *Kill switch on `valid: false`*: not planned (owner's decision, 2026-11-15). The children keep locking on the status
   `suspended`, which works. Warden's `valid: false` also covers an expired licence, an unknown key and `blocked` (its
   abuse protection), so locking on it would take sites offline where the licence-lapse rule keeps them up. Not to be
@@ -154,7 +154,7 @@ in the `AGENT.md` of its folder.
 | Suggestion | Built as | Where |
 | --- | --- | --- |
 | A health check after a theme update, with rollback | Home page loaded before and after; a broken update is undone from WordPress's own temporary backup and that version is never offered again | `inc/updates/rollback.php`, `tests/Test_Update_Rollback.php` |
-| A staged rollout | Each site waits its share of a 6-hour window, asks Warden again, then installs; `[urgent]` in the notes skips it | `inc/updates/rollout.php`, `tests/Test_Update_Rollout.php` |
+| A staged rollout | Each site waits its share of a 6-hour window, asks Warden again, then installs; the Urgent label in Warden skips it | `inc/updates/rollout.php`, `tests/Test_Update_Rollout.php` |
 | Mail failures on System Status and in the health report | Every `wp_mail_failed` kept; `mail` in the report, scrubbed | `inc/theme-settings/smtp/failures.php`, `tests/Test_Mail_Log.php` |
 | Reply-To on form notifications, and a Resend button | Reply-To from the submitter's email field; Resend for administrators | `inc/forms/dispatch/`, `tests/Test_Form_Reply_Resend_Privacy.php` |
 | Tracking only where it should run | Off on non-production and for logged-in staff; `devbase/tracking/enabled` for consent | `inc/theme-settings/tracking/inject.php`, `tests/Test_Tracking_Gate.php` |
@@ -163,8 +163,7 @@ in the `AGENT.md` of its folder.
 | Static analysis in the release gate | PHPStan level 5, release check 8c and CI | `phpstan.neon.dist`, `bin/release.sh`, `tests/Test_Release_Script.php` |
 | Free disk space checked before a backup starts | 1.5 × the last backup + 100 MiB | `inc/backups/backups.php`, `tests/Test_Backups.php` |
 
-**Open on these.** Warden has no "urgent" field on a release, so the rollout reads `[urgent]` from the notes (or `urgent: true`
-if Warden ever sends it): worth a real field in Warden. The rollback was tried end to end on 2026-11-10, on a throwaway WordPress (PHP's built-in server, its own database on
+**Open on these.** The rollback was tried end to end on 2026-11-10, on a throwaway WordPress (PHP's built-in server, its own database on
 Local's MySQL) with a fake Warden signing in Warden's shape with a test key; the package checks, WordPress's upgrader, the
 loopback scrape and `restore_temp_backup()` were all real. A healthy release stayed. A release whose `functions.php` fatals
 was put back by the unattended updater (from `wp-cron.php`) and from Dashboard > Updates, the files matched the previous
