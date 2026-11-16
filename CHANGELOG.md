@@ -10,6 +10,13 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.47.2] — 2026-11-15
+
+### Changed
+
+- **Update checks ask Warden for the Stable channel by name** (`channel=stable`) instead of relying on Warden's default.
+  Warden 0.8.0 gives each track its own channels (Stable, Beta, and any added); a site only ever takes Stable releases.
+
 ## [1.47.1] — 2026-11-15
 
 ### Changed

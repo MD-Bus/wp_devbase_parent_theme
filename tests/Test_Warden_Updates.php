@@ -148,6 +148,7 @@ class Test_Warden_Updates extends WP_UnitTestCase {
 		parse_str( (string) wp_parse_url( $url, PHP_URL_QUERY ), $query );
 
 		$this->assertSame( '1.0.0', $query['version'] );
+		$this->assertSame( 'stable', $query['channel'], 'Always the Stable channel, never beta or a test channel.' );
 		$this->assertSame( wp_parse_url( home_url(), PHP_URL_HOST ), $query['domain'] );
 		$this->assertGreaterThanOrEqual( 8, strlen( $query['nonce'] ), 'Warden requires a nonce of 8-64 characters.' );
 		$this->assertLessThanOrEqual( 64, strlen( $query['nonce'] ) );

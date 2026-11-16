@@ -213,9 +213,12 @@ function devbase_warden_check( $track, $licence, $version, $force = false ) {
 	$nonce = bin2hex( random_bytes( 16 ) );
 	$tag   = devbase_warden_tag( $track, $licence );
 
+	// Always the Stable channel, named outright rather than left to Warden's default (Warden 0.8.0+ has channels per
+	// track; a site never takes beta or other test builds).
 	$query = array(
 		'domain'  => devbase_warden_domain(),
 		'version' => $version,
+		'channel' => 'stable',
 		'nonce'   => $nonce,
 	);
 
