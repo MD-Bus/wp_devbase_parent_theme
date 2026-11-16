@@ -1081,6 +1081,8 @@ class Settings_Fields_Render {
                         echo esc_attr( $menu_item_id );
                         ?>" class="menu-item parent-menu-item menu-item-depth-0" data-custom-menu-item="<?php 
                         echo esc_attr( $is_custom_menu );
+                        ?>" data-menu-slug="<?php 
+                        echo esc_attr( $menu_info[2] );
                         ?>">
 							<div class="menu-item-bar">
 								<div class="menu-item-handle">
@@ -1337,7 +1339,8 @@ class Settings_Fields_Render {
             'custom_submenus_order',
             'custom_menu_always_hidden',
             'custom_submenu_always_hidden',
-            'custom_menu_new_items'
+            'custom_menu_new_items',
+            'custom_menu_nested_parents'
         );
         if ( in_array( $field_id, $json_option_field_ids, true ) ) {
             $field_option_value = $this->normalize_admin_menu_json_option_for_output( $field_option_value );

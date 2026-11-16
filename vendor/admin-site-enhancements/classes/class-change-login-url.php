@@ -125,8 +125,15 @@ class Change_Login_URL {
                 }
             } else {
                 // Redirect to the login URL with custom login slug in the query parameters.
+                // Carry other query arguments, e.g. FluentAuth's 2FA challenge (fls_2fa, login_hash, action),
+                // so plugins that build URLs on wp_login_url() still reach their screen on wp-login.php.
                 // Carry redirect_to and reauth so a successful login can return to the original URL.
                 $login_url = site_url( '/wp-login.php?' . $custom_login_slug . '&redirect=false' );
+                $forwarded = $this->get_forwarded_login_query_args();
+                if ( !empty( $forwarded ) ) {
+                    // add_query_arg() does not encode newly added values.
+                    $login_url = add_query_arg( rawurlencode_deep( $forwarded ), $login_url );
+                }
                 wp_safe_redirect( $this->append_preserved_login_redirect_args( $login_url ) );
                 exit;
             }
@@ -470,6 +477,59 @@ class Change_Login_URL {
             $url = add_query_arg( 'reauth', '1', $url );
         }
         return $url;
+    }
+
+    /**
+     * Query arguments from a /{custom-slug}/ request to carry over to wp-login.php.
+     *
+     * Plugins build URLs on wp_login_url(), which returns /{custom-slug}/, and add
+     * their own query arguments. For example, FluentAuth's two-factor challenge is
+     * /{custom-slug}/?fls_2fa=verify&login_hash=…&action=fls_2fa_verify. Without
+     * these arguments wp-login.php shows the plain login form instead.
+     *
+     * Forwarding them grants nothing new: the destination already contains the
+     * custom slug, and anyone who knows it can open wp-login.php?{slug}&… directly.
+     *
+     * Skipped keys:
+     * - the custom login slug, which is already on the destination URL;
+     * - `redirect`, which the destination sets to `false`;
+     * - `redirect_to` and `reauth`, which append_preserved_login_redirect_args()
+     *   adds after validation.
+     *
+     * Array values, and keys with characters outside [A-Za-z0-9_.-], are dropped.
+     * Keys are not lowercased, so case-sensitive arguments from other plugins survive.
+     *
+     * @since 9.3.3
+     *
+     * @return array<string,string> Key => sanitized, unencoded value.
+     */
+    public function get_forwarded_login_query_args() {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only query arguments copied onto the login URL.
+        if ( empty( $_GET ) || !is_array( $_GET ) ) {
+            return array();
+        }
+        $options = get_option( ASENHA_SLUG_U, array() );
+        $custom_login_slug = ( is_array( $options ) && isset( $options['custom_login_slug'] ) ? (string) $options['custom_login_slug'] : '' );
+        $skipped_keys = array('redirect', 'redirect_to', 'reauth');
+        if ( '' !== $custom_login_slug ) {
+            $skipped_keys[] = $custom_login_slug;
+        }
+        $forwarded = array();
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only query arguments copied onto the login URL.
+        foreach ( $_GET as $key => $value ) {
+            $key = (string) $key;
+            if ( in_array( $key, $skipped_keys, true ) ) {
+                continue;
+            }
+            if ( !preg_match( '/^[A-Za-z0-9_.\\-]+$/', $key ) ) {
+                continue;
+            }
+            if ( !is_string( $value ) ) {
+                continue;
+            }
+            $forwarded[$key] = sanitize_text_field( wp_unslash( $value ) );
+        }
+        return $forwarded;
     }
 
     /**

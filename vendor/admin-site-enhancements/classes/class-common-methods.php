@@ -412,6 +412,80 @@ class Common_Methods {
     }
 
     /**
+     * Whether a color string is a parseable hex value (#rgb or #rrggbb).
+     *
+     * @since 8.8.0
+     *
+     * @param string $color Color value.
+     * @return bool
+     */
+    public function is_parseable_hex_color( $color ) {
+        if ( !is_string( $color ) || '' === $color ) {
+            return false;
+        }
+        $color = trim( $color );
+        return (bool) preg_match( '/^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$/', $color );
+    }
+
+    /**
+     * Sanitize a CSS color value for Admin Menu Organizer custom menu styling.
+     *
+     * Allows hex, rgb/rgba, hsl/hsla, named colors, and CSS variables.
+     *
+     * @since 8.8.0
+     *
+     * @param string $color Color value.
+     * @return string Sanitized color or empty string when invalid.
+     */
+    public function sanitize_menu_color_value( $color ) {
+        if ( !is_string( $color ) ) {
+            return '';
+        }
+        $color = trim( $color );
+        if ( '' === $color ) {
+            return '';
+        }
+        if ( strlen( $color ) > 100 ) {
+            return '';
+        }
+        // Reject patterns that could break out of a CSS value context.
+        if ( preg_match( '/[<>"\';{}\\\\]|url\\s*\\(/i', $color ) ) {
+            return '';
+        }
+        if ( $this->is_parseable_hex_color( $color ) ) {
+            return $color;
+        }
+        if ( preg_match( '/^var\\(--[a-zA-Z0-9_-]+\\)$/', $color ) ) {
+            return $color;
+        }
+        if ( preg_match( '/^rgba?\\(\\s*[\\d.%\\s,]+\\s*\\)$/i', $color ) ) {
+            return preg_replace( '/\\s+/', ' ', $color );
+        }
+        if ( preg_match( '/^hsla?\\(\\s*[\\d.%deg\\s,]+\\s*\\)$/i', $color ) ) {
+            return preg_replace( '/\\s+/', ' ', $color );
+        }
+        if ( preg_match( '/^[a-zA-Z]+$/', $color ) ) {
+            return strtolower( $color );
+        }
+        return '';
+    }
+
+    /**
+     * Resolve manual text color mode to a hex value for menu background contrast.
+     *
+     * @since 8.8.0
+     *
+     * @param string $text_color_mode Text color mode: light or dark.
+     * @return string Hex color.
+     */
+    public function get_menu_text_color_from_mode( $text_color_mode ) {
+        if ( 'dark' === $text_color_mode ) {
+            return '#3c434a';
+        }
+        return '#ffffff';
+    }
+
+    /**
      * Get the post ID of the most recent post in a custom post type
      * 
      * @since 6.4.1
@@ -1170,14 +1244,9 @@ class Common_Methods {
      * @return array
      */
     public function get_cache( $key = null ) {
+        // Reads never prune or write. Stale post types are dropped on set_cache() and on migration only,
+        // so a single request where a post type is not registered cannot wipe its cached entries.
         $cache = $this->get_or_migrate_admin_cache();
-        if ( is_admin() ) {
-            $pruned = $this->prune_stale_post_type_caches( $cache );
-            if ( $pruned !== $cache ) {
-                $cache = $pruned;
-                update_option( $this->get_admin_cache_option_name(), $cache, false );
-            }
-        }
         if ( null === $key ) {
             return $cache;
         }

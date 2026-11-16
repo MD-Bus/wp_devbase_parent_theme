@@ -1,0 +1,117 @@
+/**
+ * Disable All Updates: admin bar switch (free version).
+ *
+ * Shows whether all updates are currently disabled or temporarily enabled.
+ */
+
+#wpadminbar #wp-admin-bar-asenha-updates-toggle > .ab-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-weight: 600;
+	color: #fff;
+}
+
+/* Disabled state: warning background, matching the SE Visibility notice */
+#wpadminbar #wp-admin-bar-asenha-updates-toggle.is-disabled > .ab-item {
+	background-color: #ff9a00;
+}
+
+#wpadminbar #wp-admin-bar-asenha-updates-toggle.is-disabled > .ab-item:hover,
+#wpadminbar #wp-admin-bar-asenha-updates-toggle.is-disabled > .ab-item:focus {
+	background-color: #e68a00;
+	color: #fff;
+}
+
+#wpadminbar #wp-admin-bar-asenha-updates-toggle.is-enabled > .ab-item:hover,
+#wpadminbar #wp-admin-bar-asenha-updates-toggle.is-enabled > .ab-item:focus {
+	color: #fff;
+}
+
+#wpadminbar #wp-admin-bar-asenha-updates-toggle > .ab-item:focus {
+	outline: 2px solid #fff;
+	outline-offset: -2px;
+}
+
+/* Switch track */
+#wpadminbar #wp-admin-bar-asenha-updates-toggle .asenha-updates-switch {
+	position: relative;
+	display: inline-block;
+	box-sizing: border-box;
+	width: 28px;
+	height: 16px;
+	border-radius: 8px;
+	border: 1px solid rgba(255, 255, 255, 0.85);
+	background-color: rgba(0, 0, 0, 0.25);
+	transition: background-color 0.15s ease-in-out;
+	flex-shrink: 0;
+}
+
+/* Switch knob */
+#wpadminbar #wp-admin-bar-asenha-updates-toggle .asenha-updates-switch-knob {
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background-color: #fff;
+	transition: left 0.15s ease-in-out;
+}
+
+/* Enabled state: green track, knob on the right */
+#wpadminbar #wp-admin-bar-asenha-updates-toggle.is-enabled .asenha-updates-switch {
+	background-color: #00a32a;
+}
+
+#wpadminbar #wp-admin-bar-asenha-updates-toggle.is-enabled .asenha-updates-switch-knob {
+	left: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	#wpadminbar #wp-admin-bar-asenha-updates-toggle .asenha-updates-switch,
+	#wpadminbar #wp-admin-bar-asenha-updates-toggle .asenha-updates-switch-knob {
+		transition: none;
+	}
+}
+
+/* Small screens: show only the switch, keep the label for screen readers */
+@media screen and (max-width: 782px) {
+	/* Core hides most toolbar items on small screens via #wpadminbar #wp-toolbar > ul > li */
+	#wpadminbar #wp-toolbar > ul > li#wp-admin-bar-asenha-updates-toggle {
+		display: block;
+	}
+
+	#wpadminbar #wp-admin-bar-asenha-updates-toggle > .ab-item {
+		height: 46px;
+		padding: 0 10px;
+	}
+
+	#wpadminbar #wp-admin-bar-asenha-updates-toggle .asenha-updates-label {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(1px, 1px, 1px, 1px);
+		clip-path: inset(50%);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	#wpadminbar #wp-admin-bar-asenha-updates-toggle .asenha-updates-switch {
+		width: 36px;
+		height: 20px;
+		border-radius: 10px;
+	}
+
+	#wpadminbar #wp-admin-bar-asenha-updates-toggle .asenha-updates-switch-knob {
+		width: 14px;
+		height: 14px;
+	}
+
+	#wpadminbar #wp-admin-bar-asenha-updates-toggle.is-enabled .asenha-updates-switch-knob {
+		left: 18px;
+	}
+}

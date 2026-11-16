@@ -589,6 +589,14 @@ class Settings_Sanitization {
             $options['disable_all_updates'] = false;
         }
         $options['disable_all_updates'] = ( 'on' == $options['disable_all_updates'] ? true : false );
+        // When the module is turned (back) on, always start with updates disabled, i.e. clear the admin bar switch's paused state
+        if ( $options['disable_all_updates'] && empty( $existing_options['disable_all_updates'] ) ) {
+            $options_extra = get_option( ASENHA_SLUG_U . '_extra', array() );
+            if ( is_array( $options_extra ) && !empty( $options_extra['disable_all_updates_paused'] ) ) {
+                $options_extra['disable_all_updates_paused'] = false;
+                update_option( ASENHA_SLUG_U . '_extra', $options_extra, true );
+            }
+        }
         // Disable Author Archives
         if ( !isset( $options['disable_author_archives'] ) ) {
             $options['disable_author_archives'] = false;

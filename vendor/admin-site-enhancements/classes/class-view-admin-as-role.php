@@ -61,6 +61,26 @@ class View_Admin_As_Role {
     const RECOVERY_COOKIE_HASH_META_KEY = '_asenha_view_admin_as_restore_cookie';
 
     /**
+     * User meta key for screen layout preferences saved during a view-as session.
+     *
+     * Holds an array of meta_key => value. Kept apart from the administrator's
+     * own layout meta and deleted when the session ends.
+     *
+     * @var string
+     */
+    const SCREEN_PREFS_META_KEY = '_asenha_view_admin_as_screen_prefs';
+
+    /**
+     * Screen layout user meta keys that core rebuilds from the boxes or columns on screen.
+     *
+     * Anchored at the start, so it never matches the preview store key or
+     * blog-prefixed keys. Page names pass sanitize_key() in core.
+     *
+     * @var string
+     */
+    const SCREEN_LAYOUT_META_KEY_PATTERN = '/^(?:meta-box-order_|metaboxhidden_|closedpostboxes_|screen_layout_)[a-z0-9_\-]+$|^manage[a-z0-9_\-]+columnshidden$/';
+
+    /**
      * Query argument for the login notice shown after an automatic role restore.
      *
      * @var string
@@ -103,6 +123,15 @@ class View_Admin_As_Role {
      * @var bool
      */
     private static $did_reissue_auth_cookie = false;
+
+    /**
+     * ID of the user whose screen layout preferences are isolated on this request.
+     *
+     * Zero when isolation is off.
+     *
+     * @var int
+     */
+    private static $screen_prefs_user_id = 0;
 
     /**
      * Add menu bar item to view admin as one of the user roles
@@ -560,6 +589,9 @@ class View_Admin_As_Role {
 
                 $this->ensure_recovery_token( get_current_user_id() );
 
+                // Start each preview with no saved screen layout changes.
+                delete_user_meta( get_current_user_id(), self::SCREEN_PREFS_META_KEY );
+
                 // Store current user's username in options
                 if ( ! in_array( $current_user_username, $usernames, true ) ) {
                     $usernames[] = $current_user_username;
@@ -703,6 +735,13 @@ class View_Admin_As_Role {
         delete_user_meta( $user_id, self::PLAIN_TOKEN_META_KEY );
         delete_user_meta( $user_id, self::RECOVERY_NOTICE_URL_META_KEY );
         delete_user_meta( $user_id, self::RECOVERY_COOKIE_HASH_META_KEY );
+        delete_user_meta( $user_id, self::SCREEN_PREFS_META_KEY );
+
+        // The session has ended, so later layout saves on this request go to the user's own meta.
+        if ( $user_id === self::$screen_prefs_user_id ) {
+            self::$screen_prefs_user_id = 0;
+        }
+
         delete_transient( self::RECOVERY_URL_TRANSIENT_PREFIX . $user_id );
         $this->expire_role_recovery_cookie();
     }
@@ -929,6 +968,192 @@ class View_Admin_As_Role {
         }
 
         return in_array( $user->user_login, $usernames, true );
+    }
+
+    /**
+     * Keep screen layout changes made during a view-as session off the administrator's own layout.
+     *
+     * While viewing as another role, core saves dashboard and edit screen layout
+     * (box order, collapsed and hidden boxes, hidden columns) to the
+     * administrator's user meta, listing only the boxes or columns that role
+     * can see. Boxes missing from the list lose their place after switching
+     * back. While the session is active, these keys are read from and written
+     * to a separate preview store instead. The store is deleted when the
+     * session ends, in clear_view_admin_as_recovery_state().
+     *
+     * Runs on init, after role_switcher_to_view_admin_as().
+     *
+     * @since 9.3.3
+     * @return void
+     */
+    public function maybe_isolate_screen_layout_preferences() {
+        if ( self::$screen_prefs_user_id > 0 || ! is_user_logged_in() ) {
+            return;
+        }
+
+        $user = wp_get_current_user();
+
+        if ( ! $this->is_allowlisted_non_admin_view( $user ) ) {
+            return;
+        }
+
+        self::$screen_prefs_user_id = (int) $user->ID;
+
+        add_filter( 'get_user_metadata', array( $this, 'filter_get_screen_layout_meta' ), 10, 4 );
+        add_filter( 'update_user_metadata', array( $this, 'filter_update_screen_layout_meta' ), 10, 4 );
+        add_filter( 'add_user_metadata', array( $this, 'filter_add_screen_layout_meta' ), 10, 4 );
+        add_filter( 'delete_user_metadata', array( $this, 'filter_delete_screen_layout_meta' ), 10, 3 );
+    }
+
+    /**
+     * Whether a user meta key holds screen layout preferences.
+     *
+     * @since 9.3.3
+     * @param mixed $meta_key User meta key.
+     * @return bool
+     */
+    private function is_screen_layout_meta_key( $meta_key ) {
+        return is_string( $meta_key ) && 1 === preg_match( self::SCREEN_LAYOUT_META_KEY_PATTERN, $meta_key );
+    }
+
+    /**
+     * Whether a meta call should go to the preview store.
+     *
+     * The key is checked first, so reads and writes of the preview store itself
+     * (and of any other key) pass through untouched.
+     *
+     * @since 9.3.3
+     * @param int   $object_id User ID.
+     * @param mixed $meta_key  User meta key.
+     * @return bool
+     */
+    private function is_isolated_screen_layout_meta( $object_id, $meta_key ) {
+        return self::$screen_prefs_user_id > 0
+            && $this->is_screen_layout_meta_key( $meta_key )
+            && (int) $object_id === self::$screen_prefs_user_id;
+    }
+
+    /**
+     * Screen layout preferences saved during the current view-as session.
+     *
+     * @since 9.3.3
+     * @param int $user_id User ID.
+     * @return array<string, mixed>
+     */
+    private function get_screen_prefs( $user_id ) {
+        $prefs = get_user_meta( (int) $user_id, self::SCREEN_PREFS_META_KEY, true );
+
+        return is_array( $prefs ) ? $prefs : array();
+    }
+
+    /**
+     * Save the view-as session's screen layout preferences.
+     *
+     * Deletes the store when it is empty.
+     *
+     * @since 9.3.3
+     * @param int                  $user_id User ID.
+     * @param array<string, mixed> $prefs   meta_key => value.
+     * @return void
+     */
+    private function save_screen_prefs( $user_id, $prefs ) {
+        if ( empty( $prefs ) ) {
+            delete_user_meta( (int) $user_id, self::SCREEN_PREFS_META_KEY );
+            return;
+        }
+
+        // update_user_meta() unslashes its value, and core already unslashed these values once.
+        update_user_meta( (int) $user_id, self::SCREEN_PREFS_META_KEY, wp_slash( $prefs ) );
+    }
+
+    /**
+     * Read a screen layout preference from the preview store.
+     *
+     * Falls through to the administrator's own value when nothing was saved
+     * during this session, so the preview starts from their layout.
+     *
+     * @since 9.3.3
+     * @param mixed  $value     Null, or a value from an earlier filter.
+     * @param int    $object_id User ID.
+     * @param string $meta_key  User meta key.
+     * @param bool   $single    Whether a single value was requested.
+     * @return mixed
+     */
+    public function filter_get_screen_layout_meta( $value, $object_id, $meta_key, $single ) {
+        unset( $single );
+
+        if ( null !== $value || ! $this->is_isolated_screen_layout_meta( $object_id, $meta_key ) ) {
+            return $value;
+        }
+
+        $prefs = $this->get_screen_prefs( $object_id );
+
+        if ( ! array_key_exists( $meta_key, $prefs ) ) {
+            return $value;
+        }
+
+        // get_metadata_raw() returns [0] for single reads. metadata_exists() treats it as present.
+        return array( $prefs[ $meta_key ] );
+    }
+
+    /**
+     * Save a screen layout preference to the preview store instead of the user's meta.
+     *
+     * @since 9.3.3
+     * @param null|bool $check      Null, or a result from an earlier filter.
+     * @param int       $object_id  User ID.
+     * @param string    $meta_key   User meta key.
+     * @param mixed     $meta_value Unslashed meta value.
+     * @return null|bool
+     */
+    public function filter_update_screen_layout_meta( $check, $object_id, $meta_key, $meta_value ) {
+        if ( null !== $check || ! $this->is_isolated_screen_layout_meta( $object_id, $meta_key ) ) {
+            return $check;
+        }
+
+        $prefs              = $this->get_screen_prefs( $object_id );
+        $prefs[ $meta_key ] = $meta_value;
+        $this->save_screen_prefs( $object_id, $prefs );
+
+        return true;
+    }
+
+    /**
+     * Add a screen layout preference to the preview store instead of the user's meta.
+     *
+     * @since 9.3.3
+     * @param null|bool $check      Null, or a result from an earlier filter.
+     * @param int       $object_id  User ID.
+     * @param string    $meta_key   User meta key.
+     * @param mixed     $meta_value Unslashed meta value.
+     * @return null|bool
+     */
+    public function filter_add_screen_layout_meta( $check, $object_id, $meta_key, $meta_value ) {
+        return $this->filter_update_screen_layout_meta( $check, $object_id, $meta_key, $meta_value );
+    }
+
+    /**
+     * Remove a screen layout preference from the preview store, leaving the user's meta alone.
+     *
+     * @since 9.3.3
+     * @param null|bool $check     Null, or a result from an earlier filter.
+     * @param int       $object_id User ID.
+     * @param string    $meta_key  User meta key.
+     * @return null|bool
+     */
+    public function filter_delete_screen_layout_meta( $check, $object_id, $meta_key ) {
+        if ( null !== $check || ! $this->is_isolated_screen_layout_meta( $object_id, $meta_key ) ) {
+            return $check;
+        }
+
+        $prefs = $this->get_screen_prefs( $object_id );
+
+        if ( array_key_exists( $meta_key, $prefs ) ) {
+            unset( $prefs[ $meta_key ] );
+            $this->save_screen_prefs( $object_id, $prefs );
+        }
+
+        return true;
     }
 
     /**
