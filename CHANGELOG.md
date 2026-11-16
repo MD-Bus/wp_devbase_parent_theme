@@ -10,6 +10,12 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.47.6] — 2026-11-16
+
+### Fixed
+
+- **Repeater buttons touched in a short row.** In the Theme Settings app, a repeater row with one line of fields was too short for SCF's add and remove buttons, which sat against each other. The button cell now keeps a minimum row height, and the remove button sits below the middle.
+
 ## [1.47.5] — 2026-11-16
 
 ### Changed

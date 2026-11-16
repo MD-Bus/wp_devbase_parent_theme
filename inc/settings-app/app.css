@@ -233,10 +233,22 @@
 	border-bottom-right-radius: 10px;
 }
 
-/* The top buttons sit inside the row, never across its top border. The remove button stays centred (SCF's -minus). */
+/* The top buttons sit inside the row, never across its top border. SCF puts the add (or duplicate) button at the top
+   of the handle cell and the remove button at its centre, so in a short row (one line of fields) the two touched.
+   The cell now keeps a minimum height that holds both, and the remove button sits just below the middle. */
 .devbase-app .acf-repeater .acf-row-handle .acf-icon:not(.-minus) {
-	top: 10px;
+	top: 8px;
 	margin-top: 0;
+}
+
+.devbase-app .acf-repeater .acf-row-handle .acf-icon.-minus {
+	top: calc(50% + 14px);
+	margin-top: -8px;
+}
+
+.devbase-app .acf-repeater .acf-row-handle.remove {
+	height: 84px;
+	min-width: 40px;
 }
 
 .devbase-app .acf-repeater .acf-row-handle {
