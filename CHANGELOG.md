@@ -10,6 +10,12 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.47.4] — 2026-11-15
+
+### Changed
+
+- Test release: no code change.
+
 ## [1.47.3] — 2026-11-15
 
 ### Changed
