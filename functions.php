@@ -162,6 +162,15 @@ require_once __DIR__ . '/inc/theme-settings/schema/settings.php';
 // ... and the filter that merges them into TSF's own Organization entity in its JSON-LD graph.
 require_once __DIR__ . '/inc/theme-settings/schema/organization.php';
 
+// The Cache page: clears the host's cache and Cloudflare when the site changes, keeps private pages out of caches,
+// lets Cloudflare cache pages and keeps compiled Twig templates on disk. All off until switched on (see its AGENT.md).
+require_once __DIR__ . '/inc/theme-settings/cache/hosts.php';
+require_once __DIR__ . '/inc/theme-settings/cache/cloudflare.php';
+require_once __DIR__ . '/inc/theme-settings/cache/purge.php';
+require_once __DIR__ . '/inc/theme-settings/cache/headers.php';
+require_once __DIR__ . '/inc/theme-settings/cache/settings.php';
+require_once __DIR__ . '/inc/theme-settings/cache/ajax.php';
+
 // The Site Settings app: one screen with a sidebar that renders the field groups above section by section
 // (see inc/settings-app/AGENT.md). Groups register on acf/init, so load order against the sub-pages does not matter.
 require_once __DIR__ . '/inc/settings-app/app.php';

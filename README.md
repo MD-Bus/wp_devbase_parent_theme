@@ -33,6 +33,7 @@ fix reaches every client site through a single release.
 | **SMTP** | Real SMTP transport with a "Send Test Email" button that surfaces the actual PHPMailer error, not a generic failure. |
 | **Security** | Cloudflare Turnstile or Google reCAPTCHA v2, mutually exclusive and enforced server-side. Forms call one function and never learn which is active. |
 | **Tracking** | GTM/GA4 IDs plus raw header/footer script fields. |
+| **Cache** | Off until switched on. Clears the host's cache (LiteSpeed, SiteGround, WP Engine, Kinsta, Cloudways and others it detects) and Cloudflare when the site changes, keeps chosen paths and private visitors out of every cache, can let Cloudflare cache pages through one managed cache rule, and keeps compiled Twig templates on disk. See [Cache](#cache). |
 | **Schema** | Organization, Website and Breadcrumb JSON-LD, each independently toggleable. |
 | **Archives** | Custom fields on a CPT archive (which ACF has no location rule for), an **SEO** tab on each archive that sets its search title and description (for The SEO Framework), and CPT archives in the internal link picker. |
 | **MCP** | Content abilities over the WordPress MCP Adapter — list/get/create/update posts and options values, generic across every post type, behind an opt-in allow-list. Pages can be read and built as a list of the site's own blocks, and media uploaded (opt-in). |
@@ -186,6 +187,54 @@ more can hook TSF's `the_seo_framework_schema_graph_data` filter.
 (`WP_ENVIRONMENT_TYPE` local, development or staging), nor for a logged-in user who can edit posts, so the site's own
 staff never count as visitors. A consent plugin holds it back with the `devbase/tracking/enabled` filter (it receives
 `analytics` or `scripts`, and why the theme said no), and a child theme can use the same filter to track staging on purpose.
+
+### Cache
+
+**Off until "Enable cache integration" is on.** Off, the theme sends no caching header, clears nothing and never
+calls Cloudflare. Leave it off on a site where a cache plugin already does all of this.
+
+**The host's cache.** The theme does not cache pages itself: the host does. It detects the host's own cache through
+the code the host loads into WordPress (LiteSpeed, SiteGround, WP Engine, Kinsta, Cloudways/Breeze, Pantheon, Nginx
+Helper, and the WP Rocket, W3 Total Cache, WP Super Cache and LiteSpeed Cache plugins) and clears it when something
+changes every page at once: a settings page saved (a child's too), menus, widgets or the Customizer, an update
+installed, a new brand credit. Each can be unticked. Post edits are left to the host, which clears those pages itself.
+"Check the home page's cache headers" loads the home page twice and shows whether the second load came from a cache.
+A child adds a host with `devbase/cache/hosts`.
+
+**Never cache these paths.** A repeater of paths ("Starts with" or "Exactly"). Those pages are sent with
+`nocache_headers()`, `DONOTCACHEPAGE` and LiteSpeed's no-cache header, which every host cache, cache plugin and
+Cloudflare obey.
+
+**Cloudflare.** A zone ID and an API token limited to the zone, with Zone Read, Cache Purge and (for page caching)
+Cache Rules Edit. The token is a secret like the SMTP password; both values can instead be set in wp-config.php as
+`DEVBASE_CLOUDFLARE_ZONE_ID` and `DEVBASE_CLOUDFLARE_API_TOKEN`, which locks the fields. "Test connection" checks the
+token, that the zone is this site's domain, and that the token may clear the cache. Cloudflare is cleared:
+
+- **on the changes above:** everything;
+- **when a post or page changes** (published, edited, unpublished, trashed, a comment approved): only the pages that
+  show it (the post, the home and blog pages, its archive, category, tag and author pages, the feed; filter
+  `devbase/cache/post_urls`), or everything, or nothing, as chosen.
+
+All of a request's changes go in one clear at the end of the request (100 URLs per call; past 300, the whole zone).
+A failure never stops the save: it shows on the Status tab and the whole zone is cleared again five minutes later.
+
+**Letting Cloudflare cache pages.** Cloudflare does not cache HTML on its own. With "Let Cloudflare cache pages" on,
+each public page is sent with `Cache-Control: public, max-age=0, s-maxage=N` (N from "Keep pages for", four hours by
+default), and "Create or update the cache rule" adds one rule to the zone's Cache Rules that makes this site's pages
+eligible with edge TTL `bypass_by_default`: Cloudflare keeps a page only when it carries that header. So the theme
+decides page by page, and switching page caching (or the integration) off stops it at once, even with the rule left
+in place. Never cached: logged-in visitors, previews, password-protected pages, searches, 404s, anything but GET, and
+visitors with a comment, password or WooCommerce cart cookie. The rule skips wp-admin, the login page, the REST API
+and those cookies too. The theme finds its rule again by its `ref`, so pressing the button again updates it, and other
+rules in the zone are never touched. "Remove the cache rule" takes it out.
+
+**Template cache.** Compiled Twig templates are kept in `wp-content/cache/devbase-twig` (with an `.htaccess` that
+denies web access) instead of being compiled on every page. Twig recompiles an edited template by itself, and an
+update empties the folder. If the folder cannot be written, the theme keeps compiling as before.
+
+**Status.** The last clear, its result per cache, the last error, and a warning when a cache plugin could clash
+(another plugin talking to Cloudflare, or another page cache while Cloudflare caches pages). The health report sent
+to Brand Relay gains a `cache` field while the integration is on.
 
 ### Form destinations
 

@@ -347,4 +347,29 @@ class Test_Credit extends WP_UnitTestCase {
 
 		$this->assertCount( 2, $this->requests );
 	}
+
+	// --- Caches --------------------------------------------------------------
+
+	public function test_a_new_credit_fires_changed_once_and_the_same_one_does_not() {
+		$fired = 0;
+		$count = function () use ( &$fired ) {
+			$fired++;
+		};
+		add_action( 'devbase/credit/changed', $count );
+
+		$this->fake( 200, $this->brand() );
+		devbase_credit_refresh( true );
+		devbase_credit_refresh( true );
+		$this->assertSame( 1, $fired, 'the same credit again changes no page' );
+
+		$this->fake( 200, $this->brand( array( 'message' => 'Built by' ) ) );
+		devbase_credit_refresh( true );
+		$this->assertSame( 2, $fired );
+
+		$this->fake( 500, '' );
+		devbase_credit_refresh( true );
+		$this->assertSame( 2, $fired, 'a failed download keeps the copy, so nothing changed' );
+
+		remove_action( 'devbase/credit/changed', $count );
+	}
 }

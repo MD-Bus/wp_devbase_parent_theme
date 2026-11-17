@@ -308,10 +308,17 @@ function devbase_credit_refresh( $force = false ) {
 		return $result;
 	}
 
+	$changed = ( $state['data'] ?? null ) !== $clean;
+
 	$state['data']       = $clean;
 	$state['fetched_at'] = time();
 	$state['last_error'] = '';
 	update_option( DEVBASE_CREDIT_OPTION, $state, false );
+
+	// The credit is on every page, so a new one makes every cached page out of date (inc/theme-settings/cache/).
+	if ( $changed ) {
+		do_action( 'devbase/credit/changed', $clean );
+	}
 
 	$result['ok'] = true;
 	return $result;

@@ -10,6 +10,17 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.50.0] — 2026-11-17
+
+### Added
+
+- **Cache integration** (Theme Settings > Cache, a new section in the settings app). Off until switched on; off, it does nothing at all. The theme detects the host's cache (LiteSpeed, SiteGround, WP Engine, Kinsta, Cloudways/Breeze, Pantheon, Nginx Helper, and the WP Rocket, W3 Total Cache, WP Super Cache and LiteSpeed Cache plugins) and clears it when a settings page is saved, menus, widgets or the Customizer change, an update installs or a new brand credit arrives. A repeater of paths that are never cached. Cloudflare on its own tab: zone ID and API token (a secret, or `DEVBASE_CLOUDFLARE_ZONE_ID` / `DEVBASE_CLOUDFLARE_API_TOKEN` in wp-config.php), a connection test, a clear on every change above and of only the pages that show a changed post, batched once per request and retried once on failure. Optional page caching on Cloudflare: public pages carry `s-maxage`, and one managed cache rule (`bypass_by_default`) lets Cloudflare keep only pages that say so. Compiled Twig templates are kept on disk. A Status tab, conflict warnings, a "Clear all caches now" button and a `cache` field in the health report. See the README, [Cache](README.md#cache).
+- `devbase/credit/changed` fires when Brand Relay sends a brand credit that differs from the stored one.
+
+### Known
+
+- The Cloudflare calls are tested against a faked API and Cloudflare's documented formats; the first test on a live zone follows this release. Nothing changes on a site until the integration is switched on.
+
 ## [1.49.1] — 2026-11-17
 
 ### Fixed

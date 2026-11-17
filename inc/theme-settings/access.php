@@ -65,6 +65,7 @@ function devbase_settings_secret_keys() {
 		'field_devbase_brevo_api_key',
 		'field_devbase_turnstile_secret_key',
 		'field_devbase_recaptcha_secret_key',
+		'field_devbase_cache_cf_api_token',
 	);
 }
 
@@ -82,6 +83,15 @@ function devbase_settings_locked_keys() {
 
 	if ( devbase_remote_setup_hidden() || defined( 'DEVBASE_RELAY_SITE_KEY' ) ) {
 		$locked[] = 'field_devbase_relay_site_key';
+	}
+
+	// Cloudflare values set in wp-config.php (Cache page) are changed there only.
+	if ( defined( 'DEVBASE_CLOUDFLARE_ZONE_ID' ) ) {
+		$locked[] = 'field_devbase_cache_cf_zone_id';
+	}
+
+	if ( defined( 'DEVBASE_CLOUDFLARE_API_TOKEN' ) ) {
+		$locked[] = 'field_devbase_cache_cf_api_token';
 	}
 
 	return $locked;

@@ -125,6 +125,15 @@ with the service, as they would for that service's SMTP. In order:
 - **Resend and SendGrid** (Bearer token) only when a client asks.
 - **Amazon SES** not planned unless a client needs it: requests must be signed with AWS's own scheme.
 
+**10. Working with the host's cache and Cloudflare (released: 1.50.0).** The theme does not cache pages: the
+host does, and the theme works with it. A Cache page, off by default, clears the host's cache (detected through the code
+the host loads into WordPress) and Cloudflare when the site changes, keeps chosen paths and private visitors out of every
+cache, lets Cloudflare cache pages through one managed cache rule (`bypass_by_default`, so the theme decides page by page
+and switching off stops it at once), and keeps compiled Twig templates on disk. Still to do: a real
+Cloudflare zone tested with a real token (the rule, the purge, the connection test), and one real LiteSpeed host. Not
+done on purpose: a page cache of the theme's own (it would run after WordPress has loaded, and a drop-in written from a
+theme is fragile), GoDaddy's cache (no documented way to clear it from code), and Cloudflare APO.
+
 ## Reliability audit (November 2026)
 
 A read of the theme's own code for what could fail on a client site without anyone noticing. Ten findings; nine are fixed and
