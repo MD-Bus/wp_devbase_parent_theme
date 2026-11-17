@@ -459,6 +459,7 @@ function devbase_cache_status_html() {
 	$rows[ __( 'Cloudflare', 'devbase_parent_theme' ) ] = $cloudflare;
 
 	$rows[ __( 'Template cache', 'devbase_parent_theme' ) ] = devbase_cache_twig_dir() ? __( 'On', 'devbase_parent_theme' ) : __( 'Off', 'devbase_parent_theme' );
+	$rows[ __( 'Object cache', 'devbase_parent_theme' ) ] = devbase_cache_object_cache_label();
 
 	if ( ! empty( $status['last']['at'] ) ) {
 		$last  = $status['last'];

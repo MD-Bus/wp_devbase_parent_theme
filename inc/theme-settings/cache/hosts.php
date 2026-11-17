@@ -209,6 +209,26 @@ function devbase_cache_detected_hosts() {
 	return $found;
 }
 
+/**
+ * What the Status tab says about the object cache. Read-only: the theme never installs or manages one (that is the
+ * host's or a plugin's object-cache.php); "Clear all caches now" empties whichever is there.
+ *
+ * @param string|null $dropin Path to object-cache.php (tests pass their own).
+ */
+function devbase_cache_object_cache_label( $dropin = null ) {
+	if ( ! wp_using_ext_object_cache() ) {
+		return __( 'None (WordPress keeps data for one page load only)', 'devbase_parent_theme' );
+	}
+
+	$dropin = null === $dropin ? WP_CONTENT_DIR . '/object-cache.php' : $dropin;
+	$name   = is_readable( $dropin ) ? trim( (string) get_file_data( $dropin, array( 'name' => 'Plugin Name' ) )['name'] ) : '';
+
+	return '' !== $name
+		/* translators: %s: the object cache's name, e.g. Redis Object Cache */
+		? sprintf( __( 'On: %s', 'devbase_parent_theme' ), $name )
+		: __( 'On (provided by the host)', 'devbase_parent_theme' );
+}
+
 /** True when this request came to the site through Cloudflare (it adds CF-Ray to every request it forwards). */
 function devbase_cache_behind_cloudflare() {
 	return ! empty( $_SERVER['HTTP_CF_RAY'] );

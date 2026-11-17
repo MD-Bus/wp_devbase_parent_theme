@@ -236,7 +236,9 @@ denies web access) instead of being compiled on every page. Twig recompiles an e
 update empties the folder. If the folder cannot be written, the theme keeps compiling as before.
 
 **Status.** The last clear, its result per cache, the last error, and a warning when a cache plugin could clash
-(another plugin talking to Cloudflare, or another page cache while Cloudflare caches pages). The health report sent
+(another plugin talking to Cloudflare, or another page cache while Cloudflare caches pages). It also shows whether the site
+has an object cache (Redis, Memcached), named from the host's or plugin's `object-cache.php`. The theme only reports
+it: it never installs one, and only "Clear all caches now" empties it. The health report sent
 to Brand Relay gains a `cache` field while the integration is on.
 
 ### Form destinations

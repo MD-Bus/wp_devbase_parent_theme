@@ -10,6 +10,12 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.51.0] — 2026-11-17
+
+### Added
+
+- Cache Status tab: an "Object cache" row saying whether the site has one (Redis, Memcached) and which, read from `object-cache.php`. Read-only; the theme never installs one.
+
 ## [1.50.1] — 2026-11-17
 
 ### Fixed

@@ -663,5 +663,22 @@ class Test_Cache extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'Fake host', $html );
 		$this->assertStringContainsString( 'On, pages cached', $html );
 		$this->assertStringContainsString( 'settings', $html );
+		$this->assertStringContainsString( 'Object cache', $html );
+	}
+
+	public function test_object_cache_label_names_the_dropin_or_says_none() {
+		$was = wp_using_ext_object_cache( false );
+		$this->assertStringStartsWith( 'None', devbase_cache_object_cache_label() );
+
+		$file = tempnam( sys_get_temp_dir(), 'oc' );
+		file_put_contents( $file, "<?php\n/*\nPlugin Name: Redis Object Cache Drop-In\n*/\n" );
+		wp_using_ext_object_cache( true );
+		$this->assertSame( 'On: Redis Object Cache Drop-In', devbase_cache_object_cache_label( $file ) );
+
+		file_put_contents( $file, "<?php\n" );
+		$this->assertSame( 'On (provided by the host)', devbase_cache_object_cache_label( $file ) );
+
+		unlink( $file );
+		wp_using_ext_object_cache( $was );
 	}
 }
