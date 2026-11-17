@@ -601,6 +601,27 @@ class Test_Bundled_Plugins extends WP_UnitTestCase {
 		$this->assertNotSame( '', devbase_bundled_plugin_version( 'woocommerce' ) );
 	}
 
+	/**
+	 * A release does not ship bundled-plugins/composer.lock, so each plugin's version is written in the registry. It must be
+	 * there, and equal to what the lock (and so the committed zip) holds.
+	 */
+	public function test_the_registry_names_the_version_the_lock_holds_for_every_bundled_plugin() {
+		remove_filter( 'devbase/bundled_plugins', array( $this, 'fixture_registry' ) );
+
+		$lock = json_decode( (string) file_get_contents( get_template_directory() . '/bundled-plugins/composer.lock' ), true );
+		$this->assertIsArray( $lock );
+
+		$locked = array();
+		foreach ( $lock['packages'] as $package ) {
+			$locked[ $package['name'] ] = ltrim( (string) $package['version'], 'v' );
+		}
+
+		foreach ( devbase_bundled_plugins() as $slug => $def ) {
+			$this->assertNotEmpty( $def['version'] ?? '', "$slug needs a 'version' in inc/bundled-plugins/registry.php (run bin/bundle-plugins.sh)." );
+			$this->assertSame( $locked[ 'wp-plugin/' . $slug ] ?? null, $def['version'], "$slug: registry version and bundled-plugins/composer.lock disagree (run bin/bundle-plugins.sh)." );
+		}
+	}
+
 	public function test_a_plugin_the_site_already_had_is_never_removed_when_nothing_requires_it_any_more() {
 		$this->install_on_disk( '1.0.0' ); // the client's own copy
 		update_option( 'active_plugins', array( 'fixtureplug/fixtureplug.php' ) );

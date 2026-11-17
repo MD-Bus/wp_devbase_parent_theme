@@ -10,6 +10,12 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.47.7] — 2026-11-17
+
+### Fixed
+
+- **Bundled plugin versions on live sites.** `devbase_bundled_plugin_version()` read each bundled plugin's version (WooCommerce, WPvivid Backup) from `bundled-plugins/composer.lock`, a file a release deliberately does not ship. On a live site the version came back empty, so the "installed copy is older than the bundled one, upgrade it" check never ran and System Status showed a dash. The version is now written in the plugin registry (`inc/bundled-plugins/registry.php`), `bin/bundle-plugins.sh` and the Dependabot workflow keep it equal to the lock, and a test fails when the registry, the lock or the zip disagree.
+
 ## [1.47.6] — 2026-11-16
 
 ### Fixed

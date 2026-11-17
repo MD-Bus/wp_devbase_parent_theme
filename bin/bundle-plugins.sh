@@ -25,6 +25,29 @@ cd "$DIR"
 
 echo "==> Installing the locked versions into bundled-plugins/.build/"
 rm -rf "$BUILD"
+
+# The registry names each plugin's version too (a release does not ship this folder's composer.lock, so a site
+# reads the version from inc/bundled-plugins/registry.php). Keep the `// bundled:<slug>` lines equal to the lock.
+REGISTRY="$THEME_DIR/inc/bundled-plugins/registry.php"
+while IFS='|' read -r SLUG; do
+	[ -z "$SLUG" ] && continue
+	LOCKED="$(php -r '
+		$lock = json_decode( file_get_contents( $argv[1] ), true );
+		foreach ( $lock["packages"] as $p ) {
+			if ( "wp-plugin/" . $argv[2] === $p["name"] ) { echo ltrim( $p["version"], "v" ); return; }
+		}
+	' "$DIR/composer.lock" "$SLUG")"
+	if ! grep -q "// bundled:$SLUG " "$REGISTRY"; then
+		echo "ABORTED: no '// bundled:$SLUG' version line in inc/bundled-plugins/registry.php."
+		exit 1
+	fi
+	sed -i.bak -E "s|('version'[[:space:]]*=> ')[^']*(', // bundled:$SLUG )|\\1$LOCKED\\2|" "$REGISTRY"
+	rm -f "$REGISTRY.bak"
+	echo "==> registry: $SLUG $LOCKED"
+done <<-REGISTRY_SLUGS
+	woocommerce
+	wpvivid-backuprestore
+REGISTRY_SLUGS
 composer install --no-dev --no-scripts --no-interaction --no-progress --quiet
 
 while IFS='|' read -r SLUG MAIN_FILE; do

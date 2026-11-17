@@ -16,9 +16,12 @@
  *
  * `file`    the plugin's main file, relative to wp-content/plugins/.
  * `zip`     the committed zip (bin/bundle-plugins.sh builds it).
- * `version` optional; the version the zip carries. Read from
- *           bundled-plugins/composer.lock when left out (the drift check in
- *           bin/check-vendor-drift.sh guarantees the two agree).
+ * `version` the version the zip carries. Written here, because a release does NOT ship
+ *           bundled-plugins/composer.lock (bin/build-zip.sh and .gitattributes leave it out), so a
+ *           site could not read it there. bin/bundle-plugins.sh rewrites the `// bundled:<slug>`
+ *           line from the lock, and Test_Bundled_Plugins fails when this, the lock and the zip
+ *           disagree. Read from bundled-plugins/composer.lock only when left out (a development
+ *           checkout).
  *
  * Optional, for a plugin tied to a Brand Relay plan service:
  * `service`     the plan service that requires it (it is required only while
@@ -38,6 +41,7 @@ function devbase_bundled_plugins() {
 			'name'        => 'WooCommerce',
 			'file'        => 'woocommerce/woocommerce.php',
 			'zip'         => $dir . 'woocommerce.zip',
+			'version'     => '11.3.0', // bundled:woocommerce (bin/bundle-plugins.sh keeps this equal to bundled-plugins/composer.lock)
 			'text_domain' => 'woocommerce',
 		),
 		// Required by the PARENT, not by a child: only while the site's Brand Relay
@@ -49,6 +53,7 @@ function devbase_bundled_plugins() {
 			'name'        => 'WPvivid Backup',
 			'file'        => 'wpvivid-backuprestore/wpvivid-backuprestore.php',
 			'zip'         => $dir . 'wpvivid-backuprestore.zip',
+			'version'     => '0.9.140', // bundled:wpvivid-backuprestore (bin/bundle-plugins.sh keeps this equal to bundled-plugins/composer.lock)
 			'service'     => 'backup',
 			'text_domain' => 'wpvivid-backuprestore',
 			'conflicts'   => array( 'wpvivid-backup-pro/wpvivid-backup-pro.php' ),
