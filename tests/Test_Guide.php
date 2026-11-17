@@ -317,8 +317,8 @@ class Test_Guide extends WP_UnitTestCase {
 		$html = (string) ob_get_clean();
 
 		$this->assertStringContainsString( 'devbaseGuidePdf()', $html );
-		$this->assertStringContainsString( 'Download PDF of this tab', $html );
-		$this->assertStringContainsString( 'Download the whole guide', $html );
+		$this->assertStringContainsString( 'PDF of this tab', $html );
+		$this->assertStringContainsString( 'PDF of the whole guide', $html );
 		// The whole guide's address: the guide on ?tab=all, printing on opening (escaped in the page as &#038;).
 		$this->assertStringContainsString( 'tab=all', $html );
 		$this->assertStringContainsString( 'print=1', $html );
@@ -333,8 +333,9 @@ class Test_Guide extends WP_UnitTestCase {
 		$html = (string) ob_get_clean();
 
 		$this->assertStringContainsString( 'Download PDF', $html );
-		$this->assertStringNotContainsString( 'Download PDF of this tab', $html );
-		$this->assertStringNotContainsString( 'Download the whole guide', $html );
+		$this->assertStringContainsString( 'class="guide-cover"', $html, 'The PDF\'s cover (shown only in print).' );
+		$this->assertStringNotContainsString( 'PDF of this tab', $html );
+		$this->assertStringNotContainsString( 'PDF of the whole guide', $html );
 	}
 
 	public function test_the_whole_guide_draws_every_tab_and_prints_itself() {

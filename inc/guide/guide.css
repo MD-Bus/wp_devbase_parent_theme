@@ -19,26 +19,35 @@
 
 .guide-intro { margin-bottom: 24px; }
 
-/* Tabs: This site / Theme features */
-.guide-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 24px; }
+/* The bar above the guide: the tabs on the left, the PDF buttons on the right */
+.guide-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin: 0 0 24px; }
+.guide-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
 .guide-tabs__tab { padding: 8px 18px; border: 1px solid var(--guide-line); border-radius: 999px; background: #fff; color: var(--guide-ink); text-decoration: none; font-weight: 500; }
 .guide-tabs__tab:hover, .guide-tabs__tab:focus { border-color: var(--guide-accent); color: var(--guide-accent); box-shadow: none; }
 .guide-tabs__tab.is-active { background: var(--guide-accent); border-color: var(--guide-accent); color: #fff; }
-.guide-lead { font-size: 16px; margin: 0 0 8px; }
-.guide-meta { color: var(--guide-muted); margin: 0; }
 
 /* Download PDF: the browser's Save as PDF */
-.guide-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 14px 0 0; }
-.guide-actions .button .dashicons { font-size: 17px; width: 17px; height: 17px; vertical-align: text-bottom; margin-right: 2px; }
-.guide-actions .button-primary { background: var(--guide-accent); border-color: var(--guide-accent); }
-.guide-actions .button-primary:hover, .guide-actions .button-primary:focus { background: var(--guide-accent); border-color: var(--guide-accent); filter: brightness(.9); }
-.guide-actions__hint { color: var(--guide-muted); font-size: 13px; }
+.guide-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.guide-btn { box-sizing: border-box; display: inline-flex; align-items: center; gap: 7px; height: 38px; margin: 0; padding: 0 14px; border: 1px solid var(--guide-line); border-radius: 8px; background: #fff; color: var(--guide-ink); font: inherit; font-size: 13px; font-weight: 500; line-height: 1; text-decoration: none; cursor: pointer; transition: border-color .15s, background-color .15s, color .15s; }
+.guide-btn svg { flex-shrink: 0; color: var(--guide-accent); }
+.guide-btn:hover { border-color: var(--guide-accent); color: var(--guide-accent); }
+.guide-btn:focus { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--guide-accent); }
+.guide-btn--primary { border-color: var(--guide-accent); background: var(--guide-accent-soft); color: var(--guide-accent); }
+.guide-btn--primary:hover { background: var(--guide-accent); color: #fff; }
+.guide-btn--primary:hover svg { color: #fff; }
+
+/* The cover: the PDF's first page only */
+.guide-cover { display: none; }
+
+.guide-lead { font-size: 16px; margin: 0 0 8px; }
+.guide-meta { color: var(--guide-muted); margin: 0; }
 
 /* The whole guide: one part per tab */
 .guide-part + .guide-part { margin-top: 48px; }
 .guide-part__title { font-size: 26px; margin: 0 0 16px; padding-bottom: 8px; border-bottom: 3px solid var(--guide-accent); }
 
 /* Table of contents: a grid of chapters */
+.guide-toc__label { display: none; }
 .guide-toc ol { list-style: none; margin: 0 0 40px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
 .guide-toc a { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--guide-line); border-radius: 6px; background: #fff; color: var(--guide-ink); text-decoration: none; font-weight: 500; }
 .guide-toc a:hover, .guide-toc a:focus { border-color: var(--guide-accent); color: var(--guide-accent); box-shadow: none; }
@@ -88,20 +97,64 @@
   .guide-table td:first-child { width: auto; }
 }
 
-/* Print / Save as PDF: only the guide, chapters on their own pages, links readable */
+/* Print / Save as PDF: a cover with the contents, then one chapter per page, page numbers at the foot */
+@page {
+  size: auto;
+  margin: 16mm 16mm 18mm;
+  @bottom-left { content: "Guide"; font: 8pt -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #8c8f94; }
+  @bottom-right { content: counter(page) " / " counter(pages); font: 8pt -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #8c8f94; }
+}
+@page :first { @bottom-left { content: none; } @bottom-right { content: none; } }
+
 @media print {
-  #adminmenumain, #wpadminbar, #wpfooter, .devbase-app__nav, .devbase-app__header, .notice, .update-nag, .guide-top, .guide-meta, .guide-tabs, .guide-actions { display: none !important; }
+  #adminmenumain, #wpadminbar, #wpfooter, #screen-meta, #screen-meta-links, .devbase-app__nav, .devbase-app__header, .notice, .update-nag,
+  .guide-top, .guide-bar, .guide-intro { display: none !important; }
   html.wp-toolbar { padding-top: 0 !important; }
-  #wpcontent, #wpbody-content, .devbase-app__main, .devbase-app__body, .wrap { margin: 0 !important; padding: 0 !important; }
+  #wpcontent, #wpbody-content, .devbase-app__main, .devbase-app__body, .devbase-app__panel, .wrap { margin: 0 !important; padding: 0 !important; border: 0 !important; box-shadow: none !important; background: none !important; }
   .devbase-app__shell { display: block !important; }
   body, #wpwrap { background: #fff !important; }
-  .guide { max-width: none; font-size: 11pt; }
-  .guide-toc ol { grid-template-columns: repeat(2, 1fr); }
-  .guide-toc a { border: 0; padding: 2px 0; }
-  .guide-part + .guide-part { break-before: page; margin-top: 0; }
-  .guide-part__title { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+
+  .guide { max-width: none; font-size: 10.5pt; line-height: 1.55; }
+  .guide a { color: inherit; text-decoration: none; }
+
+  /* Cover */
+  .guide .guide-cover { display: block; padding: 50mm 0 14mm; margin-bottom: 12mm; border-bottom: 3px solid var(--guide-accent); }
+  .guide .guide-cover__kicker { margin: 0 0 5mm; color: var(--guide-accent); font-size: 11pt; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+  .guide .guide-cover__site { margin: 0; padding: 0; font-size: 34pt; line-height: 1.1; font-weight: 700; letter-spacing: -.01em; color: var(--guide-ink); }
+  .guide .guide-cover__what { margin: 4mm 0 0; font-size: 15pt; color: var(--guide-muted); }
+  .guide .guide-cover__meta { margin: 10mm 0 0; font-size: 9pt; color: var(--guide-muted); }
+
+  /* Contents, on the cover (or at the start of each tab, for the whole guide) */
+  .guide-toc__label { display: block; margin: 0 0 4mm; font-size: 9pt; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--guide-muted); }
+  .guide-toc ol { display: block; columns: 2; column-gap: 10mm; margin: 0; }
+  .guide-toc li { break-inside: avoid; }
+  .guide-toc a { display: flex; align-items: baseline; gap: 3mm; border: 0; border-bottom: 1px solid #ececed; border-radius: 0; padding: 2.2mm 0; background: none; font-weight: 400; }
+  .guide-toc .dashicons { display: none; }
+  .guide-toc__num { min-width: 6mm; color: var(--guide-accent); font-weight: 700; }
+  .guide--all .guide-part { break-before: page; margin-top: 0; }
+  .guide .guide-part__title { margin: 0 0 8mm; padding: 0 0 3mm; font-size: 22pt; font-weight: 700; line-height: 1.2; border-bottom: 3px solid var(--guide-accent); }
+
+  /* Chapters: each starts a page */
   .guide-chapter { break-before: page; border-top: 0; margin-top: 0; padding-top: 0; }
-  .guide-shot, .guide-table, .guide-tip, .guide-warn, .guide-steps > li { break-inside: avoid; }
-  .guide-shot a { box-shadow: none; }
-  .guide-chapter, .guide-chapter h2, .guide-chapter__num, .guide-steps > li::before, .guide-tip, .guide-warn { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .guide .guide-chapter h2 { font-size: 19pt; font-weight: 700; line-height: 1.2; gap: 4mm; margin: 0 0 6mm; padding: 0 0 4mm; border-bottom: 2px solid var(--guide-accent); }
+  .guide-chapter__num { width: 10mm; height: 10mm; font-size: 12pt; }
+  .guide .guide-chapter h3 { font-size: 12.5pt; font-weight: 700; margin: 7mm 0 2.5mm; color: var(--guide-ink); }
+  .guide-chapter h2, .guide-chapter h3 { break-after: avoid; page-break-after: avoid; }
+  .guide-chapter h3 + * { break-before: avoid; }
+  .guide-chapter p, .guide-list li, .guide-steps > li { orphans: 3; widows: 3; }
+  .guide-steps > li { padding-bottom: 2mm; }
+  .guide-steps > li::before { width: 6mm; height: 6mm; font-size: 8.5pt; }
+
+  /* Screenshots: framed, never cut in two, at most half a page tall */
+  .guide-shot { margin: 3mm 0 6mm; break-inside: avoid; }
+  .guide-shot a { box-shadow: none; border-radius: 4px; }
+  .guide-shot img { max-height: 115mm; width: auto; max-width: 100%; margin: 0 auto; }
+  .guide-shot figcaption { font-size: 8.5pt; font-style: italic; margin-top: 2mm; }
+
+  .guide-table, .guide-tip, .guide-warn, .guide-steps > li { break-inside: avoid; }
+  .guide-table { font-size: 9.5pt; }
+  .guide-table th, .guide-table td { padding: 2mm 3mm; }
+  .guide-tip, .guide-warn { padding: 3mm 4mm; }
+  .guide-chapter code, .guide-chapter kbd { font-size: 9pt; }
 }

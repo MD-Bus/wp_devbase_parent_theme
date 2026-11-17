@@ -10,6 +10,13 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.52.2] — 2026-11-17
+
+### Changed
+
+- Guide PDF, redesigned: a cover (the site's name, the tab, the theme version and the date) with the contents, one chapter per page under a bold numbered title, headings kept with what follows them, framed screenshots never cut in two, and page numbers with the site's name at the foot of every page (instead of the browser's address and date). For the whole guide, each tab starts on its own page with its own contents. WordPress's heading styles no longer shrink the guide's titles in print.
+- Guide: the PDF buttons sit in a bar with the tabs (**PDF of this tab**, **PDF of the whole guide**, or **Download PDF** with one tab), in the guide's colours, instead of two WordPress buttons and a hint line.
+
 ## [1.52.1] — 2026-11-17
 
 ### Added

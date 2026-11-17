@@ -407,6 +407,8 @@ function devbase_guide_render() {
 	Timber\Timber::render( 'devbase-guide/guide.twig', array_merge( devbase_guide_context(), array(
 		'tabs'     => $links,
 		'tab'      => $all ? 'all' : $current,
+		'tab_title' => $all ? '' : $tabs[ $current ],
+		'today'    => wp_date( (string) get_option( 'date_format' ) ),
 		'parts'    => $parts,
 		'chapters' => $parts[0]['chapters'],
 		// "Whole guide" opens this view and prints it straight away.
