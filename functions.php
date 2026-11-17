@@ -51,6 +51,9 @@ require_once __DIR__ . '/inc/abilities/site-guide.php';
 require_once __DIR__ . '/inc/abilities/audit-log.php';
 
 // Hides Posts and Comments from the wp-admin menu while this theme is active.
+// Lighter images: WebP sizes and quality 75, through WordPress's own filters (no ASE code involved).
+require_once __DIR__ . '/inc/media/image-optimization.php';
+
 require_once __DIR__ . '/inc/hide-admin-menu-items.php';
 
 // The vendored dependencies only change in a theme release (Dependabot and a

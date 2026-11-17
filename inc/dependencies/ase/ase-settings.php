@@ -132,8 +132,8 @@ function devbase_ase_default_settings() {
 		// numbers unconditionally, so they are filled in together with the switch.
 		// Client-side media processing (WordPress 7.1+) stays off: the server path covers all uploads.
 		'image_upload_control' => true,
-		'image_max_width'      => 1920,
-		'image_max_height'     => 1920,
+		'image_max_width'      => 1600,
+		'image_max_height'     => 1600,
 
 		// Disable comments site-wide (posts, pages, attachments) — most of
 		// our sites don't need comments.

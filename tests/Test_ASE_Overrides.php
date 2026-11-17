@@ -182,7 +182,7 @@ class Test_ASE_Overrides extends WP_UnitTestCase {
 		$defaults = devbase_ase_default_settings();
 
 		$this->assertTrue( $defaults['image_upload_control'] );
-		$this->assertSame( 1920, $defaults['image_max_width'] );
-		$this->assertSame( 1920, $defaults['image_max_height'] );
+		$this->assertSame( 1600, $defaults['image_max_width'] );
+		$this->assertSame( 1600, $defaults['image_max_height'] );
 	}
 }
