@@ -114,9 +114,44 @@ function devbase_cache_cf_request( $method, $path, $body = null ) {
 	);
 }
 
-/** Clears everything in the zone. */
-function devbase_cache_cf_purge_everything() {
-	return devbase_cache_cf_request( 'POST', '/purge_cache', array( 'purge_everything' => true ) );
+/**
+ * The cache tag on every page this site lets Cloudflare keep (headers.php sends it as `Cache-Tag`; Cloudflare reads
+ * it and strips it before the visitor sees it). One per site, from its hostname, so clearing it clears this site's
+ * pages and nothing else in the zone.
+ */
+function devbase_cache_cf_tag() {
+	$host = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+
+	return 'devbase-pages-' . preg_replace( '/[^a-z0-9.-]/', '', $host );
+}
+
+/**
+ * Clears this site's pages, and only them: never the zone's images, CSS and JavaScript, nor another site in the zone.
+ *
+ * WHY NOT purge_everything. 1.50.0 used it, and it empties the whole zone: every file Cloudflare held for every
+ * subdomain. On a slow origin (found on the first live test, 2026-11-17: about 70 KB/s from the server) each settings
+ * save then made wp-admin load every script and style from the origin again, seconds each. Static files never need
+ * clearing anyway: WordPress versions their URLs (?ver=).
+ */
+function devbase_cache_cf_purge_site() {
+	return devbase_cache_cf_request( 'POST', '/purge_cache', array( 'tags' => array( devbase_cache_cf_tag() ) ) );
+}
+
+/**
+ * Keeps the URLs Cloudflare can clear: http(s), on this site's host. Anything else (a "#" a plugin put in place of a
+ * disabled author page, a relative path, another domain) would make Cloudflare refuse the whole call.
+ *
+ * @param string[] $urls Candidates.
+ * @return string[]
+ */
+function devbase_cache_cf_valid_urls( array $urls ) {
+	$host = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+
+	return array_values( array_unique( array_filter( array_map( 'strval', $urls ), function ( $url ) use ( $host ) {
+		$parts = wp_parse_url( $url );
+
+		return is_array( $parts ) && in_array( strtolower( (string) ( $parts['scheme'] ?? '' ) ), array( 'http', 'https' ), true ) && strtolower( (string) ( $parts['host'] ?? '' ) ) === $host;
+	} ) ) );
 }
 
 /**
@@ -126,7 +161,7 @@ function devbase_cache_cf_purge_everything() {
  * @return array { ok: bool, error: string }
  */
 function devbase_cache_cf_purge_urls( array $urls ) {
-	$urls = array_values( array_unique( array_filter( array_map( 'strval', $urls ) ) ) );
+	$urls = devbase_cache_cf_valid_urls( $urls );
 
 	foreach ( array_chunk( $urls, DEVBASE_CACHE_CF_URLS_PER_CALL ) as $chunk ) {
 		$result = devbase_cache_cf_request( 'POST', '/purge_cache', array( 'files' => $chunk ) );

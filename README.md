@@ -210,17 +210,20 @@ Cache Rules Edit. The token is a secret like the SMTP password; both values can 
 `DEVBASE_CLOUDFLARE_ZONE_ID` and `DEVBASE_CLOUDFLARE_API_TOKEN`, which locks the fields. "Test connection" checks the
 token, that the zone is this site's domain, and that the token may clear the cache. Cloudflare is cleared:
 
-- **on the changes above:** everything;
+- **on the changes above:** all of this site's pages, by their cache tag (below). Never the zone's images, CSS and
+  JavaScript, and never another site on the same domain;
 - **when a post or page changes** (published, edited, unpublished, trashed, a comment approved): only the pages that
   show it (the post, the home and blog pages, its archive, category, tag and author pages, the feed; filter
-  `devbase/cache/post_urls`), or everything, or nothing, as chosen.
+  `devbase/cache/post_urls`), or all of the site's pages, or nothing, as chosen. Only http(s) URLs on the site's own
+host are sent: Cloudflare refuses a whole call over one bad URL.
 
-All of a request's changes go in one clear at the end of the request (100 URLs per call; past 300, the whole zone).
-A failure never stops the save: it shows on the Status tab and the whole zone is cleared again five minutes later.
+All of a request's changes go in one clear at the end of the request (100 URLs per call; past 300, all the site's
+pages). A failure never stops the save: it shows on the Status tab and the site's pages are cleared again five minutes
+later.
 
 **Letting Cloudflare cache pages.** Cloudflare does not cache HTML on its own. With "Let Cloudflare cache pages" on,
 each public page is sent with `Cache-Control: public, max-age=0, s-maxage=N` (N from "Keep pages for", four hours by
-default), and "Create or update the cache rule" adds one rule to the zone's Cache Rules that makes this site's pages
+default) and `Cache-Tag: devbase-pages-{host}` (what a full clear clears; Cloudflare removes it before the visitor), and "Create or update the cache rule" adds one rule to the zone's Cache Rules that makes this site's pages
 eligible with edge TTL `bypass_by_default`: Cloudflare keeps a page only when it carries that header. So the theme
 decides page by page, and switching page caching (or the integration) off stops it at once, even with the rule left
 in place. Never cached: logged-in visitors, previews, password-protected pages, searches, 404s, anything but GET, and

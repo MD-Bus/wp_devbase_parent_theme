@@ -242,11 +242,11 @@ add_action( 'acf/init', function () {
 				'type'              => 'select',
 				'choices'           => array(
 					'urls'       => __( 'Clear only the pages that show it (recommended)', 'devbase_parent_theme' ),
-					'everything' => __( 'Clear everything', 'devbase_parent_theme' ),
+					'everything' => __( 'Clear all of this site\'s pages', 'devbase_parent_theme' ),
 					'none'       => __( 'Clear nothing', 'devbase_parent_theme' ),
 				),
 				'default_value'     => 'urls',
-				'instructions'      => __( 'The pages that show it: the post itself, the home page, the blog page, its archive, category, tag and author pages, and the feed. Comments count as a change.', 'devbase_parent_theme' ),
+				'instructions'      => __( 'The pages that show it: the post itself, the home page, the blog page, its archive, category, tag and author pages, and the feed. Comments count as a change. Cloudflare only ever clears this site\'s pages: never images, CSS or JavaScript, and never another site on the same domain.', 'devbase_parent_theme' ),
 				'conditional_logic' => $cf_on,
 			),
 			array(

@@ -11,8 +11,10 @@
 //
 // ONE CLEAR PER REQUEST. Requests are queued and sent once, at shutdown: saving a page that changes ten values, or a
 // bulk edit of 40 posts, makes one Cloudflare call (or a few, 100 URLs each), never one per change. Past
-// DEVBASE_CACHE_MAX_URLS URLs the whole zone is cleared instead. A Cloudflare failure never stops the save: it is
-// recorded on the Status tab, and the whole zone is cleared once more five minutes later.
+// DEVBASE_CACHE_MAX_URLS URLs all of the site's pages are cleared instead. A Cloudflare failure never stops the save: it
+// is recorded on the Status tab, and the site's pages are cleared once more five minutes later.
+//
+// "Every cache" on Cloudflare means this site's PAGES (by their cache tag, cloudflare.php), never the whole zone.
 //
 // OFF MEANS OFF. Every entry point checks devbase_cache_enabled() first.
 
@@ -274,13 +276,13 @@ function devbase_cache_flush() {
 	}
 
 	$results = $sent['results'];
-	$urls    = array_values( array_unique( $sent['urls'] ) );
+	$urls    = devbase_cache_cf_valid_urls( $sent['urls'] );
 	$error   = '';
 
 	if ( devbase_cache_cf_active() && ( $sent['all'] || $urls ) ) {
 		if ( $sent['all'] || count( $urls ) > (int) apply_filters( 'devbase/cache/max_urls', DEVBASE_CACHE_MAX_URLS ) ) {
-			$cf    = devbase_cache_cf_purge_everything();
-			$label = __( 'Cloudflare (everything)', 'devbase_parent_theme' );
+			$cf    = devbase_cache_cf_purge_site();
+			$label = __( 'Cloudflare (this site\'s pages)', 'devbase_parent_theme' );
 		} else {
 			$cf = devbase_cache_cf_purge_urls( $urls );
 			/* translators: %d: number of addresses */
@@ -330,18 +332,18 @@ function devbase_cache_flush_at_shutdown() {
 	devbase_cache_flush();
 }
 
-// One more try, five minutes after a failed Cloudflare clear: the whole zone, which covers whatever was missed.
+// One more try, five minutes after a failed Cloudflare clear: all of this site's pages, which covers whatever was missed.
 add_action( DEVBASE_CACHE_RETRY_HOOK, function () {
 	if ( ! devbase_cache_cf_active() ) {
 		return;
 	}
 
-	$cf     = devbase_cache_cf_purge_everything();
+	$cf     = devbase_cache_cf_purge_site();
 	$status = array(
 		'last' => array(
 			'at'      => time(),
 			'reasons' => array( 'retry' ),
-			'results' => array( 'cloudflare' => array( 'label' => __( 'Cloudflare (everything)', 'devbase_parent_theme' ), 'ok' => $cf['ok'], 'message' => $cf['error'] ) ),
+			'results' => array( 'cloudflare' => array( 'label' => __( 'Cloudflare (this site\'s pages)', 'devbase_parent_theme' ), 'ok' => $cf['ok'], 'message' => $cf['error'] ) ),
 		),
 	);
 

@@ -10,6 +10,13 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.50.1] — 2026-11-17
+
+### Fixed
+
+- **A full Cloudflare clear emptied the whole zone.** 1.50.0 cleared with `purge_everything`: every image, CSS and JavaScript file Cloudflare held for the domain and all its subdomains. Found on the first live test: on a slow server (about 70 KB/s from the origin), each settings save then made wp-admin fetch every script and style from the origin again, several seconds each, and slowed every other site on the domain the same way. Cacheable pages now carry `Cache-Tag: devbase-pages-{host}` (Cloudflare strips it before the visitor), and a full clear clears that tag: this site's pages only. Static files never needed clearing; WordPress versions their URLs. Pages cached by 1.50.0, before they had the tag, expire on their own ("Keep pages for", four hours by default).
+- **One bad URL made Cloudflare refuse a post's clear.** A plugin that replaces a disabled author page's link with `#` got that `#` into the list, and Cloudflare rejects the whole call over one invalid URL (error 1084). Only http(s) URLs on the site's own host are sent now.
+
 ## [1.50.0] — 2026-11-17
 
 ### Added

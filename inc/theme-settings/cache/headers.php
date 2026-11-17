@@ -9,7 +9,8 @@
 //            visitor with a comment, password or cart cookie. "Do not cache", so no one else is ever served their page.
 //   cache    Only while Cloudflare page caching is on: `Cache-Control: public, max-age=0, s-maxage=N`. Cloudflare keeps
 //            the page N seconds (its rule, cloudflare.php, only caches pages that say so); browsers check back every time,
-//            so a cleared page shows at once.
+//            so a cleared page shows at once. With it, `Cache-Tag: devbase-pages-{host}`, which is what a "clear
+//            everything" clears on Cloudflare.
 //   none     Anything else: nothing is sent and the site behaves as it did. So are pages that already carry a
 //            Cache-Control header or DONOTCACHEPAGE (someone else decided), searches, 404s and anything not GET/HEAD.
 
@@ -130,6 +131,8 @@ add_action( 'template_redirect', function () {
 
 		case 'cache':
 			header( 'Cache-Control: public, max-age=0, s-maxage=' . devbase_cache_cf_lifetime() );
+			// What "clear this site's pages" clears (cloudflare.php). Cloudflare strips it before the visitor.
+			header( 'Cache-Tag: ' . devbase_cache_cf_tag() );
 			break;
 	}
 }, PHP_INT_MAX );

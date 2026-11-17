@@ -163,7 +163,7 @@ class Test_Cache extends WP_UnitTestCase {
 		$results = devbase_cache_flush();
 
 		$this->assertCount( 1, $this->requests );
-		$this->assertSame( array( 'purge_everything' => true ), $this->requests[0]['body'] );
+		$this->assertSame( array( 'tags' => array( devbase_cache_cf_tag() ) ), $this->requests[0]['body'] );
 		$this->assertSame( 'Bearer cf-token', $this->requests[0]['auth'] );
 		$this->assertTrue( $results['fake']['ok'] );
 		$this->assertTrue( $results['cloudflare']['ok'] );
@@ -275,7 +275,7 @@ class Test_Cache extends WP_UnitTestCase {
 		update_field( 'cache_cf_post_purge', 'everything', 'option' );
 		self::factory()->post->create( array( 'post_status' => 'publish' ) );
 		devbase_cache_flush();
-		$this->assertSame( array( 'purge_everything' => true ), $this->purges()[0]['body'] );
+		$this->assertSame( array( 'tags' => array( devbase_cache_cf_tag() ) ), $this->purges()[0]['body'] );
 		$this->assertSame( 0, $this->host_purges );
 
 		update_field( 'cache_cf_post_purge', 'none', 'option' );
@@ -305,11 +305,36 @@ class Test_Cache extends WP_UnitTestCase {
 			return 3;
 		} );
 
-		devbase_cache_request_urls( array( 'https://a.test/1', 'https://a.test/2', 'https://a.test/3', 'https://a.test/4' ), 'post' );
+		devbase_cache_request_urls( array( home_url( '/1' ), home_url( '/2' ), home_url( '/3' ), home_url( '/4' ) ), 'post' );
 		devbase_cache_flush();
 
 		$this->assertCount( 1, $this->requests );
-		$this->assertSame( array( 'purge_everything' => true ), $this->requests[0]['body'] );
+		$this->assertSame( array( 'tags' => array( devbase_cache_cf_tag() ) ), $this->requests[0]['body'] );
+	}
+
+	public function test_only_this_sites_urls_are_sent() {
+		$this->enable( true );
+		$home = home_url( '/' );
+
+		$this->assertTrue( devbase_cache_cf_purge_urls( array( '#', '/relative/', 'https://elsewhere.test/', 'javascript:x', $home, $home ) )['ok'] );
+		$this->assertSame( array( $home ), $this->requests[0]['body']['files'] );
+
+		// A post whose author link a plugin replaced with "#" (found live, 2026-11-17).
+		add_filter( 'author_link', function () {
+			return '#';
+		} );
+		$post = self::factory()->post->create( array( 'post_status' => 'publish' ) );
+		devbase_cache_flush();
+		remove_all_filters( 'author_link' );
+
+		$files = end( $this->requests )['body']['files'];
+		$this->assertNotContains( '#', $files );
+		$this->assertContains( get_permalink( $post ), $files );
+	}
+
+	public function test_site_clear_names_only_this_sites_tag() {
+		$this->assertSame( 'devbase-pages-' . strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) ), devbase_cache_cf_tag() );
+		$this->assertMatchesRegularExpression( '/^[a-z0-9.-]+$/', devbase_cache_cf_tag() );
 	}
 
 	public function test_urls_go_in_calls_of_100() {
@@ -317,7 +342,7 @@ class Test_Cache extends WP_UnitTestCase {
 		$urls = array();
 
 		for ( $i = 0; $i < 150; $i++ ) {
-			$urls[] = 'https://a.test/p' . $i;
+			$urls[] = home_url( '/p' . $i );
 		}
 
 		$this->assertTrue( devbase_cache_cf_purge_urls( $urls )['ok'] );
@@ -345,7 +370,7 @@ class Test_Cache extends WP_UnitTestCase {
 		// The retry clears the whole zone.
 		$this->router = null;
 		do_action( DEVBASE_CACHE_RETRY_HOOK );
-		$this->assertSame( array( 'purge_everything' => true ), end( $this->requests )['body'] );
+		$this->assertSame( array( 'tags' => array( devbase_cache_cf_tag() ) ), end( $this->requests )['body'] );
 		$this->assertSame( array( 'retry' ), devbase_cache_get_status()['last']['reasons'] );
 	}
 
