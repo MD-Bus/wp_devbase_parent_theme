@@ -125,6 +125,16 @@ function devbase_ase_default_settings() {
 		'disable_admin_email_notification_after_password_change' => true, // Admin gets emailed on every user's password change — noise, not a meaningful signal.
 		'disable_plugin_theme_editor'                             => true, // Blocks the live PHP editor in Appearance/Plugins — standard hardening.
 
+		// Image Upload Control: a new upload larger than this is resized down and the
+		// original deleted; BMP and PNG without transparency become JPG. Keeps a
+		// client's 6000px phone photo from going live at 8 MB. Only new uploads are
+		// touched; a file named like photo-nr.jpg is left alone. ASE reads both
+		// numbers unconditionally, so they are filled in together with the switch.
+		// Client-side media processing (WordPress 7.1+) stays off: the server path covers all uploads.
+		'image_upload_control' => true,
+		'image_max_width'      => 1920,
+		'image_max_height'     => 1920,
+
 		// Disable comments site-wide (posts, pages, attachments) — most of
 		// our sites don't need comments.
 		'disable_comments'     => true,

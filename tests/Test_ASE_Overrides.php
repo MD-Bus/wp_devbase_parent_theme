@@ -175,4 +175,14 @@ class Test_ASE_Overrides extends WP_UnitTestCase {
 
 		remove_filter( 'devbase/ase/enforced', $fn );
 	}
+
+	// ASE reads image_max_width / image_max_height unconditionally once Image Upload
+	// Control is on, so the switch and both numbers must always be seeded together.
+	public function test_image_upload_control_is_seeded_with_its_sizes() {
+		$defaults = devbase_ase_default_settings();
+
+		$this->assertTrue( $defaults['image_upload_control'] );
+		$this->assertSame( 1920, $defaults['image_max_width'] );
+		$this->assertSame( 1920, $defaults['image_max_height'] );
+	}
 }

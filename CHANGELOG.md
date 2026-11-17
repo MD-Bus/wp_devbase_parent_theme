@@ -10,6 +10,12 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.48.0] — 2026-11-17
+
+### Added
+
+- **Uploaded images are optimized by default.** ASE's Image Upload Control is on in the baseline: a new image wider or taller than 1920px is resized down (JPEG at quality 82) and the original is deleted, and a BMP or a PNG without transparency becomes a JPG. Nothing already in the Media Library changes, and a file whose name ends in `-nr` (photo-nr.jpg) is left as uploaded. Like every default here it only fills a gap: a site that already saved its own value keeps it.
+
 ## [1.47.7] — 2026-11-17
 
 ### Fixed
