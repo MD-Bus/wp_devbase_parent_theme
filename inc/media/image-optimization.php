@@ -1,18 +1,19 @@
 <?php
 
 // Lighter images, in the theme and nowhere else. Admin Site Enhancements'
-// Image Upload Control (see inc/dependencies/ase/ase-settings.php) shrinks the
-// ORIGINAL of a new upload; this file handles the smaller sizes WordPress
-// generates from it, which are the files visitors actually download:
+// Image Upload Control (see inc/dependencies/ase/ase-settings.php) shrinks a new
+// upload; this file handles the files WordPress writes from it, which are the
+// ones visitors actually download:
 //
-//   - JPEG and PNG sizes are written as WebP (about 25-35% lighter), when the
-//     server's image library can write WebP.
-//   - Their quality is 75 instead of WordPress's 82, which is hard to see on a photo.
+//   - A JPEG or PNG is written as WebP (about 25-35% lighter): the full size and
+//     every generated size, when the server's image library can write WebP. The
+//     upload itself is kept as the attachment's original_image.
+//   - The quality is 75 instead of WordPress's 82, which is hard to see on a photo.
 //
 // It only uses WordPress's own filters, so it never reads or edits ASE's code
 // and keeps working whatever ASE version is bundled. Only newly generated sizes
-// are affected; existing media changes when it is regenerated (plain
-// "wp media regenerate", not --only-missing). Full guide: inc/media/AGENT.md.
+// are affected ("sizes" here and below means the full size too); existing media changes when it is regenerated (plain
+// "wp media regenerate", not --only-missing). Full guide: the README, section Images.
 //
 // A file named like photo-nr.jpg ("no resize", ASE's own convention) is left as
 // uploaded. Child themes can turn either part off:
@@ -34,6 +35,28 @@ function devbase_image_webp_supported() {
 }
 
 /**
+ * Is this image opted out with ASE's "-nr" naming (photo-nr.jpg)?
+ *
+ * WordPress asks for the output format with the file's path when it opens an image, but
+ * with no path at all when it writes each generated size. So the last path seen is
+ * remembered, and a call without one is judged by it: without that, a -nr upload would
+ * keep its own file but still get WebP sizes.
+ *
+ * @param string|null $filename The path WordPress passed, or null/'' for a generated size.
+ */
+function devbase_image_is_opted_out( $filename ) {
+	static $last = '';
+
+	if ( is_string( $filename ) && '' !== $filename ) {
+		$last = $filename;
+	}
+
+	// photo-nr.jpg, and the names WordPress derives from it: photo-nr-1.jpg (a second upload of the same
+	// name), photo-nr-scaled.jpg and photo-nr-rotated.jpg.
+	return '' !== $last && (bool) preg_match( '/-nr(?:-\d+)?(?:-scaled|-rotated)?\.[a-z0-9]+$/i', wp_basename( $last ) );
+}
+
+/**
  * The quality for generated JPEG and WebP sizes.
  */
 function devbase_image_quality() {
@@ -49,7 +72,7 @@ add_filter(
 			return $formats;
 		}
 
-		if ( is_string( $filename ) && false !== strpos( wp_basename( $filename ), '-nr.' ) ) {
+		if ( devbase_image_is_opted_out( $filename ) ) {
 			return $formats;
 		}
 

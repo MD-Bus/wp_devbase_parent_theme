@@ -10,11 +10,18 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.49.1] — 2026-11-17
+
+### Fixed
+
+- **A `-nr` upload still got WebP sizes.** WordPress asks for the output format of each generated size without a file name, so the "-nr" opt-out of 1.49.0 only covered the full-size file. The last path seen is now remembered (`devbase_image_is_opted_out()`), and the names WordPress derives from a `-nr` file count too: `photo-nr-1.jpg` (a second upload of the same name), `-scaled` and `-rotated`. Two real-upload tests cover it.
+- **The 1.49.0 guide said the full-size file stays JPG or PNG.** It does not: WordPress converts the full size with the same mapping and keeps the upload as `original_image`. The README's new [Images](README.md#images) section explains both layers, the files an upload leaves, the `-nr` opt-out, regenerating an existing library, emails (`wp_get_original_image_url()`) and the child-theme filters. (1.49.0 pointed to `inc/media/AGENT.md`, which is not shipped: AGENT.md files are local notes.)
+
 ## [1.49.0] — 2026-11-17
 
 ### Added
 
-- **WebP sizes at quality 75.** The sizes WordPress generates from an upload (the files pages actually serve) are now written as WebP when the server can, and at quality 75 instead of 82. It lives in `inc/media/image-optimization.php` and uses only WordPress's own filters, so it never touches ASE's code and survives ASE updates. Only newly generated sizes change; regenerate a site's media to apply it to existing images. A file named `…-nr.jpg` is skipped. A child turns it off with `devbase/image_webp` or sets the quality with `devbase/image_quality`. Guide: `inc/media/AGENT.md`.
+- **WebP sizes at quality 75.** The sizes WordPress generates from an upload (the files pages actually serve) are now written as WebP when the server can, and at quality 75 instead of 82. It lives in `inc/media/image-optimization.php` and uses only WordPress's own filters, so it never touches ASE's code and survives ASE updates. Only newly generated sizes change; regenerate a site's media to apply it to existing images. A file named `…-nr.jpg` is skipped. A child turns it off with `devbase/image_webp` or sets the quality with `devbase/image_quality`. Documented in the README, [Images](README.md#images).
 
 ### Changed
 

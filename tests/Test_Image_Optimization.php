@@ -3,6 +3,23 @@
 
 class Test_Image_Optimization extends WP_UnitTestCase {
 
+	/** @var int[] Attachments a test uploaded: deleted with their files afterwards. */
+	private $uploaded = array();
+
+	public function tear_down() {
+		foreach ( $this->uploaded as $id ) {
+			wp_delete_attachment( $id, true );
+		}
+		$this->uploaded = array();
+		parent::tear_down();
+	}
+
+	private function upload( $file ) {
+		$id               = self::factory()->attachment->create_upload_object( $file );
+		$this->uploaded[] = $id;
+		return $id;
+	}
+
 	public function test_jpeg_and_png_sizes_become_webp_when_the_server_can_write_it() {
 		if ( ! devbase_image_webp_supported() ) {
 			$this->markTestSkipped( 'This PHP cannot write WebP.' );
@@ -18,6 +35,19 @@ class Test_Image_Optimization extends WP_UnitTestCase {
 		$formats = apply_filters( 'image_editor_output_format', array(), '/x/photo-nr.jpg', 'image/jpeg' );
 
 		$this->assertSame( array(), $formats );
+	}
+
+	public function test_names_wordpress_derives_from_a_nr_file_are_left_alone_too() {
+		foreach ( array( 'photo-nr-1.jpg', 'photo-nr-scaled.jpg', 'photo-nr-2-scaled.jpg', 'photo-nr-rotated.png' ) as $name ) {
+			$this->assertSame( array(), apply_filters( 'image_editor_output_format', array(), '/x/' . $name, 'image/jpeg' ), $name );
+		}
+		// "-nr" must end the name: these are ordinary files.
+		if ( ! devbase_image_webp_supported() ) {
+			return;
+		}
+		foreach ( array( 'corner-nr-photo.jpg', 'snr.jpg' ) as $name ) {
+			$this->assertArrayHasKey( 'image/jpeg', apply_filters( 'image_editor_output_format', array(), '/x/' . $name, 'image/jpeg' ), $name );
+		}
 	}
 
 	public function test_an_existing_mapping_is_never_overridden() {
@@ -55,12 +85,43 @@ class Test_Image_Optimization extends WP_UnitTestCase {
 			$this->markTestSkipped( 'This PHP cannot write WebP.' );
 		}
 
-		$id   = self::factory()->attachment->create_upload_object( DIR_TESTDATA . '/images/test-image-large.jpg' );
+		$id   = $this->upload( DIR_TESTDATA . '/images/test-image-large.jpg' );
 		$meta = wp_get_attachment_metadata( $id );
 
 		$this->assertNotEmpty( $meta['sizes'] );
 		foreach ( $meta['sizes'] as $size ) {
 			$this->assertSame( 'image/webp', $size['mime-type'] );
 		}
+	}
+
+	// End to end: WordPress converts the full-size file too (wp_create_image_subsizes() follows the same mapping), and keeps the file as uploaded as original_image.
+	public function test_a_real_upload_keeps_the_uploaded_file_as_original_image() {
+		if ( ! devbase_image_webp_supported() ) {
+			$this->markTestSkipped( 'This PHP cannot write WebP.' );
+		}
+
+		$id = $this->upload( DIR_TESTDATA . '/images/test-image-large.jpg' );
+
+		// (The attachment's post_mime_type stays image/jpeg: WordPress does not change it.)
+		$this->assertStringEndsWith( '.webp', get_attached_file( $id ) );
+		$this->assertStringEndsWith( '.jpg', wp_get_original_image_path( $id ) );
+		$this->assertFileExists( wp_get_original_image_path( $id ) );
+	}
+
+	// End to end: a -nr upload stays JPEG, the full size AND every generated size (WordPress asks for
+	// the output format of a size with no file name, so the skip must remember the file being processed).
+	public function test_a_real_nr_upload_stays_jpeg_everywhere() {
+		$tmp = get_temp_dir() . 'devbase-' . wp_generate_password( 8, false ) . '-nr.jpg';
+		copy( DIR_TESTDATA . '/images/test-image-large.jpg', $tmp );
+
+		$id   = $this->upload( $tmp );
+		$meta = wp_get_attachment_metadata( $id );
+
+		$this->assertStringEndsWith( '.jpg', get_attached_file( $id ) );
+		$this->assertNotEmpty( $meta['sizes'] );
+		foreach ( $meta['sizes'] as $size ) {
+			$this->assertSame( 'image/jpeg', $size['mime-type'] );
+		}
+		@unlink( $tmp );
 	}
 }

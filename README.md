@@ -36,7 +36,7 @@ fix reaches every client site through a single release.
 | **Schema** | Organization, Website and Breadcrumb JSON-LD, each independently toggleable. |
 | **Archives** | Custom fields on a CPT archive (which ACF has no location rule for), an **SEO** tab on each archive that sets its search title and description (for The SEO Framework), and CPT archives in the internal link picker. |
 | **MCP** | Content abilities over the WordPress MCP Adapter — list/get/create/update posts and options values, generic across every post type, behind an opt-in allow-list. Pages can be read and built as a list of the site's own blocks, and media uploaded (opt-in). |
-| **Images** | New uploads are resized to 1600 px and, for a JPEG or PNG, their generated sizes are written as WebP at quality 75, so pages stay light. Admin Site Enhancements does the original, a small theme filter does the sizes. Existing images change only when regenerated; `-nr` in a file name opts out. See `inc/media/AGENT.md`. |
+| **Images** | New uploads are resized to 1600 px and, for a JPEG or PNG, WordPress writes them as WebP at quality 75 (the full size and every generated size; the upload is kept as the original), so pages stay light. Admin Site Enhancements does the resize, a small theme filter the WebP. Existing images change only when regenerated; `-nr` in a file name opts out. See [Images](#images). |
 | **Shops** | WooCommerce ships inside the theme as a zip and is installed into `wp-content/plugins/` only for a child theme that requires it. It is activated, kept active, and cannot be updated, deactivated or deleted from WordPress: only a theme release changes it, and a release never downgrades it. Off unless a child asks. |
 | **Updates** | Both themes update themselves from [Warden](https://github.com/momardia54/Warden), a self-hosted licensing and release service. Bundled dependencies change only in a tested theme release; Dependabot and a release workflow say when one is due. |
 
@@ -391,6 +391,59 @@ add_filter( 'devbase/required_plugins', function ( $plugins ) {
 | Filter | Purpose |
 | --- | --- |
 | `devbase/required_plugins` | Slugs of bundled plugins this site needs (`woocommerce`). Required means installed, activated and locked against WordPress changes. Details: `inc/bundled-plugins/AGENT.md`. |
+
+### Images
+
+Every site keeps its images light without anyone thinking about it. Two layers do it, and
+neither touches the other's code:
+
+| Layer | Where | What it does |
+| --- | --- | --- |
+| **Resize** | Admin Site Enhancements' *Image Upload Control*, switched on in `inc/dependencies/ase/ase-settings.php` | A new upload larger than 1600 × 1600 px is resized down, and a BMP or a PNG without transparency becomes a JPG. The file as uploaded is not kept. |
+| **WebP** | `inc/media/image-optimization.php` | WordPress writes the image as WebP at quality 75: the full size and every generated size, which are the files pages serve. Only WordPress's own filters are used, so an ASE update cannot break it. |
+
+What an upload of `photo.jpg` leaves in `uploads/`:
+
+| File | What it is |
+| --- | --- |
+| `photo.jpg` | the upload, after the resize. Kept as the attachment's `original_image`: `wp_get_original_image_url( $id )` returns it |
+| `photo.webp` | the full size: what `wp_get_attachment_url()` and "Full Size" return |
+| `photo-300x225.webp`, … | the generated sizes |
+
+The attachment's `post_mime_type` stays `image/jpeg`; only the files are WebP. If the
+server's image library cannot write WebP, the WebP step is skipped and nothing breaks.
+
+**Opting one image out.** End the file name in `-nr` (`diagram-nr.png`): it stays as
+uploaded, no resize and no WebP. The names WordPress derives from it count too
+(`diagram-nr-1.png`, `-scaled`, `-rotated`), but ASE's own check does not know the `-1`
+form and still resizes it.
+
+**Existing images** do not change. To convert a site's library, take a backup, then run
+`wp media regenerate --yes` in the site's folder (`--only-missing` skips everything,
+since the old sizes exist).
+
+**Emails** cannot rely on WebP (Outlook shows nothing). For an email picture use
+`wp_get_original_image_url( $id )`, never the attachment URL or a size.
+
+**From a child theme:**
+
+```php
+// Keep JPEG and PNG as they are.
+add_filter( 'devbase/image_webp', '__return_false' );
+
+// Another quality (1-100) for JPEG and WebP.
+add_filter( 'devbase/image_quality', fn () => 82 );
+
+// A different resize limit, even where a site already saved one (see ASE settings above).
+add_filter( 'devbase/ase/enforced', function ( $enforced ) {
+    $enforced['image_max_width']  = 2400;
+    $enforced['image_max_height'] = 2400;
+    return $enforced;
+} );
+```
+
+The ASE numbers are defaults: they fill a gap only, so a site that already saved its own
+value keeps it. Tests: `tests/Test_Image_Optimization.php` and `tests/Test_ASE_Overrides.php`.
 
 ### Building a form
 
