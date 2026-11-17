@@ -382,7 +382,7 @@ The site's language is sent as `?lang=` so a multilingual brand answers in it.
 
 **Theme Settings > Help > Guide** is the site's manual, in the admin where editors already are. It ships and updates
 with the themes, so it always describes the site as it is, nobody can delete it by accident, and none of it is public.
-Print > Save as PDF gives a PDF of the open tab. A Dashboard box links to it (`devbase/guide/dashboard` false removes it).
+**Download PDF** opens the browser's print dialog on the open tab (choose *Save as PDF*), once every screenshot has loaded; with two tabs, **Download the whole guide** does the same for both, one after the other (`?tab=all`). The PDF has the guide's print layout (no admin menu, one chapter per page) and only the reader's chapters. A Dashboard box links to the guide (`devbase/guide/dashboard` false removes it).
 
 It has two tabs:
 

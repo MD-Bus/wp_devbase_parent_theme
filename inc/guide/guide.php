@@ -381,15 +381,15 @@ function devbase_guide_render() {
 		return;
 	}
 
-	$chapters = array();
+	// ?tab=all: every tab the reader has, one after the other, for a PDF of the whole guide.
+	$all   = count( $tabs ) > 1 && isset( $_GET['tab'] ) && 'all' === sanitize_key( wp_unslash( $_GET['tab'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$parts = array();
 
-	foreach ( devbase_guide_chapters( $current ) as $id => $chapter ) {
-		$chapters[] = array(
-			'id'        => $id,
-			'title'     => $chapter['title'],
-			'icon'      => $chapter['icon'],
-			'templates' => '' !== (string) $chapter['template'] ? devbase_guide_template_names( $chapter['template'] ) : array(),
-			'html'      => '' === (string) $chapter['template'] && is_callable( $chapter['render'] ) ? devbase_guide_capture( $chapter['render'], $chapter ) : '',
+	foreach ( $all ? array_keys( $tabs ) : array( $current ) as $tab ) {
+		$parts[] = array(
+			'id'       => $tab,
+			'title'    => $tabs[ $tab ],
+			'chapters' => devbase_guide_chapter_views( $tab ),
 		);
 	}
 
@@ -400,15 +400,35 @@ function devbase_guide_render() {
 			'id'      => $id,
 			'title'   => $title,
 			'url'     => devbase_guide_url( '', $id ),
-			'current' => $id === $current,
+			'current' => ! $all && $id === $current,
 		);
 	}
 
 	Timber\Timber::render( 'devbase-guide/guide.twig', array_merge( devbase_guide_context(), array(
 		'tabs'     => $links,
-		'tab'      => $current,
-		'chapters' => $chapters,
+		'tab'      => $all ? 'all' : $current,
+		'parts'    => $parts,
+		'chapters' => $parts[0]['chapters'],
+		// "Whole guide" opens this view and prints it straight away.
+		'all_url'  => count( $tabs ) > 1 ? add_query_arg( 'print', '1', devbase_guide_url( '', 'all' ) ) : '',
+		'print'    => $all && isset( $_GET['print'] ), // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	) ) );
+}
+
+/** One tab's chapters as the template draws them: id, title, icon, templates (or html, for a `render` chapter). */
+function devbase_guide_chapter_views( $tab ) {
+	$chapters = array();
+
+	foreach ( devbase_guide_chapters( $tab ) as $id => $chapter ) {
+		$chapters[] = array(
+			'id'        => $id,
+			'title'     => $chapter['title'],
+			'icon'      => $chapter['icon'],
+			'templates' => '' !== (string) $chapter['template'] ? devbase_guide_template_names( $chapter['template'] ) : array(),
+			'html'      => '' === (string) $chapter['template'] && is_callable( $chapter['render'] ) ? devbase_guide_capture( $chapter['render'], $chapter ) : '',
+		);
+	}
+	return $chapters;
 }
 
 /** What a `render` chapter prints, as a string. */

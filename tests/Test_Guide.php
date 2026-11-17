@@ -16,7 +16,7 @@ class Test_Guide extends WP_UnitTestCase {
 			}
 		}
 
-		unset( $_GET['tab'], $_GET['section'], $_GET['page'] );
+		unset( $_GET['tab'], $_GET['section'], $_GET['page'], $_GET['print'] );
 		remove_all_filters( 'devbase/guide/chapters' );
 		remove_all_filters( 'devbase/guide/tabs' );
 		parent::tear_down();
@@ -304,5 +304,77 @@ class Test_Guide extends WP_UnitTestCase {
 		foreach ( array( 'Warden', 'Brand Relay' ) as $name ) {
 			$this->assertStringNotContainsString( $name, $html );
 		}
+	}
+
+	// --- Download PDF --------------------------------------------------------------------------
+
+	public function test_the_page_offers_a_pdf_of_the_tab_and_of_the_whole_guide() {
+		$this->as_role( 'administrator' );
+		$this->add_child_chapter();
+
+		ob_start();
+		devbase_guide_render();
+		$html = (string) ob_get_clean();
+
+		$this->assertStringContainsString( 'devbaseGuidePdf()', $html );
+		$this->assertStringContainsString( 'Download PDF of this tab', $html );
+		$this->assertStringContainsString( 'Download the whole guide', $html );
+		// The whole guide's address: the guide on ?tab=all, printing on opening (escaped in the page as &#038;).
+		$this->assertStringContainsString( 'tab=all', $html );
+		$this->assertStringContainsString( 'print=1', $html );
+		$this->assertStringNotContainsString( "addEventListener( 'load', devbaseGuidePdf )", $html, 'Only the whole guide prints on opening.' );
+	}
+
+	public function test_with_one_tab_there_is_no_whole_guide_button() {
+		$this->as_role( 'administrator' );
+
+		ob_start();
+		devbase_guide_render();
+		$html = (string) ob_get_clean();
+
+		$this->assertStringContainsString( 'Download PDF', $html );
+		$this->assertStringNotContainsString( 'Download PDF of this tab', $html );
+		$this->assertStringNotContainsString( 'Download the whole guide', $html );
+	}
+
+	public function test_the_whole_guide_draws_every_tab_and_prints_itself() {
+		$this->as_role( 'administrator' );
+		$this->add_child_chapter();
+
+		$_GET['tab']   = 'all';
+		$_GET['print'] = '1';
+
+		ob_start();
+		devbase_guide_render();
+		$html = (string) ob_get_clean();
+
+		$this->assertStringContainsString( 'Child chapter body.', $html );
+		$this->assertStringContainsString( 'id="email"', $html );
+		$this->assertSame( 2, substr_count( $html, 'class="guide-part__title"' ) );
+		$this->assertLessThan( strpos( $html, 'id="email"' ), strpos( $html, 'Child chapter body.' ), 'In the tabs\' order: This site first.' );
+		$this->assertStringContainsString( "addEventListener( 'load', devbaseGuidePdf )", $html );
+		$this->assertStringNotContainsString( 'is-active', $html, 'No tab is the open one.' );
+	}
+
+	public function test_the_whole_guide_has_only_the_readers_chapters_and_needs_two_tabs() {
+		$this->as_role( 'editor' );
+		$this->add_child_chapter();
+		$_GET['tab'] = 'all';
+
+		ob_start();
+		devbase_guide_render();
+		$html = (string) ob_get_clean();
+
+		$this->assertStringContainsString( 'Child chapter body.', $html );
+		$this->assertStringNotContainsString( 'id="email"', $html );
+
+		remove_all_filters( 'devbase/guide/chapters' );
+
+		ob_start();
+		devbase_guide_render();
+		$html = (string) ob_get_clean();
+
+		$this->assertStringNotContainsString( 'guide-part__title', $html, 'With one tab, ?tab=all is just that tab.' );
+		$this->assertStringContainsString( 'id="trouble"', $html );
 	}
 }

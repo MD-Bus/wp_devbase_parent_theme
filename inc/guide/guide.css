@@ -27,6 +27,17 @@
 .guide-lead { font-size: 16px; margin: 0 0 8px; }
 .guide-meta { color: var(--guide-muted); margin: 0; }
 
+/* Download PDF: the browser's Save as PDF */
+.guide-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 14px 0 0; }
+.guide-actions .button .dashicons { font-size: 17px; width: 17px; height: 17px; vertical-align: text-bottom; margin-right: 2px; }
+.guide-actions .button-primary { background: var(--guide-accent); border-color: var(--guide-accent); }
+.guide-actions .button-primary:hover, .guide-actions .button-primary:focus { background: var(--guide-accent); border-color: var(--guide-accent); filter: brightness(.9); }
+.guide-actions__hint { color: var(--guide-muted); font-size: 13px; }
+
+/* The whole guide: one part per tab */
+.guide-part + .guide-part { margin-top: 48px; }
+.guide-part__title { font-size: 26px; margin: 0 0 16px; padding-bottom: 8px; border-bottom: 3px solid var(--guide-accent); }
+
 /* Table of contents: a grid of chapters */
 .guide-toc ol { list-style: none; margin: 0 0 40px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
 .guide-toc a { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--guide-line); border-radius: 6px; background: #fff; color: var(--guide-ink); text-decoration: none; font-weight: 500; }
@@ -79,7 +90,7 @@
 
 /* Print / Save as PDF: only the guide, chapters on their own pages, links readable */
 @media print {
-  #adminmenumain, #wpadminbar, #wpfooter, .devbase-app__nav, .devbase-app__header, .notice, .update-nag, .guide-top, .guide-meta, .guide-tabs { display: none !important; }
+  #adminmenumain, #wpadminbar, #wpfooter, .devbase-app__nav, .devbase-app__header, .notice, .update-nag, .guide-top, .guide-meta, .guide-tabs, .guide-actions { display: none !important; }
   html.wp-toolbar { padding-top: 0 !important; }
   #wpcontent, #wpbody-content, .devbase-app__main, .devbase-app__body, .wrap { margin: 0 !important; padding: 0 !important; }
   .devbase-app__shell { display: block !important; }
@@ -87,6 +98,8 @@
   .guide { max-width: none; font-size: 11pt; }
   .guide-toc ol { grid-template-columns: repeat(2, 1fr); }
   .guide-toc a { border: 0; padding: 2px 0; }
+  .guide-part + .guide-part { break-before: page; margin-top: 0; }
+  .guide-part__title { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .guide-chapter { break-before: page; border-top: 0; margin-top: 0; padding-top: 0; }
   .guide-shot, .guide-table, .guide-tip, .guide-warn, .guide-steps > li { break-inside: avoid; }
   .guide-shot a { box-shadow: none; }

@@ -1,7 +1,9 @@
-{# The Guide (inc/guide/guide.php). Context: site, home, is_admin, version, tsf, go = { screen: admin address },
-   tabs = [ { id, title, url, current } ], tab (the open one), chapters = [ { id, title, icon, templates, html } ].
+{# The Guide (inc/guide/guide.php). Context: site, home, is_admin, version, site_version, tsf, go = { screen: admin address },
+   tabs = [ { id, title, url, current } ], tab (the open one, or 'all' for the whole guide),
+   parts = [ { id, title, chapters } ] (one per tab shown: one, or every tab for 'all'),
+   chapters = [ { id, title, icon, templates, html } ] (the first part's), all_url (the whole guide, printing), print.
    shot( name, caption ) prints a screenshot from assets/guide/<name>.jpg (the child's first), or nothing when it is missing. #}
-<div class="guide">
+<div class="guide{{ tab == 'all' ? ' guide--all' }}">
 	{% if tabs|length > 1 %}
 	<nav class="guide-tabs" aria-label="Guide">
 		{% for t in tabs %}
@@ -11,28 +13,53 @@
 	{% endif %}
 
 	<div class="guide-intro">
-		{% if tab == 'theme' %}
+		{% if tab == 'all' %}
+		<p class="guide-lead">The whole guide to <strong>{{ site }}</strong>: {% for p in parts %}<strong>{{ p.title }}</strong>{{ not loop.last ? (loop.revindex == 2 ? ' and ' : ', ') }}{% endfor %}.</p>
+		{% elseif tab == 'theme' %}
 		<p class="guide-lead">The features behind <strong>{{ site }}</strong> that every site built on this theme shares: forms, email, spam protection, images, search engines, speed and updates. Each chapter says where the setting is and what it does.</p>
 		{% if not is_admin %}<p class="guide-meta">Some chapters are for administrators only, so you see the ones your account can use.</p>{% endif %}
 		{% else %}
 		<p class="guide-lead">Everything you need to keep <strong>{{ site }}</strong> up to date, step by step and with pictures of the real screens. Pick a chapter, or read it from the top the first time.</p>
 		{% endif %}
-		<p class="guide-meta">Written for theme version {{ tab == 'theme' ? version : site_version }}. To keep a copy: <a href="#" onclick="window.print(); return false;">Print</a> and choose <em>Save as PDF</em>.</p>
+		<p class="guide-meta">Written for theme version {{ tab == 'site' ? site_version : version }}.</p>
+		<p class="guide-actions">
+			<button type="button" class="button button-primary" onclick="devbaseGuidePdf()"><span class="dashicons dashicons-pdf" aria-hidden="true"></span> Download PDF{{ tabs|length > 1 and tab != 'all' ? ' of this tab' }}</button>
+			{% if all_url and tab != 'all' %}<a class="button" href="{{ all_url }}"><span class="dashicons dashicons-book" aria-hidden="true"></span> Download the whole guide</a>{% endif %}
+			<span class="guide-actions__hint">Choose <em>Save as PDF</em> as the destination, then <em>Save</em>.</span>
+		</p>
 	</div>
 
-	<nav class="guide-toc" aria-label="Chapters">
-		<ol>
-			{% for c in chapters %}
-			<li><a href="#{{ c.id }}"><span class="dashicons {{ c.icon }}" aria-hidden="true"></span><span class="guide-toc__num">{{ loop.index }}</span>{{ c.title }}</a></li>
-			{% endfor %}
-		</ol>
-	</nav>
+	{% for p in parts %}
+	<div class="guide-part" id="part-{{ p.id }}">
+		{% if parts|length > 1 %}<h1 class="guide-part__title">{{ p.title }}</h1>{% endif %}
 
-	{% for c in chapters %}
-	<section class="guide-chapter" id="{{ c.id }}" aria-labelledby="{{ c.id }}-title">
-		<h2 id="{{ c.id }}-title"><span class="guide-chapter__num">{{ loop.index }}</span>{{ c.title }}</h2>
-		{% if c.templates %}{% include c.templates ignore missing %}{% else %}{{ c.html|raw }}{% endif %}
-		<p class="guide-top"><a href="#wpbody">Back to the top ↑</a></p>
-	</section>
+		<nav class="guide-toc" aria-label="{{ parts|length > 1 ? p.title ~ ': chapters' : 'Chapters' }}">
+			<ol>
+				{% for c in p.chapters %}
+				<li><a href="#{{ c.id }}"><span class="dashicons {{ c.icon }}" aria-hidden="true"></span><span class="guide-toc__num">{{ loop.index }}</span>{{ c.title }}</a></li>
+				{% endfor %}
+			</ol>
+		</nav>
+
+		{% for c in p.chapters %}
+		<section class="guide-chapter" id="{{ c.id }}" aria-labelledby="{{ c.id }}-title">
+			<h2 id="{{ c.id }}-title"><span class="guide-chapter__num">{{ loop.index }}</span>{{ c.title }}</h2>
+			{% if c.templates %}{% include c.templates ignore missing %}{% else %}{{ c.html|raw }}{% endif %}
+			<p class="guide-top"><a href="#wpbody">Back to the top ↑</a></p>
+		</section>
+		{% endfor %}
+	</div>
 	{% endfor %}
 </div>
+<script>
+	// The PDF is the browser's own "Save as PDF", with the guide's print styles. The screenshots load lazily, so every
+	// one is loaded first: a picture still waiting when the print dialog opens would be missing from the PDF.
+	function devbaseGuidePdf() {
+		var images = Array.prototype.slice.call( document.querySelectorAll( '.guide img' ) );
+		images.forEach( function ( img ) { img.loading = 'eager'; } );
+		Promise.all( images.map( function ( img ) {
+			return img.complete ? null : new Promise( function ( done ) { img.addEventListener( 'load', done ); img.addEventListener( 'error', done ); } );
+		} ) ).then( function () { window.print(); } );
+	}
+	{% if print %}window.addEventListener( 'load', devbaseGuidePdf );{% endif %}
+</script>

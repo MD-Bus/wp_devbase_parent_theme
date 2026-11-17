@@ -10,6 +10,12 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.52.1] — 2026-11-17
+
+### Added
+
+- Guide: a **Download PDF** button, which opens the browser's print dialog (*Save as PDF*) once every screenshot has loaded, so none is missing from the PDF. With a child's "This site" tab, **Download the whole guide** saves both tabs in one PDF (`?tab=all`, each tab starting a new page). It replaces the "Print" link, which could leave out pictures that had not loaded yet.
+
 ## [1.52.0] — 2026-11-17
 
 ### Added
