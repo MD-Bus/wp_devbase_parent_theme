@@ -34,6 +34,7 @@ fix reaches every client site through a single release.
 | **Security** | Cloudflare Turnstile or Google reCAPTCHA v2, mutually exclusive and enforced server-side. Forms call one function and never learn which is active. |
 | **Tracking** | GTM/GA4 IDs plus raw header/footer script fields. |
 | **Cache** | Off until switched on. Clears the host's cache (LiteSpeed, SiteGround, WP Engine, Kinsta, Cloudways and others it detects) and Cloudflare when the site changes, keeps chosen paths and private visitors out of every cache, can let Cloudflare cache pages through one managed cache rule, and keeps compiled Twig templates on disk. See [Cache](#cache). |
+| **Guide** | A manual for the people who run the site, inside Theme Settings (Help > Guide), with annotated screenshots of the real screens. Its **Theme features** tab explains this theme's features to clients and is the same on every site; a child theme adds a **This site** tab with its own chapters. See [Guide](#guide). |
 | **Schema** | Organization, Website and Breadcrumb JSON-LD, each independently toggleable. |
 | **Archives** | Custom fields on a CPT archive (which ACF has no location rule for), an **SEO** tab on each archive that sets its search title and description (for The SEO Framework), and CPT archives in the internal link picker. |
 | **MCP** | Content abilities over the WordPress MCP Adapter — list/get/create/update posts and options values, generic across every post type, behind an opt-in allow-list. Pages can be read and built as a list of the site's own blocks, and media uploaded (opt-in). |
@@ -377,6 +378,31 @@ It deliberately does **not** print Brand Relay's `embed` HTML/CSS, which the
 reference snippets do; see the allowlist note above for why.
 The site's language is sent as `?lang=` so a multilingual brand answers in it.
 
+### Guide
+
+**Theme Settings > Help > Guide** is the site's manual, in the admin where editors already are. It ships and updates
+with the themes, so it always describes the site as it is, nobody can delete it by accident, and none of it is public.
+Print > Save as PDF gives a PDF of the open tab. A Dashboard box links to it (`devbase/guide/dashboard` false removes it).
+
+It has two tabs:
+
+| Tab | Written by | What is in it |
+|---|---|---|
+| **This site** | the child theme | the site's own pages and content (its post types, its shop). Shown only when the child adds a chapter, and then opened first. |
+| **Theme features** | this theme | Theme Settings, images, SEO, forms and submissions, email, spam protection, tracking, cache, retention and system status, AI access (MCP), updates and backups, troubleshooting. The same on every site. |
+
+- **Each reader sees their chapters.** The guide opens for anyone who can edit posts (`devbase/guide/capability`). Chapters
+  about administrator settings need `manage_options`, so an Editor gets Theme Settings, images, SEO and troubleshooting.
+  A chapter about a feature that is off is left out (SEO while The SEO Framework is off; forms without the form types).
+- **Screenshots are annotated**: numbered red markers and labels on the real screens, in `assets/guide/` (1440 px wide,
+  JPEG, no admin bar, no personal data). A missing picture is simply left out.
+- **No service names.** Like the rest of the client-facing admin, the guide never names the update or management
+  service; a test checks it.
+- **Translations** go chapter by chapter: `views/devbase-guide/theme/fr_FR/email.twig` replaces `email.twig` for a
+  reader whose admin language is French, and any chapter without one stays in English.
+
+Adding a child theme's chapters: see [Adding to the Guide](#adding-to-the-guide).
+
 ### Hidden tabs
 
 On **Theme Settings > Miscellaneous**, the **Credit** and **Management** tabs are
@@ -426,6 +452,36 @@ add_filter( 'devbase/forms/registered_forms', function ( $forms ) {
     return $forms;
 } );
 ```
+
+### Adding to the Guide
+
+A child theme's chapters go on the Guide's **This site** tab. Each is a Twig template in the child's `views/`
+(or a `render` callable), and its screenshots go in the child's `assets/guide/`:
+
+```php
+add_filter( 'devbase/guide/chapters', function ( $chapters ) {
+    $chapters['news'] = array(
+        'title'    => 'News articles',
+        'icon'     => 'dashicons-megaphone',
+        'template' => 'guide/chapters/news.twig',    // in the child's views/
+        // Optional: 'tab' (default 'site'), 'capability' (default edit_posts),
+        // 'when' (a callable; false leaves it out), 'after' (another chapter's id).
+    );
+    return $chapters;
+} );
+
+// Links the chapters use as {{ go.news }}, merged into the parent's own.
+add_filter( 'devbase/guide/context', function ( $context ) {
+    $context['go']['news'] = admin_url( 'edit.php?post_type=news' );
+    return $context;
+} );
+```
+
+In a chapter, `{{ shot( 'news-edit', 'Caption' ) }}` prints `assets/guide/news-edit.jpg` (or .png, .webp) from the
+child, else from this theme, or nothing when neither has it. The classes `guide-steps`, `guide-list`, `guide-table`,
+`guide-tip` and `guide-warn` style numbered steps, lists, tables and callouts. `devbase_guide_url( 'news' )` links to a
+chapter from anywhere in the admin; `devbase/guide/tabs` renames or adds tabs. Keep the child's own templates out of
+`views/devbase-guide/`, which is this theme's.
 
 ### Turning on the shop
 

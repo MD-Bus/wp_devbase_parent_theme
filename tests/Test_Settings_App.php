@@ -461,7 +461,7 @@ class Test_Settings_App extends WP_UnitTestCase {
 		$groups = devbase_app_groups();
 
 		$this->assertArrayHasKey( 'seo', $groups );
-		$this->assertSame( array( 'settings', 'seo', 'forms', 'content' ), array_keys( $groups ) );
+		$this->assertSame( array( 'settings', 'seo', 'forms', 'content', 'help' ), array_keys( $groups ), 'Help (the Guide, inc/guide/guide.php) comes last.' );
 
 		$sections = devbase_app_all_sections();
 

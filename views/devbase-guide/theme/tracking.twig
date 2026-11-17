@@ -1,0 +1,16 @@
+<p>Theme Settings &gt; <a href="{{ go.tracking }}"><strong>Tracking</strong></a> adds Google Analytics, Google Tag Manager or any other tracking code to every page.</p>
+{{ shot( 'tracking', 'Tracking: Tag Manager or Analytics, and other codes on the Custom Scripts tab.' ) }}
+
+<ol class="guide-steps">
+	<li><em>Analytics</em> tab: paste the <strong>Google Tag Manager ID</strong> (<code>GTM-...</code>) <strong>or</strong> the <strong>Google Analytics ID</strong> (<code>G-...</code>). If Analytics is set up inside Tag Manager, the Tag Manager ID alone is enough.</li>
+	<li><em>Custom Scripts</em> tab: other codes a service gives you to paste in the page's head or before its end (Meta Pixel, Hotjar...).</li>
+	<li>Click <strong>Save changes</strong>.</li>
+</ol>
+
+<h3>When it runs</h3>
+<ul class="guide-list">
+	<li>Only on the live site: a copy used for testing never counts visits. The box at the top of the page says whether tracking runs here.</li>
+	<li>Not for you: anyone logged in who can edit the site is never counted, so your own visits do not skew the numbers.</li>
+	<li>A cookie-consent tool can hold the codes back until the visitor agrees.</li>
+</ul>
+<div class="guide-warn">Paste only codes from a service you trust: whatever is in Custom Scripts runs on every page, for every visitor.</div>

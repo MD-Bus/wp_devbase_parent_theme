@@ -1,0 +1,42 @@
+<p>Everything visitors send through the site's forms is <strong>saved in the site</strong>, then emailed (or sent to another service) to whoever is set for that form. A message is never lost, even when its email fails.</p>
+
+<h3>Read the messages</h3>
+<ol class="guide-steps">
+	<li>Open Theme Settings &gt; Forms &gt; <a href="{{ go.submissions }}"><strong>Submissions</strong></a>.</li>
+	<li>Search what visitors wrote, show one form only, or pick <em>Needs attention</em> to see only the messages whose email did not go out.</li>
+	<li>Click a message's date to read all of it.</li>
+</ol>
+{{ shot( 'submissions', 'Submissions: every message, with whether its email went out.' ) }}
+
+<table class="guide-table">
+	<thead><tr><th>Delivery</th><th>What it means</th></tr></thead>
+	<tbody>
+		<tr><td><strong>Sent</strong></td><td>Delivered to every destination of its form.</td></tr>
+		<tr><td><strong>Sending</strong> / <strong>Retrying</strong></td><td>On its way, or a destination failed and is tried again by itself in a few minutes.</td></tr>
+		<tr><td><strong>Failed</strong></td><td>A destination refused it. The detail says why; fix the cause, then <strong>Resend</strong>.</td></tr>
+		<tr><td><strong>Nobody notified</strong></td><td>No destination is set for this form: the message is only kept here. Add one in Form Destinations (below).</td></tr>
+		<tr><td><strong>Logged only</strong></td><td>Saved, with no record of a send (for example, a message from before its form had a destination).</td></tr>
+	</tbody>
+</table>
+
+<h3>One message in detail</h3>
+{{ shot( 'submission-detail', 'A submission: what the visitor sent, and what happened to each email or webhook.' ) }}
+<ul class="guide-list">
+	<li><strong>What they sent</strong>: every field, exactly as typed.</li>
+	<li><strong>Delivery log</strong>: each email or webhook it went to, and the result.</li>
+	<li><strong>Resend</strong> sends it again to every destination of its form, for example after fixing an address.</li>
+</ul>
+
+<h3>Choose who receives each form</h3>
+<p>Theme Settings &gt; <a href="{{ go.destinations }}"><strong>Form Destinations</strong></a> is a list of places messages can go. Each row is one address (or one web service) and the forms that send to it.</p>
+<ol class="guide-steps">
+	<li>Click <strong>Add Destination</strong>.</li>
+	<li><strong>Label</strong>: a name you will recognise ("Office inbox").</li>
+	<li><strong>Type</strong>: <em>Email</em>, or <em>Webhook</em> to send it to another service (a mailing list, a CRM). A webhook needs the address your developer or that service gives you.</li>
+	<li><strong>Send To</strong>: the one email address that receives it. Two people? Add two rows.</li>
+	<li><strong>Applies To</strong>: the forms that send here. One form can go to several destinations.</li>
+	<li>Click <strong>Save changes</strong>.</li>
+</ol>
+{{ shot( 'destinations', 'Form Destinations: one row per address, and the forms that send to it.' ) }}
+<p><a href="{{ go.forms }}"><strong>Registered Forms</strong></a> lists every form on the site, how many messages it has received and who it notifies. Forms themselves are built by your developer.</p>
+<div class="guide-tip">Messages arrive but no email does? Check <a href="#email">Email delivery</a> first: its test button shows the exact error.</div>

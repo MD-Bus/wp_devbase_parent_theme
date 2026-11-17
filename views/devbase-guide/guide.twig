@@ -1,0 +1,38 @@
+{# The Guide (inc/guide/guide.php). Context: site, home, is_admin, version, tsf, go = { screen: admin address },
+   tabs = [ { id, title, url, current } ], tab (the open one), chapters = [ { id, title, icon, templates, html } ].
+   shot( name, caption ) prints a screenshot from assets/guide/<name>.jpg (the child's first), or nothing when it is missing. #}
+<div class="guide">
+	{% if tabs|length > 1 %}
+	<nav class="guide-tabs" aria-label="Guide">
+		{% for t in tabs %}
+		<a href="{{ t.url }}" class="guide-tabs__tab{{ t.current ? ' is-active' }}"{{ t.current ? ' aria-current="true"' }}>{{ t.title }}</a>
+		{% endfor %}
+	</nav>
+	{% endif %}
+
+	<div class="guide-intro">
+		{% if tab == 'theme' %}
+		<p class="guide-lead">The features behind <strong>{{ site }}</strong> that every site built on this theme shares: forms, email, spam protection, images, search engines, speed and updates. Each chapter says where the setting is and what it does.</p>
+		{% if not is_admin %}<p class="guide-meta">Some chapters are for administrators only, so you see the ones your account can use.</p>{% endif %}
+		{% else %}
+		<p class="guide-lead">Everything you need to keep <strong>{{ site }}</strong> up to date, step by step and with pictures of the real screens. Pick a chapter, or read it from the top the first time.</p>
+		{% endif %}
+		<p class="guide-meta">Written for theme version {{ tab == 'theme' ? version : site_version }}. To keep a copy: <a href="#" onclick="window.print(); return false;">Print</a> and choose <em>Save as PDF</em>.</p>
+	</div>
+
+	<nav class="guide-toc" aria-label="Chapters">
+		<ol>
+			{% for c in chapters %}
+			<li><a href="#{{ c.id }}"><span class="dashicons {{ c.icon }}" aria-hidden="true"></span><span class="guide-toc__num">{{ loop.index }}</span>{{ c.title }}</a></li>
+			{% endfor %}
+		</ol>
+	</nav>
+
+	{% for c in chapters %}
+	<section class="guide-chapter" id="{{ c.id }}" aria-labelledby="{{ c.id }}-title">
+		<h2 id="{{ c.id }}-title"><span class="guide-chapter__num">{{ loop.index }}</span>{{ c.title }}</h2>
+		{% if c.templates %}{% include c.templates ignore missing %}{% else %}{{ c.html|raw }}{% endif %}
+		<p class="guide-top"><a href="#wpbody">Back to the top ↑</a></p>
+	</section>
+	{% endfor %}
+</div>

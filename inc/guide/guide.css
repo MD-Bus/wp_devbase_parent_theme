@@ -1,0 +1,94 @@
+/* The Guide (inc/guide/guide.php), inside the Theme Settings app. Screen first, then print (Print > Save as PDF).
+   The class names are the ones child themes' chapters already use, so a child's chapters look the same here. */
+
+.guide {
+  --guide-accent: #2271b1;
+  --guide-accent-soft: #e5f0f8;
+  --guide-teal: #237177;
+  --guide-teal-soft: #dbf0f1;
+  --guide-warn: #8a5a00;
+  --guide-warn-soft: #fff4d6;
+  --guide-ink: #1d2327;
+  --guide-muted: #50575e;
+  --guide-line: #dcdcde;
+  max-width: 920px;
+  color: var(--guide-ink);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.guide-intro { margin-bottom: 24px; }
+
+/* Tabs: This site / Theme features */
+.guide-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 24px; }
+.guide-tabs__tab { padding: 8px 18px; border: 1px solid var(--guide-line); border-radius: 999px; background: #fff; color: var(--guide-ink); text-decoration: none; font-weight: 500; }
+.guide-tabs__tab:hover, .guide-tabs__tab:focus { border-color: var(--guide-accent); color: var(--guide-accent); box-shadow: none; }
+.guide-tabs__tab.is-active { background: var(--guide-accent); border-color: var(--guide-accent); color: #fff; }
+.guide-lead { font-size: 16px; margin: 0 0 8px; }
+.guide-meta { color: var(--guide-muted); margin: 0; }
+
+/* Table of contents: a grid of chapters */
+.guide-toc ol { list-style: none; margin: 0 0 40px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+.guide-toc a { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--guide-line); border-radius: 6px; background: #fff; color: var(--guide-ink); text-decoration: none; font-weight: 500; }
+.guide-toc a:hover, .guide-toc a:focus { border-color: var(--guide-accent); color: var(--guide-accent); box-shadow: none; }
+.guide-toc .dashicons { color: var(--guide-accent); }
+.guide-toc__num { min-width: 1.5em; color: var(--guide-muted); font-variant-numeric: tabular-nums; }
+
+/* Chapters */
+.guide-chapter { padding-top: 32px; margin-top: 32px; border-top: 1px solid var(--guide-line); scroll-margin-top: 48px; }
+.guide-chapter h2 { display: flex; align-items: center; gap: 12px; font-size: 22px; line-height: 1.3; margin: 0 0 16px; }
+.guide-chapter__num { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--guide-accent); color: #fff; font-size: 15px; flex-shrink: 0; }
+.guide-chapter h3 { font-size: 16px; margin: 28px 0 10px; }
+.guide-chapter p { margin: 0 0 12px; }
+.guide-chapter code, .guide-chapter kbd { font-size: 13px; padding: 1px 5px; border-radius: 3px; background: #f0f0f1; }
+
+/* Numbered steps */
+.guide-steps { counter-reset: step; list-style: none; margin: 0 0 16px; padding: 0; }
+.guide-steps > li { counter-increment: step; position: relative; padding: 0 0 10px 40px; min-height: 28px; }
+.guide-steps > li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 26px; height: 26px; border-radius: 50%; background: var(--guide-accent-soft); color: var(--guide-accent); font-weight: 600; display: grid; place-items: center; font-size: 13px; }
+.guide-steps ul { margin: 6px 0 0 18px; list-style: disc; }
+.guide-list { margin: 0 0 16px 20px; list-style: disc; }
+.guide-list li { margin-bottom: 6px; }
+
+/* Tables */
+.guide-table { width: 100%; border-collapse: collapse; margin: 0 0 16px; background: #fff; border: 1px solid var(--guide-line); }
+.guide-table th, .guide-table td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--guide-line); }
+.guide-table th { background: #f6f7f7; font-weight: 600; }
+.guide-table tr:last-child td { border-bottom: 0; }
+.guide-table td:first-child { width: 26%; }
+.guide-table--sections td:first-child { width: 20%; }
+
+/* Callouts */
+.guide-tip, .guide-warn { padding: 12px 16px; border-radius: 6px; margin: 0 0 16px; border-left: 4px solid; }
+.guide-tip { background: var(--guide-teal-soft); border-color: var(--guide-teal); }
+.guide-warn { background: var(--guide-warn-soft); border-color: var(--guide-warn); }
+
+/* Screenshots: click to open full size */
+.guide-shot { margin: 8px 0 20px; }
+.guide-shot a { display: block; border: 1px solid var(--guide-line); border-radius: 6px; overflow: hidden; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06); }
+.guide-shot a:focus { box-shadow: 0 0 0 2px var(--guide-accent); }
+.guide-shot img { display: block; width: 100%; height: auto; }
+.guide-shot figcaption { color: var(--guide-muted); font-size: 13px; margin-top: 6px; }
+
+.guide-top { margin-top: 20px; font-size: 13px; }
+.guide-top a { color: var(--guide-muted); }
+
+@media (max-width: 782px) {
+  .guide-table td:first-child { width: auto; }
+}
+
+/* Print / Save as PDF: only the guide, chapters on their own pages, links readable */
+@media print {
+  #adminmenumain, #wpadminbar, #wpfooter, .devbase-app__nav, .devbase-app__header, .notice, .update-nag, .guide-top, .guide-meta, .guide-tabs { display: none !important; }
+  html.wp-toolbar { padding-top: 0 !important; }
+  #wpcontent, #wpbody-content, .devbase-app__main, .devbase-app__body, .wrap { margin: 0 !important; padding: 0 !important; }
+  .devbase-app__shell { display: block !important; }
+  body, #wpwrap { background: #fff !important; }
+  .guide { max-width: none; font-size: 11pt; }
+  .guide-toc ol { grid-template-columns: repeat(2, 1fr); }
+  .guide-toc a { border: 0; padding: 2px 0; }
+  .guide-chapter { break-before: page; border-top: 0; margin-top: 0; padding-top: 0; }
+  .guide-shot, .guide-table, .guide-tip, .guide-warn, .guide-steps > li { break-inside: avoid; }
+  .guide-shot a { box-shadow: none; }
+  .guide-chapter, .guide-chapter h2, .guide-chapter__num, .guide-steps > li::before, .guide-tip, .guide-warn { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}

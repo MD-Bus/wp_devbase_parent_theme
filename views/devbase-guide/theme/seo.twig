@@ -1,0 +1,26 @@
+<p>The site tells search engines and social networks what each page is about by itself: its title, a short description, a picture when the page is shared, and a map of the site for Google. You can adjust any page.</p>
+{{ shot( 'seo-box', 'The SEO box under a page: its title and description in Google, and the Social and Visibility tabs.' ) }}
+
+<h3>Change how a page shows in Google</h3>
+<ol class="guide-steps">
+	<li>Open the page or post. Scroll below the content to the <strong>SEO Settings</strong> box (in the block editor, open <em>Meta Boxes</em> at the bottom).</li>
+	<li><strong>Meta Title</strong>: the blue link in Google. The grey text is the automatic one; type to replace it. Aim for 50 to 60 characters: the counter below turns green.</li>
+	<li><strong>Meta Description</strong>: the two lines under it. Aim for 120 to 155 characters, written for a person, not stuffed with keywords.</li>
+	<li><em>Social</em> tab: the title, text and picture shown when the page is shared on Facebook, LinkedIn or X. <em>Visibility</em> tab: keep a page out of Google (a thank-you page, for example).</li>
+	<li>Click <strong>Update</strong>.</li>
+</ol>
+<div class="guide-tip">Leave the fields empty and the site writes them for you from the page's title and first lines. Fill them in only for the pages that matter most: the home page, your main services, your contact page.</div>
+
+<h3>List pages (News, Events...)</h3>
+<p>A page that lists articles or events has no editor of its own. Its search title and description are on its page under <strong>Theme Settings &gt; Content</strong>, in the <strong>SEO</strong> tab.</p>
+
+{% if is_admin %}
+<h3>Who the site represents</h3>
+<p>Theme Settings &gt; SEO &gt; <a href="{{ go.organization }}"><strong>Organization Details</strong></a> tells Google who is behind the site: a business or a person, its name, logo, social profiles and locations. It feeds the panel Google can show beside search results.</p>
+{{ shot( 'organization', 'Organization Details: who the site represents, for search engines.' ) }}
+<ul class="guide-list">
+	<li>The logo must be a <strong>PNG or JPG</strong>: Google does not read SVG logos.</li>
+	<li><strong>Social / Profile Links</strong>: only the official profiles of this same business.</li>
+	<li>A field left empty keeps what the SEO tool had; nothing is lost.</li>
+</ul>
+{% endif %}

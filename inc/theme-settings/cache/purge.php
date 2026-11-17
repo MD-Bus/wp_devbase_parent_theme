@@ -73,7 +73,7 @@ function devbase_cache_trigger_choices() {
 		'settings' => __( 'A settings page is saved (every page under Theme Settings, the child theme\'s too)', 'devbase_parent_theme' ),
 		'menus'    => __( 'Menus, widgets or the Customizer change', 'devbase_parent_theme' ),
 		'updates'  => __( 'An update installs (a theme, a plugin or WordPress)', 'devbase_parent_theme' ),
-		'credit'   => __( 'Brand Relay sends a new brand credit', 'devbase_parent_theme' ),
+		'credit'   => __( 'The site credit in the footer changes', 'devbase_parent_theme' ),
 	);
 }
 

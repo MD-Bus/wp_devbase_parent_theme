@@ -1,0 +1,30 @@
+<h3>A change does not show on the site</h3>
+<ul class="guide-list">
+	<li>Did you click <strong>Save changes</strong> or <strong>Update</strong>? A green message confirms it.</li>
+	<li>Reload the page while holding <kbd>Shift</kbd>, or open it in a private window: your browser may be showing an older copy.</li>
+	{% if is_admin %}<li>Still old? Theme Settings &gt; <a href="{{ go.cache }}">Cache</a> &gt; <strong>Clear all caches now</strong> (<a href="#cache">Cache and speed</a>).</li>{% endif %}
+</ul>
+
+<h3>Form messages stop arriving by email</h3>
+<ul class="guide-list">
+	<li>The messages are still in <a href="{{ go.submissions }}">Submissions</a>: nothing visitors send is lost. Pick <em>Needs attention</em> to see which ones did not go out, and why.</li>
+	<li>Theme Settings &gt; <a href="{{ go.email }}">Email</a> &gt; <strong>Send Test Email</strong> shows the exact error. Once fixed, open each message and click <strong>Resend</strong>.</li>
+	<li>Check the spam folder, and that the form has a destination (<em>Nobody notified</em> means it has none).</li>
+</ul>
+
+<h3>Visitors say a form will not send</h3>
+<ul class="guide-list">
+	<li>The spam check may be failing: Theme Settings &gt; <a href="{{ go.security }}">Security</a>. A key created for another domain, or a reCAPTCHA key that is not "score-based (v3)", blocks everyone.</li>
+	<li>Too many sends from one visitor in a short time are refused on purpose; they can try again a little later.</li>
+</ul>
+
+<h3>Undo a change</h3>
+<p>Pages and posts keep every saved version: open it, click <strong>Revisions</strong> in the side panel, pick an earlier version and click <strong>Restore This Revision</strong>. Deleted items stay in the <strong>Trash</strong> for 30 days.</p>
+
+<h3>Things to leave alone</h3>
+<ul class="guide-list">
+	<li>Plugin and theme updates: they are handled for you.</li>
+	<li>Greyed-out fields: they are set for you on purpose.</li>
+	<li>Tracking and custom scripts you did not add yourself.</li>
+</ul>
+<div class="guide-tip">Stuck? Note the page's address and what you did just before, take a screenshot, and send them to your web developer.</div>

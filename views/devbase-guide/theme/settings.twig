@@ -1,0 +1,26 @@
+<p>What the whole site shares (its email, its forms, its spam protection and more) is set once in <strong>Theme Settings</strong>, in the left menu. Change it there and every page follows.</p>
+{{ shot( 'theme-settings', 'Theme Settings: every page in the sidebar, its tabs, and Save changes.' ) }}
+
+<h3>Find your way around</h3>
+<ol class="guide-steps">
+	<li>Click <a href="{{ go.app }}"><strong>Theme Settings</strong></a> in the left menu.</li>
+	<li>The sidebar lists every page, in groups. Click one to open it: its title and what it is for are at the top.</li>
+	<li>Most pages are split into <strong>tabs</strong>. Each tab holds part of the page; nothing is lost when you switch tabs.</li>
+	<li>Click <strong>Save changes</strong> when you are done. Until you do, nothing is kept.</li>
+</ol>
+
+<h3>Who sees what</h3>
+<p>You only see the pages your account may use. Editors usually see the content pages (a list page's banner and text, for example) and this guide; administrators see everything.</p>
+{% if is_admin %}
+<table class="guide-table">
+	<thead><tr><th>Group</th><th>What is in it</th></tr></thead>
+	<tbody>
+		<tr><td><strong>Settings</strong></td><td><a href="{{ go.email }}">Email</a>, <a href="{{ go.security }}">Security</a>, <a href="{{ go.tracking }}">Tracking</a>, <a href="{{ go.cache }}">Cache</a>, <a href="{{ go.destinations }}">Form Destinations</a>, <a href="{{ go.miscellaneous }}">Miscellaneous</a> and <a href="{{ go.licence }}">Licence &amp; Updates</a>.</td></tr>
+		{% if tsf %}<tr><td><strong>SEO</strong></td><td><a href="{{ go.organization }}">Organization Details</a>: who the site represents, for search engines (<a href="#seo">chapter on SEO</a>).</td></tr>{% endif %}
+		<tr><td><strong>Forms</strong></td><td><a href="{{ go.forms }}">Registered Forms</a> and <a href="{{ go.submissions }}">Submissions</a>: every message sent through the site (<a href="#forms">Forms and submissions</a>).</td></tr>
+		<tr><td><strong>Content</strong></td><td>The text and settings of list pages such as News or Events, when the site has them.</td></tr>
+		<tr><td><strong>Help</strong></td><td>This guide.</td></tr>
+	</tbody>
+</table>
+{% endif %}
+<div class="guide-tip">A field that looks greyed out and cannot be changed is set for you (by your developer, or by the update service). That is on purpose.</div>

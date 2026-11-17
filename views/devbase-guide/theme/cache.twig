@@ -1,0 +1,35 @@
+<p>A cache keeps a ready-made copy of each page so visitors get it instantly. Most hosts have one, and Cloudflare can add another. Theme Settings &gt; <a href="{{ go.cache }}"><strong>Cache</strong></a> keeps them up to date: when the site changes, the old copies are cleared, so nobody sees an outdated page.</p>
+<div class="guide-warn">Leave the whole page <strong>off</strong> when a cache plugin (WP Rocket, LiteSpeed Cache...) already does this job, or ask your developer. Two tools clearing the same cache get in each other's way.</div>
+
+<h3>General tab</h3>
+{{ shot( 'cache', 'Cache, General tab: the master switch, what clears every cache, and the template cache.' ) }}
+<ol class="guide-steps">
+	<li><strong>Enable cache integration</strong>: the master switch. Off, the theme does nothing with caching at all.</li>
+	<li><strong>Clear every cache when</strong>: the changes that touch every page (a settings page saved, the menus, an update). Leave them ticked.</li>
+	<li><strong>Template cache</strong>: makes every page a little faster to build. Leave it on.</li>
+	<li><strong>Never cache these paths</strong>: pages that must always be fresh (a members' area, a quote form). One row per path, as it shows in the address bar (<code>/members/</code>), matching every page that <em>starts with</em> it or <em>exactly</em> that one.</li>
+	<li><strong>Clear all caches now</strong>: empties everything at once, if a page ever looks out of date.</li>
+</ol>
+
+<h3>Host cache tab</h3>
+<p>Shows the host's cache the theme found (LiteSpeed, SiteGround, WP Engine, Kinsta, Cloudways and others) and clears it on the changes above. <strong>Check the home page's cache headers</strong> loads the home page twice and tells you whether the second load came from a cache.</p>
+
+<h3>Cloudflare tab</h3>
+<p>For a site whose domain goes through Cloudflare. The theme needs a <strong>token</strong> from Cloudflare that may only touch this domain.</p>
+{{ shot( 'cloudflare', 'Cloudflare: the token\'s three permissions, the zone ID and the token.' ) }}
+<ol class="guide-steps">
+	<li>In Cloudflare: <em>My Profile &gt; API Tokens &gt; Create Token &gt; Custom token</em>. Give it the three permissions listed on the page, for this domain only.</li>
+	<li>Back here: switch <strong>Enable Cloudflare</strong> on and paste the <strong>Zone ID</strong> (on the domain's Overview page in Cloudflare, under API) and the <strong>API token</strong>. The token is never shown again once saved.</li>
+	<li>Click <strong>Save changes</strong>, then <strong>Test connection</strong>.</li>
+</ol>
+{{ shot( 'cloudflare-pages', 'Cloudflare: the connection test, what a post edit clears, and page caching.' ) }}
+<ul class="guide-list">
+	<li><strong>When a post or page changes</strong>: clear only the pages that show it (recommended), all of this site's pages, or nothing.</li>
+	<li><strong>Let Cloudflare cache pages</strong>: Cloudflare keeps whole pages, not just pictures, which makes the site much faster for visitors far from the server. Turn it on, save, then click <strong>Create or update the cache rule</strong> once. Logged-in visitors, previews, searches, carts and password-protected pages are never kept.</li>
+	<li><strong>Keep pages for</strong>: a changed page is cleared at once anyway; this is only the longest a page could be out of date if a clear ever failed.</li>
+</ul>
+<p>Cloudflare only ever clears this site's own pages: never its pictures, styles or scripts, and never another site on the same domain.</p>
+
+<h3>Status tab</h3>
+{{ shot( 'cache-status', 'Cache, Status tab: what is on, and the last clear.' ) }}
+<p>What is on, the object cache the host provides (Redis or Memcached) if any, the last clear with its result for each cache, and the last error. A clear that fails is tried again five minutes later by itself.</p>

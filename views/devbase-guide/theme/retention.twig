@@ -1,0 +1,25 @@
+<p>Theme Settings &gt; <a href="{{ go.miscellaneous }}"><strong>Miscellaneous</strong></a> holds the housekeeping: how long form messages are kept, a health check of the site's email and forms, and AI access (<a href="#ai">next chapter</a>).</p>
+
+<h3>Delete old form messages by themselves</h3>
+<p>Messages are kept forever unless you set a rule. Keeping personal data only as long as needed is good practice, and often the law.</p>
+{{ shot( 'retention', 'Retention Policy: how long messages are kept, per form.' ) }}
+<ol class="guide-steps">
+	<li><em>Retention Policy</em> tab: switch <strong>Enable Retention Policy</strong> on.</li>
+	<li>Click <strong>Add Policy</strong>. Pick <strong>Delete After</strong> (6 months, 1 year...) and the forms it <strong>Applies To</strong>. A form with no rule is kept forever.</li>
+	<li>Click <strong>Save changes</strong>. Every day, messages older than that are deleted for good. <strong>Run Purge Now</strong> does it straight away.</li>
+</ol>
+<div class="guide-warn">Deleted messages cannot be brought back. Export or copy anything you need to keep before setting a short period.</div>
+
+<h3>System Status</h3>
+{{ shot( 'system-status', 'System Status: email sending, mail delivery and form notifications at a glance.' ) }}
+<table class="guide-table">
+	<tbody>
+		<tr><td><strong>SMTP</strong></td><td>How the site sends email, and when it was last tested.</td></tr>
+		<tr><td><strong>Mail Delivery</strong></td><td>The last email that failed (any email, not only forms), how many failed in the last 7 days, and when the last one went out.</td></tr>
+		<tr><td><strong>Form Notifications</strong></td><td>Recent form emails or webhooks that did not go out, and why.</td></tr>
+		<tr><td><strong>Spam Trap</strong></td><td>How many robot submissions the hidden trap caught.</td></tr>
+		<tr><td><strong>Retention Policy</strong></td><td>When old messages were last deleted.</td></tr>
+		<tr><td><strong>Bundled Dependencies</strong></td><td>The tools shipped inside the theme and their versions. They are updated with the theme, never on their own.</td></tr>
+	</tbody>
+</table>
+<p>The <em>SEO</em> tab switches the site's search engine features on or off: leave it as your developer set it.</p>

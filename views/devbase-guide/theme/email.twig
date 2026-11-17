@@ -1,0 +1,22 @@
+<p>Every email the site sends (form messages, password resets, order emails) goes through the setting on Theme Settings &gt; <a href="{{ go.email }}"><strong>Email</strong></a>. Without it, a website's emails often land in spam or never arrive.</p>
+{{ shot( 'email', 'Email: sending through an email service, the sender address, and Send Test Email.' ) }}
+
+<h3>Two ways to send (only one at a time)</h3>
+<table class="guide-table">
+	<tbody>
+		<tr><td><strong>SMTP</strong> tab</td><td>Through a mail server, like an email program: the server's address, port, encryption, user name and password, given by your email provider.</td></tr>
+		<tr><td><strong>Email API</strong> tab</td><td>Through an email service such as Brevo, with an API key. Use it when the host blocks mail servers: emails then never time out.</td></tr>
+	</tbody>
+</table>
+
+<h3>Set it up or change it</h3>
+<ol class="guide-steps">
+	<li>Open Theme Settings &gt; <a href="{{ go.email }}">Email</a> and pick the tab. Switch the other one off first: only one can be on.</li>
+	<li>Fill in the connection (or the API key). A password or key is <strong>never shown again</strong> once saved; leave the field empty to keep it.</li>
+	<li><strong>From Email</strong>: the sender address. It must be on a domain the email service has verified, or emails are refused.</li>
+	<li>Click <strong>Save changes</strong>, then <strong>Send Test Email</strong>. You receive a test, or you see the exact error to pass on.</li>
+</ol>
+
+<h3>Is mail going out?</h3>
+<p>Every email the site sends is watched. Theme Settings &gt; <a href="{{ go.miscellaneous }}">Miscellaneous</a> &gt; <em>System Status</em> shows the last failure with its error, how many failed in the last 7 days, and when the last email went out (<a href="#retention">Old submissions and system status</a>).</p>
+<div class="guide-warn">Changing the email service or its key stops every email until the new one is tested. Do it when you can send a test right away.</div>

@@ -1,0 +1,18 @@
+<p>Every form on the site checks that a person, not a robot, is sending it. Theme Settings &gt; <a href="{{ go.security }}"><strong>Security</strong></a> chooses how.</p>
+{{ shot( 'spam', 'Security: Turnstile or reCAPTCHA, and their two keys.' ) }}
+
+<table class="guide-table">
+	<tbody>
+		<tr><td><strong>Turnstile</strong> (Cloudflare)</td><td>Free, and no puzzles: a small box on the form checks the visitor by itself, and only now and then asks them to tick it.</td></tr>
+		<tr><td><strong>reCAPTCHA v3</strong> (Google)</td><td>Invisible: Google scores each visitor from 0.0 (a robot) to 1.0 (a person) and low scores are blocked. <strong>Minimum Score</strong> sets the bar (0.5 by default). Only a <em>score-based (v3)</em> key works here.</td></tr>
+	</tbody>
+</table>
+
+<h3>Turn it on</h3>
+<ol class="guide-steps">
+	<li>Create the keys for this site's domain: in Cloudflare (Turnstile) or in Google's reCAPTCHA admin (v3).</li>
+	<li>Open Theme Settings &gt; <a href="{{ go.security }}">Security</a>, pick the tab, switch it on.</li>
+	<li>Paste the <strong>Site Key</strong> and the <strong>Secret Key</strong>. The secret is never shown again once saved.</li>
+	<li>Click <strong>Save changes</strong>, then send one of the site's forms yourself to check it goes through.</li>
+</ol>
+<div class="guide-tip">Only one can be on at a time: switch the other off first. Every form also has a hidden trap for robots and a limit on how often one visitor can send, with or without these keys.</div>

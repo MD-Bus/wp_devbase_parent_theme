@@ -10,6 +10,16 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.52.0] — 2026-11-17
+
+### Added
+
+- **The Guide** (Theme Settings > Help > Guide): a manual for the people who run the site, with annotated screenshots of the real screens. The **Theme features** tab has twelve chapters on this theme's features (Theme Settings, images, SEO, forms and submissions, email, spam protection, tracking, cache, retention and system status, AI access, updates and backups, troubleshooting), the same on every site. A child theme adds a **This site** tab through `devbase/guide/chapters` (and `devbase/guide/context` for its links); the tab shows only when it has a chapter, and opens first. Editors see only their chapters; a chapter about a feature that is off is left out. Print > Save as PDF, a Dashboard box, and per-chapter translations (`views/devbase-guide/theme/{locale}/`). See the README, [Guide](README.md#guide).
+
+### Fixed
+
+- The Cache page's "Clear every cache when" list named the management service ("Brand Relay sends a new brand credit"). It now reads "The site credit in the footer changes".
+
 ## [1.51.0] — 2026-11-17
 
 ### Added

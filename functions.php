@@ -175,6 +175,10 @@ require_once __DIR__ . '/inc/theme-settings/cache/ajax.php';
 // (see inc/settings-app/AGENT.md). Groups register on acf/init, so load order against the sub-pages does not matter.
 require_once __DIR__ . '/inc/settings-app/app.php';
 
+// The Guide: Theme Settings > Help > Guide, the manual for the people who run the site, in tabs (this theme's features,
+// and the child theme's own chapters through devbase/guide/chapters).
+require_once __DIR__ . '/inc/guide/guide.php';
+
 // Registers the theme's first two CPTs: registered_form (one per form
 // name) and form_data (one per submission). Foundational — everything
 // else in inc/forms/ depends on these existing.
