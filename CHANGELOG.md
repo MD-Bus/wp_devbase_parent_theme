@@ -10,6 +10,16 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.52.3] — 2026-11-17
+
+### Fixed
+
+- **The front-end placeholder showed a broken image.** `views/index.twig` (the page a site shows with no child theme, or one without its own `index.twig`) still loaded `assets/icons/devbase-b-icon.svg`, the old company's "B", which 1.30.0 deleted. It now shows the current "M" mark (`assets/icons/theme-settings-icon.svg`). A new test, `tests/Test_Template_Assets.php`, fails when any template loads a file from `{{ theme.uri }}` that the theme does not ship.
+
+### Changed
+
+- README: up to date with everything since October (the Theme Settings screen, Email API, Submissions, Management switches, Backups, reCAPTCHA v3, SEO through The SEO Framework, one licence key), with twelve new screenshots of the current admin.
+
 ## [1.52.2] — 2026-11-17
 
 ### Changed
