@@ -7,9 +7,10 @@ site's design and specifics.
 
 Timber/Twig for templating, Secure Custom Fields for custom fields, Admin
 Site Enhancements for admin cleanup and hardening, The SEO Framework for
-SEO — all vendored, none installed as WordPress plugins.
+SEO — all vendored, none installed as WordPress plugins. Every setting lives
+in one **Theme Settings** screen in wp-admin.
 
-![Theme Settings — System Status](docs/screenshots/system-status.png)
+![The Theme Settings screen, on Miscellaneous > System Status](docs/screenshots/system-status.jpg)
 
 ---
 
@@ -29,25 +30,28 @@ fix reaches every client site through a single release.
 
 | Area | What it does |
 | --- | --- |
-| **Forms** | Two CPTs (`registered_form`, `form_data`), a JSON registry, automatic submission logging and dispatch to email/webhook destinations. A form is its markup plus one handler call: the theme adds CSRF, the CAPTCHA, a honeypot, a per-visitor rate limit, the AJAX script, logging and notifications. |
-| **SMTP** | Real SMTP transport with a "Send Test Email" button that surfaces the actual PHPMailer error, not a generic failure. |
-| **Security** | Cloudflare Turnstile or Google reCAPTCHA v2, mutually exclusive and enforced server-side. Forms call one function and never learn which is active. |
+| **Theme Settings** | One wp-admin screen with a sidebar of sections (Settings, SEO, Forms, Content, Help) in place of a stack of sub-pages. Each section has its own capability: administrators see everything, Editors only the archive sections. See [Settings](#settings). |
+| **Forms** | Two CPTs (`registered_form`, `form_data`), a JSON registry, automatic submission logging and dispatch to email/webhook destinations, retried when one fails. A form is its markup plus one handler call: the theme adds CSRF, the CAPTCHA, a honeypot, a per-visitor rate limit, the AJAX script, logging and notifications. A **Submissions** screen lists what came in and whether it was delivered. |
+| **Email** | Mail through real SMTP, or through an email service's HTTPS API (Brevo) for hosts that block the SMTP ports. Each has a "Send Test Email" button that shows the real error, and every failed `wp_mail()` is logged on System Status. |
+| **Security** | Cloudflare Turnstile or Google reCAPTCHA v3, mutually exclusive and enforced server-side. Forms call one function and never learn which is active. |
 | **Tracking** | GTM/GA4 IDs plus raw header/footer script fields. |
 | **Cache** | Off until switched on. Clears the host's cache (LiteSpeed, SiteGround, WP Engine, Kinsta, Cloudways and others it detects) and Cloudflare when the site changes, keeps chosen paths and private visitors out of every cache, can let Cloudflare cache pages through one managed cache rule, and keeps compiled Twig templates on disk. See [Cache](#cache). |
 | **Guide** | A manual for the people who run the site, inside Theme Settings (Help > Guide), with annotated screenshots of the real screens. Its **Theme features** tab explains this theme's features to clients and is the same on every site; a child theme adds a **This site** tab with its own chapters. See [Guide](#guide). |
-| **Schema** | Organization, Website and Breadcrumb JSON-LD, each independently toggleable. |
+| **SEO** | The SEO Framework, vendored and off until switched on: titles, descriptions, Open Graph, the JSON-LD graph, the sitemap. The theme adds an **Organization Details** page (an organization or a person) merged into that graph. See [SEO](#seo). |
 | **Archives** | Custom fields on a CPT archive (which ACF has no location rule for), an **SEO** tab on each archive that sets its search title and description (for The SEO Framework), and CPT archives in the internal link picker. |
 | **MCP** | Content abilities over the WordPress MCP Adapter — list/get/create/update posts and options values, generic across every post type, behind an opt-in allow-list. Pages can be read and built as a list of the site's own blocks, and media uploaded (opt-in). |
 | **Images** | New uploads are resized to 1600 px and, for a JPEG or PNG, WordPress writes them as WebP at quality 75 (the full size and every generated size; the upload is kept as the original), so pages stay light. Admin Site Enhancements does the resize, a small theme filter the WebP. Existing images change only when regenerated; `-nr` in a file name opts out. See [Images](#images). |
 | **Shops** | WooCommerce ships inside the theme as a zip and is installed into `wp-content/plugins/` only for a child theme that requires it. It is activated, kept active, and cannot be updated, deactivated or deleted from WordPress: only a theme release changes it, and a release never downgrades it. Off unless a child asks. |
-| **Updates** | Both themes update themselves from [Warden](https://github.com/momardia54/Warden), a self-hosted licensing and release service. Bundled dependencies change only in a tested theme release; Dependabot and a release workflow say when one is due. |
+| **Updates** | Both themes update themselves from [Warden](https://github.com/momardia54/Warden), a self-hosted licensing and release service, over a staged rollout, with a health check and automatic rollback after each theme update. Bundled dependencies change only in a tested theme release; Dependabot and a release workflow say when one is due. |
+| **Backups** | When Brand Relay asks, the site makes a backup with the bundled WPvivid Backup and sends it off the server. The Licence & Updates screen lists the backups held and downloads one back for a restore. See [Backups](#backups). |
+| **Monitoring** | On request from Brand Relay, a site reports its health (versions, pending updates, disk, mail failures, scheduled tasks) and its PHP errors, scrubbed. See [Updates](#updates). |
 
 ## Installing
 
 1. Install this theme into `wp-content/themes/`. **Do not rename the
    directory** — a child theme binds to it by exact name.
 2. Install a child theme and activate **that**, not this one. The
-   [Dev Base Child Theme](../wp_devbase_child_theme) is the
+   [Dev Base Child Theme](https://github.com/MD-Bus/wp_devbase_child_theme) is the
    starter to copy.
 3. Fill in Theme Settings as the site needs.
 
@@ -61,21 +65,47 @@ install order produces a clear message rather than a broken site.
 
 ## Settings
 
-Everything lives under **Theme Settings** in wp-admin. Every field is
-registered in code, so it is identical on every site running this theme.
+Everything lives under **Theme Settings** in wp-admin: one screen, with a
+sidebar of sections grouped by what they are for. Every field is registered in
+code, so it is identical on every site running this theme.
+
+| Group | Sections |
+|---|---|
+| **Settings** | Email, Security, Tracking, Cache, Form Destinations, Miscellaneous, Licence & Updates |
+| **SEO** | Organization Details (while The SEO Framework is on) |
+| **Forms** | Registered Forms, Submissions |
+| **Content** | One section per post type archive, for its fields and its [archive SEO](#seo) |
+| **Help** | Guide |
+
+- **Who sees what.** Each section has its own capability. Administrators see
+  every section; an Editor sees only the Content (archive) sections and the Guide.
+  A save that posts to a store other than its own section's is refused (403), so an
+  Editor cannot write the administrator-only settings by forging the form.
+- **Nothing new is stored.** Each section draws the existing Secure Custom Fields
+  groups with `acf_form()`. The older one-page-per-setting screens are hidden from
+  the menu but still open at their own addresses, so links, MCP and WP-CLI keep working.
+- **Pages a child theme adds show up by themselves.** An SCF options sub-page
+  registered under Theme Settings with a field group on it becomes a section.
+  `'devbase_app' => array( 'group', 'after', 'icon', 'title', 'description' )` on the
+  `acf_add_options_sub_page()` call places it; `devbase/app/sections` and
+  `devbase/app/groups` change the sidebar.
+- **The settings public pages read are autoloaded**, so they cost no query of
+  their own per page (`devbase/settings/autoload_fields` adds a child's own).
 
 ### Licence & updates
 
-![Licence settings](docs/screenshots/licence-connection.png)
+![Licence & Updates, Licence tab](docs/screenshots/licence-settings.jpg)
 
-The page has three tabs and opens on **Status**: each theme's licence and whether
-updates are available, plus **Check licence and updates now**. **Licence** holds the
-**Licence key**, the **Update server** and the **Verification key**; they are
-provisioned automatically and cannot be edited here, and a notice says so once.
-**Remote setup** holds the **Management server address** and **Site access key**
-that make the rest provision themselves: saving them pulls everything else straight
-away, see [Provisioning from Brand Relay](#provisioning-from-brand-relay). Switch on **Lock remote setup** (Theme Settings > Miscellaneous > Management) to hide this tab; off, it is visible. The Management tab is itself out of sight, see [Hidden tabs](#hidden-tabs). Clients never see the product names Warden
-or Brand Relay.
+The section opens on **Status**: each theme's licence and whether updates are
+available, plus **Check licence and updates now**. **Backups** lists the site's backups
+(see [Backups](#backups)). **Licence** holds the **Licence key**, the **Update server**
+and the **Verification key**; they are provisioned automatically and cannot be edited
+here, and a notice says so. **Remote setup** holds the **Management server address** and
+**Site access key** that make the rest provision themselves: saving them pulls everything
+else straight away, see [Provisioning from Brand Relay](#provisioning-from-brand-relay).
+**Lock remote setup** (Theme Settings > Miscellaneous > Management, on by default) hides
+that tab. The Management tab is itself out of sight, see [Hidden tabs](#hidden-tabs).
+Clients never see the product names Warden or Brand Relay.
 
 One key covers the whole site. In Warden the licence has two apps attached under the tags
 **`parent-theme`** (this base theme) and **`child-theme`** (the site's own theme); the site
@@ -83,20 +113,38 @@ checks each theme under its tag, and one key uses one site slot. The developer's
 Status tab shows each theme's tag. (Until 1.18.0 each theme had its own key; a site still
 holding those keeps updating with them until the single key arrives, which then replaces them.)
 
-![Licence status](docs/screenshots/licence-status.png)
+![Licence & Updates, Status tab](docs/screenshots/licence-status.jpg)
 
 The Status tab answers "is this site actually receiving updates" — a
 question that otherwise has half a dozen indistinguishable failure modes.
 **Check licence and updates now** forces the check immediately rather than waiting for
-the cached answer to expire.
+the cached answer to expire. When a release is offered it shows the release's labels
+(Urgent, Security, Bug fix, New feature) and when this site will install it (see
+[staged rollout](#updates)). (The screenshot is a local copy with no licence, which is why
+updates are off.)
 
-### SMTP
+### Email
 
-![SMTP settings](docs/screenshots/smtp-settings.png)
+![Email, Email API tab](docs/screenshots/email-api.jpg)
 
-Connection fields stay hidden until the feature is switched on, and are
-only required while it is — ACF skips validation for conditionally hidden
-fields, so "required when enabled" needs no custom JavaScript.
+Two tabs, two ways to send, and only one can be on: the other switch is locked on
+the page, and a save that turns on both is refused.
+
+- **SMTP**: a real mail server (host, port, encryption, login, sender).
+- **Email API**: for hosts that block the SMTP ports (25, 465, 587). Mail goes out
+  over HTTPS with `wp_remote_post`, no new library. **Brevo** is the first service; each
+  service is one adapter behind `devbase/mail_api/providers`
+  (`inc/theme-settings/smtp/api.php`, `api-brevo.php`). It takes over inside `wp_mail()`
+  through `pre_wp_mail`, so form notifications, password resets and plugins all use it,
+  and `wp_mail_succeeded` / `wp_mail_failed` fire as WordPress fires them. A failure
+  carries the service's own reason ("Key not found", "Sender not valid"). A Brevo SMTP key
+  (`xsmtpsib-`) pasted in place of an API key is refused with the reason.
+
+Each tab has its own **Send Test Email** button. Passwords and API keys are secrets: the
+field is drawn empty, a save that leaves it empty keeps the stored value, and MCP can
+never read or write them. Connection fields stay hidden until their switch is on, and are
+only required while it is — ACF skips validation for conditionally hidden fields, so
+"required when enabled" needs no custom JavaScript.
 
 **Every mail is watched, not only the test.** Each failure of `wp_mail()`, whatever sent it (a form notification, a
 password reset, WooCommerce), is kept: Miscellaneous > System Status > Mail Delivery shows the last one with its
@@ -105,7 +153,7 @@ as `mail`, with the error scrubbed and no recipient.
 
 ### Security
 
-![Security settings](docs/screenshots/security-settings.png)
+![Security, reCAPTCHA tab](docs/screenshots/security-settings.jpg)
 
 Turnstile and reCAPTCHA on separate tabs. Only one may be active; a
 server-side `acf/validate_save_post` handler enforces that, with the
@@ -175,6 +223,8 @@ The theme adds two small things TSF has no screen for, both handed to TSF throug
   Schema setting for it, and TSF's own "Presence" tab (the same fields) is hidden in the theme's copy so there is one place to edit them (an empty field leaves TSF's saved value; `devbase/tsf/hide_organization_fields` keeps the tab). The extras are
   only ever added. There is no switch on this page: TSF's own knowledge-graph setting is the master switch.
 
+![Organization Details](docs/screenshots/organization-details.jpg)
+
 What TSF's free version does not do, so neither does the theme: no Article, Product, FAQ, Review,
 Event or LocalBusiness schema, no focus keywords, no Google News sitemap, and no SEO fields over
 REST (so MCP cannot set a page's SEO title; it can set an archive's). A child theme that needs
@@ -182,8 +232,9 @@ more can hook TSF's `the_seo_framework_schema_graph_data` filter.
 
 ### Tracking
 
-![Tracking settings](docs/screenshots/tracking-settings.png)
+![Tracking, Analytics tab](docs/screenshots/tracking-settings.jpg)
 
+A Google Tag Manager ID, a GA4 ID, and raw header and footer scripts (Custom Scripts tab).
 **Only where it should run.** Nothing on this page reaches the pages on a site whose environment is not production
 (`WP_ENVIRONMENT_TYPE` local, development or staging), nor for a logged-in user who can edit posts, so the site's own
 staff never count as visitors. A consent plugin holds it back with the `devbase/tracking/enabled` filter (it receives
@@ -205,6 +256,8 @@ A child adds a host with `devbase/cache/hosts`.
 **Never cache these paths.** A repeater of paths ("Starts with" or "Exactly"). Those pages are sent with
 `nocache_headers()`, `DONOTCACHEPAGE` and LiteSpeed's no-cache header, which every host cache, cache plugin and
 Cloudflare obey.
+
+![Cache, Cloudflare tab](docs/screenshots/cache-cloudflare.jpg)
 
 **Cloudflare.** A zone ID and an API token limited to the zone, with Zone Read, Cache Purge and (for page caching)
 Cache Rules Edit. The token is a secret like the SMTP password; both values can instead be set in wp-config.php as
@@ -244,14 +297,26 @@ to Brand Relay gains a `cache` field while the integration is on.
 
 ### Form destinations
 
-![Form destinations](docs/screenshots/form-destinations.png)
+![Form Destinations](docs/screenshots/form-destinations.jpg)
 
 One repeater where each row is a self-contained destination (email or
-webhook) plus the forms it applies to.
+webhook) plus the forms it applies to. An **Email** destination sends the way the
+[Email](#email) section sends, SMTP or the Email API.
+
+### Submissions
+
+**Forms > Submissions** lists what visitors sent, newest first: filter by form, by
+"needs attention" (failed, retrying or nobody notified), or search the submitted text.
+One submission shows its fields, each destination's delivery log and how often it was
+tried, and a **Resend** button (see [Building a form](#building-a-form)). Old submissions
+are deleted by the **Retention Policy** (Miscellaneous): rules of "delete after" a period,
+each applying to the forms it names, with a **Run Purge Now** button.
 
 ### MCP access
 
-![MCP access](docs/screenshots/mcp-access.png)
+**Miscellaneous > MCP Access.**
+
+![Miscellaneous, MCP Access tab](docs/screenshots/mcp-access.jpg)
 
 **Opt-in, always.** Nothing is readable or writable through MCP until an
 admin explicitly ticks it here. A newly registered post type starts fully
@@ -380,6 +445,8 @@ The site's language is sent as `?lang=` so a multilingual brand answers in it.
 
 ### Guide
 
+![The Guide, Theme features tab](docs/screenshots/guide.jpg)
+
 **Theme Settings > Help > Guide** is the site's manual, in the admin where editors already are. It ships and updates
 with the themes, so it always describes the site as it is, nobody can delete it by accident, and none of it is public.
 **Download PDF** (with two tabs, **PDF of this tab** and **PDF of the whole guide**, `?tab=all`) opens the browser's print dialog (choose *Save as PDF*) once every screenshot has loaded. The PDF has a cover with the contents, one chapter per page, page numbers, and only the reader's chapters. A Dashboard box links to the guide (`devbase/guide/dashboard` false removes it).
@@ -424,12 +491,26 @@ keys or reads the page source can reach them. The code is
 `inc/theme-settings/miscellaneous/hidden-tabs.js`, and the CSS that hides the tabs
 from the start is in `inc/theme-settings/miscellaneous/settings.php`.
 
+### Management switches
+
+The hidden **Management** tab keeps the admin tidy for a client:
+
+| Switch | Default | When on |
+|---|---|---|
+| **Lock remote setup** | on | hides the Licence page's Remote setup tab |
+| **Hide WPvivid Backup** | on | hides WPvivid from the admin menu, the admin bar, the Plugins list and its notices; backups keep working |
+| **Hide Secure Custom Fields** | on | hides and closes the Custom Fields menu and its screens, so nobody changes the site's structure by accident |
+| **Hide Registered Forms**, **Hide Form Data** | off | leaves those sections out of Theme Settings; forms keep working and submissions are still stored and sent |
+| **Allow Make available now** | off | shows a button on the Licence status tab beside a release waiting for its staged rollout: it skips the wait on this site, and the update then appears on Dashboard > Updates like any other |
+
+Hidden is not blocked: each screen still opens by its address.
+
 ## The front end
 
 This theme ships exactly one template — a branded placeholder, so a fresh
 install shows something intentional rather than a blank page.
 
-![Front end placeholder](docs/screenshots/front-end.png)
+![Front end placeholder](docs/screenshots/front-end.jpg)
 
 Real templates are the child theme's job, since they are the part every
 project replaces. Timber resolves templates child-first, so a child's
@@ -886,11 +967,10 @@ plugin is still loading, before the theme, cannot be seen; that is a total outag
 
 Theme Settings > Miscellaneous > System Status shows the bundled versions.
 
-
 **The themes themselves** are delivered by [Warden](https://github.com/momardia54/Warden) — a self-hosted
 licensing and release service, and a separate project. Each theme has its
-own release track and its own licence key, so the parent and a client's
-child theme update independently.
+own release track, so the parent and a client's child theme update
+independently; one licence key covers both (see [Licence & updates](#licence--updates)).
 
 The theme asks Warden what release is available for the version and domain
 it reports, then hands the answer to WordPress's own `Theme_Upgrader`,
@@ -931,6 +1011,25 @@ onwards, and the admin side from 1.41.0 onwards.
 
 No licence key means no update checks for that theme — which is the right
 state for a staging clone or a local copy.
+
+### Backups
+
+Needs Brand Relay 0.30.0+ (0.34.0 for its "Run now" buttons), and only while the site's plan includes backups. When
+Brand Relay's signed ping names `backup`, the site starts a job: the bundled **WPvivid Backup** makes one archive of the
+files (WordPress core included) and the database, kept on the site only and without touching WPvivid's own remote
+storage, schedule or retention. The job sends it to Brand Relay in parts of 50 MiB streamed from the file (memory stays
+flat, a 5 GB backup is fine), reports `last_backup_at` in the health report and deletes the local copy.
+
+- **In steps.** It runs in time-limited steps over signed loopback requests, resumes after a failed part, and a job that
+  stops moving for 90 seconds is moved on, not abandoned.
+- **Disk first.** It starts only with 1.5 times the last backup plus 100 MiB free (`devbase/backup/disk_needed`), or
+  fails saying so.
+- **Restore is manual, on purpose.** Licence & Updates > **Backups** lists what Brand Relay holds for the site (also after
+  a reinstall with the same site key) and **downloads** one back into WPvivid's folder, resumable and checksum-checked;
+  the owner then presses Restore in WPvivid. Clients cannot start a backup from the site; Brand Relay's schedule does. A
+  plan without backups shows a short message instead.
+- **WPvivid is locked down** to what this flow uses while the plan includes backups. A WPvivid the client installed for
+  themselves is left alone.
 
 ## Versioning
 
