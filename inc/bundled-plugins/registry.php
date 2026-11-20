@@ -41,7 +41,7 @@ function devbase_bundled_plugins() {
 			'name'        => 'WooCommerce',
 			'file'        => 'woocommerce/woocommerce.php',
 			'zip'         => $dir . 'woocommerce.zip',
-			'version'     => '11.3.0', // bundled:woocommerce (bin/bundle-plugins.sh keeps this equal to bundled-plugins/composer.lock)
+			'version'     => '11.3.1', // bundled:woocommerce (bin/bundle-plugins.sh keeps this equal to bundled-plugins/composer.lock)
 			'text_domain' => 'woocommerce',
 		),
 		// Required by the PARENT, not by a child: only while the site's Brand Relay
