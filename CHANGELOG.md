@@ -10,6 +10,12 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.52.4] — 2026-11-20
+
+### Changed
+
+- **WooCommerce 11.3.0 → 11.3.1** (Dependabot). A patch release that tightens checkout and the REST API: permission checks on order endpoints, payment handling for existing orders, coupon usage counts and discount limits, state tax and shipping rates on block and classic checkout, held stock counts, and email-confirmation links in My Account now asking for the account password. The full theme test suite passes with it (907 tests).
+
 ## [1.52.3] — 2026-11-17
 
 ### Fixed
