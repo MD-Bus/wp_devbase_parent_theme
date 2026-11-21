@@ -49,6 +49,14 @@ because most sites get few visits and many have cron off. The plan is pulled bef
 **3. Error events (done in 1.24.0; warnings and notices added after).** Fatals and uncaught exceptions, then warnings, notices and deprecations
 through a chained error handler that only counts, scrubbed and queued, sent when the ping names `events`, only while the plan has error tracking.
 See `inc/maintenance/AGENT.md`. Open: failed scheduled jobs; warnings raised while a plugin is still loading are missed (the theme loads later).
+*Stack traces for uncaught exceptions* (released: 1.53.0, 2026-11-21; Brand Relay 0.46.0 stores and shows them). Tested end to
+end against a local Brand Relay. The design as built: the scrubber still keeps the first line of the message. Only for fatals and exceptions, never for warnings and
+notices (their handler stays a counter with no backtrace). Rules: take the `Stack trace:` block already in the uncaught-exception
+message (no `debug_backtrace`); keep only `file(line): Class->method` and drop every argument (they can hold emails, tokens, form
+data); run each file through the existing path scrubbing; cap at about 10 frames and a few KB; leave the fingerprint on kind,
+place and message so one error does not split by caller. Plain PHP fatals (parse error, memory exhaustion) have no trace.
+An optional `trace` field on the Brand Relay side (old themes simply do not send it, and an older Brand Relay ignores it,
+so rollout order does not matter); tests in `Test_Events.php`.
 
 **4. Backups (done, 1.26.0 to 1.30.6).** Option B, made through WPvivid Backup rather than our own engine: WPvivid is bundled like
 WooCommerce, the theme runs its newer backup engine (the one its dashboard uses), uploads the merged file to Brand Relay in 50 MiB parts when the
@@ -133,6 +141,30 @@ and switching off stops it at once), and keeps compiled Twig templates on disk. 
 Cloudflare zone tested with a real token (the rule, the purge, the connection test), and one real LiteSpeed host. Not
 done on purpose: a page cache of the theme's own (it would run after WordPress has loaded, and a drop-in written from a
 theme is fragile), GoDaddy's cache (no documented way to clear it from code), and Cloudflare APO.
+
+**11. Remote site management from Brand Relay (idea, 2026-11-21; not designed or built).** Do the work on a client site
+without opening its wp-admin, as a Brand Relay service of its own (in force only while the plan has it, like the others, and
+switched off at once when the plan lapses). Three steps, in this order, each its own release:
+
+1. *Plugin inventory.* The health report already carries site health; add every installed plugin (name, version, active or
+   not, update available) from `get_plugins()` and the update transient. Brand Relay shows it per client and across the
+   fleet ("which sites run an old WooCommerce"). Read-only, so it carries the least risk; it also closes the open item under
+   item 2 (outdated plugin and theme names are not sent yet).
+2. *Remote plugin updates.* Brand Relay names a plugin and a site; the site's next ping carries the command, WordPress's own
+   `Plugin_Upgrader` does the update (no engine of ours), and the result (success or failure, version, time) goes back in
+   the next report. Must go through the same safeguards as the bundled-plugin updater: the update locks, a health check
+   after, and the rollback idea from the theme updates. The bundled plugins (WooCommerce, WPvivid) stay under the
+   theme's own release control and are not updated this way.
+3. *One-click login.* Brand Relay asks the site for a single-use, short-lived login ticket and opens a site endpoint that
+   checks and uses up the ticket, then starts a normal WordPress session. No client password or Application Password is
+   stored in Brand Relay (Application Passwords are for API access, not browser login). Needs its own security design
+   before any code: which user it signs in as, an audit log entry on the site and in Brand Relay, a ticket lifetime of
+   seconds, bound to the site and one use, and a visible notice to the client's administrators if the owner wants one.
+
+Dependency: steps 2 and 3 make Brand Relay's word able to change a site or open it, so the site must be sure the command
+came from Brand Relay. Today's ping proves only that the sender holds the site key; see "A stronger ping" under Considered
+(Brand Relay signing with its own Ed25519 key, public key stored here like Warden's). That should come first, or with step 2.
+The licence-lapse rule applies: no plan, no remote management.
 
 ## Reliability audit (November 2026)
 

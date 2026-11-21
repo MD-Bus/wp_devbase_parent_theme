@@ -158,6 +158,96 @@ class Test_Events extends WP_UnitTestCase {
 		$this->assertSame( 'mine', $event['context']['theme'] );
 	}
 
+	// --- Stack traces ------------------------------------------------------------
+
+	public function test_an_uncaught_exception_sends_its_stack_trace_without_arguments() {
+		$message = "Uncaught Exception: nope in /home/u/Web Design/site/wp-content/themes/mine/a.php:7\n"
+			. "Stack trace:\n"
+			. "#0 /home/u/Web Design/site/wp-content/plugins/shop/cart.php(42): Cart->total('jane@example.com', Array)\n"
+			. "#1 [internal function]: Shop\\Hooks::{closure:/home/u/public_html/wp-content/plugins/shop/hooks.php:12}('x')\n"
+			. "#2 /home/u/public_html/vendor/acme/Thing.php(9): do_action('init', Object(WP_Post))\n"
+			. "#3 C:\\sites\\maple\\wp-includes\\plugin.php(517): WP_Hook->do_action(Array)\n"
+			. "#4 {main}\n"
+			. '  thrown in /home/u/Web Design/site/wp-content/themes/mine/a.php on line 7';
+		$event   = devbase_events_build( array( 'type' => E_ERROR, 'message' => $message, 'file' => '/x/wp-content/themes/mine/a.php', 'line' => 7 ) );
+
+		$this->assertSame(
+			array(
+				'wp-content/plugins/shop/cart.php(42): Cart->total',
+				'[internal function]: Shop\\Hooks::{closure:wp-content/plugins/shop/hooks.php:12}',
+				'Thing.php(9): do_action',
+				'wp-includes/plugin.php(517): WP_Hook->do_action',
+				'{main}',
+			),
+			$event['trace']
+		);
+		$this->assertSame( 'Uncaught Exception: nope in wp-content/themes/mine/a.php:7', $event['message'], 'The message is still its first line.' );
+
+		$sent = devbase_events_body( array( $event ) );
+		foreach ( array( 'jane', 'home/u', 'Web Design', 'public_html', 'maple', 'Array', 'WP_Post', "'x'", 'thrown in' ) as $leak ) {
+			$this->assertStringNotContainsString( $leak, $sent, $leak );
+		}
+	}
+
+	public function test_a_fatal_without_a_trace_and_a_silent_failure_send_none() {
+		$this->assertArrayNotHasKey( 'trace', devbase_events_build( array( 'type' => E_ERROR, 'message' => 'Allowed memory size of 134217728 bytes exhausted', 'file' => '/x/wp-includes/a.php', 'line' => 1 ) ) );
+		$this->assertArrayNotHasKey( 'trace', devbase_events_build( array( 'type' => E_PARSE, 'message' => 'syntax error, unexpected token "}"', 'file' => '/x/wp-content/themes/mine/a.php', 'line' => 3 ) ) );
+		$this->assertSame( array(), devbase_events_trace( "Uncaught Error: x\nStack trace:\n" ), 'An empty block is no trace.' );
+
+		devbase_events_report( 'mail', "Mail could not be sent\nStack trace:\n#0 /x/wp-content/a.php(1): f()" );
+		foreach ( $this->queue() as $queued ) {
+			$this->assertArrayNotHasKey( 'trace', $queued );
+		}
+	}
+
+	public function test_a_stack_trace_is_bounded_and_reads_only_the_first_block() {
+		$frames = '';
+		for ( $i = 0; $i < 40; $i++ ) {
+			$frames .= "#{$i} /x/wp-content/plugins/p/f{$i}.php({$i}): f{$i}()\n";
+		}
+		$trace = devbase_events_trace( "Uncaught Error: x\nStack trace:\n{$frames}#40 {main}" );
+		$this->assertCount( DEVBASE_EVENTS_TRACE_FRAMES, $trace );
+		$this->assertSame( 'wp-content/plugins/p/f0.php(0): f0', $trace[0], 'Innermost first.' );
+
+		$long = '';
+		for ( $i = 0; $i < 10; $i++ ) {
+			$long .= "#{$i} /x/wp-content/a.php(1): " . str_repeat( 'Very_Long_Name ', 40 ) . "()\n";
+		}
+		$trace = devbase_events_trace( "Uncaught Error: x\nStack trace:\n{$long}" );
+		$this->assertLessThanOrEqual( DEVBASE_EVENTS_TRACE_BYTES, strlen( implode( "\n", $trace ) ) );
+		foreach ( $trace as $frame ) {
+			$this->assertLessThanOrEqual( DEVBASE_EVENTS_TRACE_FRAME, strlen( $frame ) );
+		}
+
+		$chained = "Uncaught Exception: inner\nStack trace:\n#0 /x/wp-content/a.php(1): inner()\n#1 {main}\n\nNext RuntimeException: outer\nStack trace:\n#0 /x/wp-content/b.php(2): outer()\n#1 {main}";
+		$this->assertSame( array( 'wp-content/a.php(1): inner', '{main}' ), devbase_events_trace( $chained ) );
+	}
+
+	public function test_the_same_exception_from_another_caller_is_one_queued_error() {
+		$a = devbase_events_build( array( 'type' => E_ERROR, 'message' => "Uncaught Error: boom\nStack trace:\n#0 /x/wp-content/a.php(1): a()\n#1 {main}", 'file' => '/x/wp-content/t.php', 'line' => 5 ) );
+		$b = devbase_events_build( array( 'type' => E_ERROR, 'message' => "Uncaught Error: boom\nStack trace:\n#0 /x/wp-content/b.php(2): b()\n#1 {main}", 'file' => '/x/wp-content/t.php', 'line' => 5 ) );
+
+		$this->assertSame( devbase_events_fingerprint( $a ), devbase_events_fingerprint( $b ) );
+		devbase_events_enqueue( array( $a ) );
+		devbase_events_enqueue( array( $b ) );
+		$this->assertCount( 1, $this->queue() );
+		$this->assertSame( 2, $this->queue()[0]['count'] );
+	}
+
+	public function test_a_real_uncaught_exception_message_gives_its_trace() {
+		// PHP's own text for an uncaught exception, as error_get_last() hands it to the shutdown function.
+		$e       = ( function () {
+			return new RuntimeException( 'boom' );
+		} )();
+		$message = 'Uncaught ' . (string) $e;
+		$trace   = devbase_events_trace( $message );
+
+		$this->assertNotEmpty( $trace );
+		$this->assertStringNotContainsString( dirname( ABSPATH ), implode( "\n", $trace ), 'No server path.' );
+		$this->assertStringContainsString( 'Test_Events.php(', $trace[0], 'Innermost first: the closure that made it, in this file.' );
+		$this->assertCount( min( DEVBASE_EVENTS_TRACE_FRAMES, count( $e->getTrace() ) + 1 ), $trace, 'One frame per PHP frame, {main} included, up to the cap.' );
+	}
+
 	// --- Collecting --------------------------------------------------------------
 
 	public function test_a_fatal_is_queued_while_the_plan_has_error_tracking() {

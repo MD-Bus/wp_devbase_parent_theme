@@ -11,7 +11,9 @@
 // Fatals (a shutdown function) AND warnings, notices and deprecations (a chained PHP error
 // handler that only counts, see "Warnings and notices" below). What is kept is scrubbed here
 // before it is queued and again by Brand Relay: first line of the message, paths cut to
-// wp-content/..., no emails, no tokens, no query strings, never request data.
+// wp-content/..., no emails, no tokens, no query strings, never request data. An uncaught
+// exception also sends its stack trace as `trace` (frames without their arguments, see
+// devbase_events_trace()); warnings and notices never have one.
 
 /** The queue of errors waiting to be sent: fingerprint => event. Not autoloaded. */
 const DEVBASE_EVENTS_QUEUE = 'devbase_events_queue';
@@ -74,6 +76,68 @@ function devbase_events_scrub( $text, $max = 500 ) {
 	return function_exists( 'mb_substr' ) ? mb_substr( $text, 0, $max ) : substr( $text, 0, $max );
 }
 
+/** A stack trace keeps at most this many frames, this many characters each, and this many in all. */
+const DEVBASE_EVENTS_TRACE_FRAMES = 10;
+const DEVBASE_EVENTS_TRACE_FRAME  = 300;
+const DEVBASE_EVENTS_TRACE_BYTES  = 3000;
+
+/**
+ * The stack trace of an uncaught exception, from the "Stack trace:" block PHP already writes into its message (no
+ * debug_backtrace: the shutdown function's own stack is not the error's). Each frame becomes "path(line): Class->method":
+ * the path cut like `file`, the argument list DROPPED (arguments can hold emails, tokens, form data), the rest scrubbed.
+ * Only the first block is read (a chained exception's "Next ..." blocks are not), at most DEVBASE_EVENTS_TRACE_FRAMES
+ * frames and DEVBASE_EVENTS_TRACE_BYTES in all. A message without one (a plain fatal: parse error, memory exhausted) has
+ * none: an empty array.
+ *
+ * @param string $message The whole message, as error_get_last() gives it.
+ * @return string[] Frames, innermost first.
+ */
+function devbase_events_trace( $message ) {
+	$lines = preg_split( '/\R/', (string) $message );
+	$start = array_search( 'Stack trace:', array_map( 'trim', $lines ), true );
+
+	if ( false === $start ) {
+		return array();
+	}
+
+	$frames = array();
+	$size   = 0;
+
+	foreach ( array_slice( $lines, $start + 1 ) as $line ) {
+		if ( ! preg_match( '/^#\d+\s+(.*)$/', trim( $line ), $m ) || count( $frames ) >= DEVBASE_EVENTS_TRACE_FRAMES ) {
+			break;
+		}
+
+		$text  = $m[1];
+		$where = '';
+
+		if ( preg_match( '/^(?:(\[internal function\])|(.*?)\((\d+)\)): (.*)$/s', $text, $f ) ) {
+			$where = '' !== $f[1] ? $f[1] : devbase_events_relative_path( trim( $f[2] ) ) . '(' . $f[3] . ')';
+			$text  = $f[4];
+		}
+
+		// The call up to its own "(": PHP 8.4 names closures {closure:/path/file.php:12}, which may hold a path and "()".
+		$call = preg_match( '/^(?:[^({]|\{[^}]*\})*/', $text, $c ) ? trim( $c[0] ) : '';
+		$call = preg_replace_callback( '/\{closure:([^}]*?)(:\d+)?\}/', function ( $c ) {
+			return '{closure:' . ( preg_match( '~[\\\\/]~', $c[1] ) ? devbase_events_relative_path( $c[1] ) : $c[1] ) . ( $c[2] ?? '' ) . '}';
+		}, $call );
+
+		$frame = devbase_events_scrub( '' !== $where && '' !== $call ? "{$where}: {$call}" : $where . $call, DEVBASE_EVENTS_TRACE_FRAME );
+
+		if ( '' === $frame ) {
+			continue;
+		}
+		if ( $size + strlen( $frame ) > DEVBASE_EVENTS_TRACE_BYTES ) {
+			break;
+		}
+
+		$size    += strlen( $frame ) + 1;
+		$frames[] = $frame;
+	}
+
+	return $frames;
+}
+
 /** Where the request came from, in a word. */
 function devbase_events_where() {
 	if ( 'cli' === PHP_SAPI ) {
@@ -112,7 +176,7 @@ function devbase_events_build( array $error ) {
 		$context[ 'plugins' === $m[1] ? 'plugin' : ( 'themes' === $m[1] ? 'theme' : 'mu-plugin' ) ] = $m[2];
 	}
 
-	return array(
+	$event = array(
 		'type'    => 0 === strpos( $message, 'Uncaught ' ) ? 'exception' : 'php',
 		'level'   => 'fatal',
 		'message' => devbase_events_scrub( $message ),
@@ -123,6 +187,14 @@ function devbase_events_build( array $error ) {
 		'at'      => time(),
 		'context' => $context,
 	);
+
+	// Only when there is one (uncaught exceptions). Not part of the fingerprint: one error does not split by caller.
+	$trace = devbase_events_trace( $message );
+	if ( $trace ) {
+		$event['trace'] = $trace;
+	}
+
+	return $event;
 }
 
 /**
@@ -147,7 +219,7 @@ function devbase_events_report( $type, $message, array $context = array(), $leve
 
 	try {
 		$base = devbase_events_build( array( 'message' => $message ) );
-		unset( $base['context']['plugin'], $base['context']['theme'] );
+		unset( $base['context']['plugin'], $base['context']['theme'], $base['trace'] );
 
 		foreach ( $context as $key => $value ) {
 			$base['context'][ preg_replace( '/[^a-z0-9_.-]/', '_', strtolower( (string) $key ) ) ] = devbase_events_scrub( (string) $value, 200 );

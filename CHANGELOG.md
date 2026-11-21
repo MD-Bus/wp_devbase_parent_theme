@@ -10,6 +10,12 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.53.0] — 2026-11-21
+
+### Added
+
+- **Stack traces for uncaught exceptions.** An error event for an uncaught exception now carries its stack trace as `trace`, so Brand Relay's event page shows where the call came from, not only the line that threw. The frames come from the `Stack trace:` block PHP already writes into the message (no `debug_backtrace`), each kept as `file(line): Class->method`: **every argument is dropped** (they can hold emails, tokens and form data), paths are cut like the event's `file` (PHP 8.4+ closure names included), and the rest is scrubbed like a message. At most 10 frames and 3 KB, only the first block of a chained exception. Warnings, notices and the silent-failure reports never have one; plain PHP fatals (parse errors, memory exhausted) have none to send. The fingerprint is unchanged, so the same error from two callers is still one queued error and one issue. Needs Brand Relay 0.46.0 to be stored; an older Brand Relay ignores the field. Tests in `tests/Test_Events.php`.
+
 ## [1.52.5] — 2026-11-20
 
 ### Changed
