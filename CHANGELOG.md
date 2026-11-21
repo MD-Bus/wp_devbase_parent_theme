@@ -10,6 +10,12 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.52.5] — 2026-11-20
+
+### Changed
+
+- **MCP Adapter 0.7.1 → 0.7.2.** Three upstream fixes: MCP clients that don't send the `MCP-Protocol-Version` header after `initialize` can connect again (since 0.7.0 their requests got HTTP 400), ability permission callbacks receive the same prepared input WordPress gives them when it runs the ability directly (so the AI-access abilities check permissions against the real input), and the `wp mcp-adapter serve` help examples use the registered command name. `vendor/mcp-adapter/` is the 0.7.2 release unchanged, and the full theme test suite passes with it (907 tests).
+
 ## [1.52.4] — 2026-11-20
 
 ### Changed
