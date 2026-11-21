@@ -10,6 +10,15 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.54.0] — 2026-11-21
+
+### Added
+
+- **Remote updates, step 1: the inventory.** A new Brand Relay service, `updates`. When Brand Relay's signed ping names it and the plan has it in force, the site sends WordPress's version and every installed plugin (file, name, version, active, whether the theme bundles it) with the update WordPress itself offers for each, to Brand Relay's `POST /v1/site/updates`. Brand Relay shows them per site and across the fleet and can notify when new versions appear. WordPress's own update checks are refreshed first when they are older than 12 hours, since many sites have cron off. WordPress's version is read from `wp-includes/version.php`. New `inc/maintenance/updates.php`, tests in `tests/Test_Updates.php`.
+- **Remote updates, step 2: Update now.** Brand Relay's answer to that report may name updates to apply (`apply`: ids, `plugin` + file or `core`, at most 20; never a URL or a version). The site answers the ping `started` and, after answering, applies each through WordPress's own automatic updater, allowed for that one item only while it runs: maintenance mode, WordPress's `auto_updater` lock, and for an active plugin WordPress's fatal-error check, which puts the previous version back. Only the update WordPress itself offers is installed. A plugin the theme bundles, one not installed, or one with no update on offer is refused, whatever Brand Relay asks. When an update clears WordPress's update caches, the offers are fetched again once before the next item. The site then checks the version on disk and sends the results (`id`, `ok`, `from`, `to`, `error`) to Brand Relay in a report at once, up to 3 rounds if Brand Relay hands over more. Results Brand Relay did not acknowledge are kept and sent with the next report. Brand Relay 0.48.0 has the Update buttons, the history and the `update_completed` / `update_failed` notifications. Without PHP-FPM, Brand Relay's trigger waits for the updates and may record a timeout; the results still arrive.
+
+Needs Brand Relay 0.48.0 (0.47.0 for the inventory alone).
+
 ## [1.53.0] — 2026-11-21
 
 ### Added

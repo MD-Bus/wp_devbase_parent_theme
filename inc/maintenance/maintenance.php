@@ -8,7 +8,7 @@
 // the signed sync route (POST /wp-json/devbase/v1/sync, the same URL as the settings
 // sync) with a small signed JSON body naming what to run:
 //
-//     { "run": ["settings", "health", "events", "backup"] }
+//     { "run": ["settings", "health", "events", "backup", "updates"] }
 //
 // An EMPTY body is the old ping and means settings only. The site runs the names it
 // knows, ignores the rest, and answers { ok, error, changed, ran: { name: result } }
@@ -35,7 +35,7 @@ const DEVBASE_MAINTENANCE_PLAN_FRESH = 10;
 
 /** The services Brand Relay can name (its own keys). `uptime` is done by Brand Relay itself. */
 function devbase_maintenance_known() {
-	return array( 'uptime', 'health', 'events', 'backup' );
+	return array( 'uptime', 'health', 'events', 'backup', 'updates' );
 }
 
 /**
@@ -51,6 +51,7 @@ function devbase_maintenance_services() {
 		'health' => 'devbase_heartbeat_run',
 		'events' => 'devbase_events_run',
 		'backup' => 'devbase_backup_run',
+		'updates' => 'devbase_updates_run',
 	) );
 }
 

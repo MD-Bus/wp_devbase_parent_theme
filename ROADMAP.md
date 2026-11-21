@@ -142,28 +142,51 @@ Cloudflare zone tested with a real token (the rule, the purge, the connection te
 done on purpose: a page cache of the theme's own (it would run after WordPress has loaded, and a drop-in written from a
 theme is fragile), GoDaddy's cache (no documented way to clear it from code), and Cloudflare APO.
 
-**11. Remote site management from Brand Relay (idea, 2026-11-21; not designed or built).** Do the work on a client site
-without opening its wp-admin, as a Brand Relay service of its own (in force only while the plan has it, like the others, and
-switched off at once when the plan lapses). Three steps, in this order, each its own release:
+**11. Remote site management from Brand Relay (designed 2026-11-21; steps 1 and 2 released in 1.54.0).** Do the work on a client site
+without opening its wp-admin, as a Brand Relay plan service of its own, `updates` (in force only while the plan has it, like
+the others, and switched off at once when the plan lapses). Each step its own release on both sides.
 
-1. *Plugin inventory.* The health report already carries site health; add every installed plugin (name, version, active or
-   not, update available) from `get_plugins()` and the update transient. Brand Relay shows it per client and across the
-   fleet ("which sites run an old WooCommerce"). Read-only, so it carries the least risk; it also closes the open item under
-   item 2 (outdated plugin and theme names are not sent yet).
-2. *Remote plugin updates.* Brand Relay names a plugin and a site; the site's next ping carries the command, WordPress's own
-   `Plugin_Upgrader` does the update (no engine of ours), and the result (success or failure, version, time) goes back in
-   the next report. Must go through the same safeguards as the bundled-plugin updater: the update locks, a health check
-   after, and the rollback idea from the theme updates. The bundled plugins (WooCommerce, WPvivid) stay under the
-   theme's own release control and are not updated this way.
-3. *One-click login.* Brand Relay asks the site for a single-use, short-lived login ticket and opens a site endpoint that
+How commands reach the site (decided 2026-11-21): the ping only says `{"run": ["updates"]}`. The site then POSTs its inventory
+to `/v1/site/updates` on its configured (HTTPS) Brand Relay, and Brand Relay's ANSWER says what to apply. The site asked a
+server it already trusts over TLS, so a forged ping can at most make it ask early. And a command never carries a URL or a version:
+it only names an item ("plugin akismet/akismet.php", "core"), and the site applies the update WordPress itself is offering
+for it, or nothing. A stolen site key can therefore at most install official updates early, as WordPress's own auto-updates
+would. This is why "A stronger ping" is no longer a prerequisite for updates (it still is for one-click login).
+
+What is never touched (owner's decision): the theme itself (Warden's updater does it) and the bundled plugins (WooCommerce,
+WPvivid: the theme's release control). The site refuses them even if asked. Third-party themes: not in scope.
+
+1. *Inventory* (released: 1.54.0, 2026-11-21; Brand Relay 0.47.0; tested end to end against a local Brand Relay). Every installed plugin (file, name, version, active, the update WordPress offers, whether it is
+   bundled) and core (version, the offered update and whether it is minor or major), refreshed from api.wordpress.org when the
+   site's own update check is older than 12 hours (cron is off on many sites). Brand Relay keeps one row per site and plugin,
+   with when it first saw each offered version (the clock for the wait below), shows a site's Updates tab and a fleet view
+   ("which sites run an old X"). Read-only. Closes the open item under item 2.
+2. *Update now* (released: 1.54.0, 2026-11-21; Brand Relay 0.48.0; tested end to end on a throwaway WordPress against a
+   local Brand Relay: Akismet 5.3 → 5.7.2, active, through WordPress's fatal-error check, and core 7.1.4 → 7.1.5, with
+   the result and the notification back in Brand Relay). From Brand Relay: one plugin, all plugins, or core, on one site.
+   Queued in Brand Relay, handed to the site in the answer to its next `/v1/site/updates` (a report made while updates are
+   queued is accepted inside the 60-second interval), applied by WordPress's own automatic updater limited to the named
+   items (its maintenance mode, its lock, and its own rollback of an active plugin update that fatals, WordPress 6.6+; no
+   engine of ours). The site answers the ping `started`, applies after answering, and sends the results (from, to, ok or
+   the error) in a report at once; undelivered results go with the next one. Core major versions only this way, never
+   automatically. Not built: the theme's own home-page and admin check after the update, as for theme updates. WordPress's
+   check covers active plugins; core has none, as with WordPress's own auto-updates.
+3. *Auto-update* (owner's decisions, 2026-11-21). Set on the plan (on or off for its sites) with a per-site override, and
+   per-site held-back plugins. A plugin version is applied once Brand Relay has seen it offered for N days (default 2, so
+   a broken release is usually pulled or fixed first), in a nightly window in the site's time zone. Core: minor releases
+   automatically and without the wait (WordPress ships them as security and maintenance releases); major versions only by
+   Update now.
+4. *One-click login.* Brand Relay asks the site for a single-use, short-lived login ticket and opens a site endpoint that
    checks and uses up the ticket, then starts a normal WordPress session. No client password or Application Password is
-   stored in Brand Relay (Application Passwords are for API access, not browser login). Needs its own security design
-   before any code: which user it signs in as, an audit log entry on the site and in Brand Relay, a ticket lifetime of
-   seconds, bound to the site and one use, and a visible notice to the client's administrators if the owner wants one.
+   stored in Brand Relay. Needs its own security design before any code (which user, audit log entries on both sides, a
+   ticket lifetime of seconds bound to the site and one use, a notice to the client's administrators if the owner wants
+   one), and "A stronger ping" under Considered first.
 
-Dependency: steps 2 and 3 make Brand Relay's word able to change a site or open it, so the site must be sure the command
-came from Brand Relay. Today's ping proves only that the sender holds the site key; see "A stronger ping" under Considered
-(Brand Relay signing with its own Ed25519 key, public key stored here like Warden's). That should come first, or with step 2.
+Notifications (owner's request, 2026-11-21): new Brand Relay notification events, chosen per channel like the others.
+`update_available` (step 1): one alert per site when its inventory first shows new versions, listing them; a version
+already announced is not announced again. `update_completed` and `update_failed` (step 2, and step 3's automatic runs): what
+changed (from, to) or what failed and why, including a plugin update WordPress rolled back.
+
 The licence-lapse rule applies: no plan, no remote management.
 
 ## Reliability audit (November 2026)
