@@ -10,6 +10,12 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.56.1] — 2026-11-22
+
+### Fixed
+
+- **Remote access had two save buttons, and the page's own Save changes did not save it.** The panel's **Save remote access** button is gone: the page's **Save changes** now saves remote login. It is saved on `admin_init` from any admin POST carrying the panel's nonce (administrators only), not on `acf/save_post`, which SCF skips when a page posts none of its own fields, as Licence & Updates does. The guide's step and screenshot say Save changes.
+
 ## [1.56.0] — 2026-11-22
 
 ### Changed

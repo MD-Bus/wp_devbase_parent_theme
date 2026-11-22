@@ -471,13 +471,9 @@ function devbase_remote_login_save( array $input, $by, $why = '' ) {
 	return $after;
 }
 
-add_action( 'admin_post_devbase_remote_login', function () {
-	if ( ! current_user_can( 'manage_options' ) ) {
-		wp_die( esc_html__( 'You are not allowed to change remote login.', 'devbase_parent_theme' ), '', array( 'response' => 403 ) );
-	}
-
-	check_admin_referer( 'devbase_remote_login', 'devbase_remote_login_nonce' );
-
+/** The panel's posted choice, saved (the caller verified the nonce). */
+function devbase_remote_login_save_posted() {
+	// phpcs:disable WordPress.Security.NonceVerification.Missing -- the caller verified the nonce.
 	devbase_remote_login_save(
 		array(
 			'on'    => ! empty( $_POST['devbase_remote_login_on'] ),
@@ -486,10 +482,24 @@ add_action( 'admin_post_devbase_remote_login', function () {
 		),
 		get_current_user_id()
 	);
+	// phpcs:enable
+}
 
-	wp_safe_redirect( add_query_arg( 'devbase_remote_login', 'saved', devbase_remote_login_settings_url() ) );
-	exit;
-} );
+// Saved with the page's own Save changes (the panel sits inside its form). Not on acf/save_post: SCF skips its save,
+// and that action, when the page posts none of its own fields, which is the case on Licence & Updates. The panel's
+// nonce is only in that form, so a POST that carries it is that form's.
+function devbase_remote_login_save_from_page() {
+	if ( 'POST' !== ( $_SERVER['REQUEST_METHOD'] ?? '' ) || ! isset( $_POST['devbase_remote_login_nonce'] ) || ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+
+	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['devbase_remote_login_nonce'] ) ), 'devbase_remote_login' ) ) {
+		return;
+	}
+
+	devbase_remote_login_save_posted();
+}
+add_action( 'admin_init', 'devbase_remote_login_save_from_page' );
 
 /** Where the setting is (the Remote access tab). */
 function devbase_remote_login_settings_url() {
@@ -539,7 +549,6 @@ function devbase_remote_login_panel_html() {
 			</select></p>
 		<p><label><input type="checkbox" name="devbase_remote_login_email" value="1" <?php checked( $settings['email'] ); ?> />
 			<?php esc_html_e( 'Email me each time my developer logs in.', 'devbase_parent_theme' ); ?></label></p>
-		<p><button type="submit" class="button button-primary" formaction="<?php echo esc_url( admin_url( 'admin-post.php?action=devbase_remote_login' ) ); ?>" formmethod="post" formnovalidate><?php esc_html_e( 'Save remote access', 'devbase_parent_theme' ); ?></button></p>
 		<?php if ( ! $plan ) : ?>
 			<p class="description"><strong><?php esc_html_e( 'Remote login needs an active maintenance plan.', 'devbase_parent_theme' ); ?></strong> <?php esc_html_e( 'This site has none (or it is suspended or expired), so remote login is off and cannot be switched on. Remote login switches itself off when the plan ends.', 'devbase_parent_theme' ); ?></p>
 		<?php endif; ?>

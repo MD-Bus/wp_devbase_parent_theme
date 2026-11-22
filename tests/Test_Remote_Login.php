@@ -301,7 +301,8 @@ class Test_Remote_Login extends WP_UnitTestCase {
 		$this->assertStringContainsString( esc_html__( 'I allow my developer to log in to this site remotely, as an administrator, without my password.', 'devbase_parent_theme' ), $html );
 		$this->assertStringNotContainsString( 'Brand Relay', $html, 'Product names are for the developer, not the client.' );
 		$this->assertStringContainsString( 'name="devbase_remote_login_on"', $html );
-		$this->assertStringContainsString( 'admin-post.php?action=devbase_remote_login', $html );
+		$this->assertStringContainsString( 'name="devbase_remote_login_nonce"', $html );
+		$this->assertStringNotContainsString( 'formaction', $html, 'One button: the page\'s own Save changes.' );
 		$this->assertStringContainsString( 'value="support"', $html );
 	}
 
@@ -449,6 +450,31 @@ class Test_Remote_Login extends WP_UnitTestCase {
 
 			$this->assertFalse( wp_validate_auth_cookie( $cookie, 'logged_in' ), "{$case}: the cookie no longer logs anyone in." );
 		}
+	}
+
+
+	public function test_the_pages_own_save_changes_saves_it_and_only_with_the_panels_nonce_and_an_administrator() {
+		$admin = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		$post  = function ( $nonce ) {
+			$_SERVER['REQUEST_METHOD'] = 'POST';
+			$_POST                     = array( 'devbase_remote_login_nonce' => $nonce, 'devbase_remote_login_on' => '1', 'devbase_remote_login_user' => 'support', 'devbase_remote_login_email' => '1', 'acf' => array() );
+			devbase_remote_login_save_from_page();
+			$_POST                     = array();
+			$_SERVER['REQUEST_METHOD'] = 'GET';
+		};
+
+		wp_set_current_user( $admin );
+		$post( 'forged' );
+		$this->assertFalse( devbase_remote_login_settings()['on'], 'A wrong nonce saves nothing.' );
+
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
+		$post( wp_create_nonce( 'devbase_remote_login' ) );
+		$this->assertFalse( devbase_remote_login_settings()['on'], 'An editor saves nothing.' );
+
+		wp_set_current_user( $admin );
+		$post( wp_create_nonce( 'devbase_remote_login' ) );
+		$this->assertTrue( devbase_remote_login_settings()['on'] );
+		$this->assertTrue( devbase_remote_login_settings()['email'] );
 	}
 
 }
