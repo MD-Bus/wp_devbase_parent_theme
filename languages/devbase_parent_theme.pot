@@ -1144,3 +1144,102 @@ msgstr ""
 #, php-format
 msgid "Labels: %s"
 msgstr ""
+
+#: inc/maintenance/remote-login.php
+msgid "Remote access"
+msgstr ""
+
+#: inc/maintenance/remote-login.php
+msgid "Remote login"
+msgstr ""
+
+#: inc/maintenance/remote-login.php
+msgid "Remote support"
+msgstr ""
+
+#: inc/maintenance/remote-login.php
+msgid "Made for remote login from the developer's management service. Deleted when remote login is switched off."
+msgstr ""
+
+#: inc/maintenance/remote-login.php
+#, php-format
+msgid "[%s] Your developer logged in remotely"
+msgstr ""
+
+#: inc/maintenance/remote-login.php
+#, php-format
+msgid "Your developer logged in to %1$s remotely as %2$s.\n\nAsked by: %3$s\nFrom: %4$s\n\nThe session ends by itself after %5$d hours. To stop remote logins, switch them off here (this also ends any remote session now):\n%6$s"
+msgstr ""
+
+#: inc/maintenance/remote-login.php
+msgid "Open WP admin from the management service again."
+msgstr ""
+
+#: inc/maintenance/remote-login.php
+msgid "You are not allowed to change remote login."
+msgstr ""
+
+#: inc/maintenance/remote-login.php
+msgid "Remote login is ON."
+msgstr ""
+
+#: inc/maintenance/remote-login.php
+msgid "Remote login is off."
+msgstr ""
+
+#: inc/maintenance/remote-login.php
+#, php-format
+msgid "Allowed by %1$s on %2$s."
+msgstr ""
+
+#: inc/maintenance/remote-login.php
+msgid "What this allows"
+msgstr ""
+
+#: inc/maintenance/remote-login.php
+msgid "While this is on, your developer can open this site's dashboard from their management service and is logged in as an administrator, without your password. They can then do anything an administrator can: change content, settings, plugins and users. Each login is recorded below, and a session ends by itself after 4 hours. Switch it off at any time: that also ends any remote session at once."
+msgstr ""
+
+#: inc/maintenance/remote-login.php
+msgid "I allow my developer to log in to this site remotely, as an administrator, without my password."
+msgstr ""
+
+#: inc/maintenance/remote-login.php
+msgid "Log in as"
+msgstr ""
+
+#: inc/maintenance/remote-login.php
+msgid "A separate support user (made at the first login, deleted when this is switched off)"
+msgstr ""
+
+#: inc/maintenance/remote-login.php
+msgid "Email me each time my developer logs in."
+msgstr ""
+
+#: inc/maintenance/remote-login.php
+msgid "Save remote access"
+msgstr ""
+
+#: inc/maintenance/remote-login.php
+msgid "The management service has not given this site its signing key yet, so logins will be refused until the next sync."
+msgstr ""
+
+#: inc/maintenance/remote-login.php
+msgid "Recent activity"
+msgstr ""
+
+#: inc/maintenance/remote-login.php
+msgid "This login link is not valid."
+msgstr ""
+
+#: inc/maintenance/remote-login.php
+msgid "This login link was already used or is not valid."
+msgstr ""
+
+#: inc/maintenance/remote-login.php
+msgid "This login link has expired."
+msgstr ""
+
+#: inc/maintenance/remote-login.php
+msgid "Remote login is switched off on this site."
+msgstr ""

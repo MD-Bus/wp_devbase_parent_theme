@@ -10,6 +10,15 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.55.0] — 2026-11-22
+
+### Added
+
+- **Remote login from Brand Relay, only while the client allows it.** A new **Remote access** tab on Theme Settings › Licence & Updates, shown to clients (also where Remote setup is hidden). A checkbox under a plain warning allows the developer to log in as an administrator without a password. **Log in as** offers an existing administrator, or a separate support user (`remote-support`), made at the first login and deleted when remote login is switched off, with its content given to the administrator who switched it off. **Email me each time** sends that administrator an email at each login. The setting is a plain option saved only by that form (nonce, `manage_options`), not an SCF field, so neither Brand Relay's sync nor the MCP abilities can change it. Brand Relay asks `POST /wp-json/devbase/v1/login` and the site answers a single-use link to `wp-login.php?action=devbase_relay_login`: a 256-bit ticket, kept only as its SHA-256, valid 60 seconds. Opening it starts a normal WordPress session of 4 hours, marked as remote. Switching it off, or changing who is logged in as, ends every remote session at once and leaves everyone's own sessions alone. The tab lists recent activity (logins, refusals, changes). New `inc/maintenance/remote-login.php`, tests in `tests/Test_Remote_Login.php`. French translations included.
+- **Brand Relay's own signature on pings.** A ping may carry `X-Relay-Ed25519`, Brand Relay's Ed25519 signature over the same string as the HMAC. The site takes Brand Relay's public key from `ping_key` in its `GET /v1/site` answer (or the `DEVBASE_RELAY_PING_KEY` constant). A ping with a wrong signature is refused. One without it is still accepted for sync and the maintenance services, so an older Brand Relay keeps working. Remote login requires it, so a stolen site key alone cannot open a session.
+
+Needs Brand Relay 0.49.0 for remote login.
+
 ## [1.54.0] — 2026-11-21
 
 ### Added

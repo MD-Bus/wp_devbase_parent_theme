@@ -118,6 +118,21 @@ add_action( 'acf/init', function () {
 			'rows'  => 2,
 		),
 
+		// REMOTE ACCESS: the client's own choice to allow remote login (inc/maintenance/remote-login.php). Shown to
+		// clients always, also where Remote setup is hidden: it is their consent. Not a field with a value: the
+		// setting is a plain option saved by its own form post, so nothing remote can write it.
+		array(
+			'key'   => 'field_devbase_licence_tab_remote_access',
+			'label' => __( 'Remote access', 'devbase_parent_theme' ),
+			'type'  => 'tab',
+		),
+		array(
+			'key'      => 'field_devbase_remote_login_panel',
+			'label'    => __( 'Remote login', 'devbase_parent_theme' ),
+			'type'     => 'message',
+			'message'  => '',
+			'esc_html' => 0,
+		),
 		// REMOTE SETUP: the developer's tab. Hidden from clients where a child
 		// asks (devbase_remote_setup_hidden()).
 		array(
@@ -176,6 +191,12 @@ add_action( 'acf/init', function () {
 devbase_message_when_shown( 'field_devbase_licence_status', 'devbase_licence_status_html' );
 devbase_message_when_shown( 'field_devbase_heartbeat_status', 'devbase_heartbeat_status_html' );
 devbase_message_when_shown( 'field_devbase_events_status', 'devbase_events_status_html' );
+// The Remote access panel has form controls (checkboxes, a select, a button posting to its own handler), which SCF's
+// escaping of message fields removes. It is printed after the (empty) message instead; every value in it is escaped
+// by devbase_remote_login_panel_html() itself.
+add_action( 'acf/render_field/key=field_devbase_remote_login_panel', function () {
+	echo devbase_remote_login_panel_html(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+} );
 
 // ---------------------------------------------------------------------------
 // Accessors. Every one of these is read by inc/updates/; nothing else in the

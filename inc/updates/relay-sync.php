@@ -84,6 +84,9 @@ define( 'DEVBASE_RELAY_MIN_INTERVAL', 30 );
 define( 'DEVBASE_RELAY_PING_WINDOW', 5 * MINUTE_IN_SECONDS );
 
 define( 'DEVBASE_RELAY_STATE_OPTION', 'devbase_relay_sync_state' );
+// Brand Relay's own Ed25519 public key (base64), from its `ping_key` in GET /v1/site. Proves a ping comes from Brand
+// Relay itself, not merely from someone holding this site's key (see devbase_relay_ping_signed_by_relay()).
+define( 'DEVBASE_RELAY_PING_KEY_OPTION', 'devbase_relay_ping_key' );
 
 // Requests one IP may make to the ping route per window, valid or not.
 define( 'DEVBASE_RELAY_PING_LIMIT', 10 );
@@ -275,8 +278,60 @@ function devbase_relay_fetch_site() {
 	}
 
 	devbase_relay_store_plan( $data );
+	devbase_relay_store_ping_key( $data );
 
 	return $data;
+}
+
+/**
+ * Keeps Brand Relay's ping key from its answer. The answer comes from the configured Brand Relay over TLS, so someone
+ * holding only the site key cannot change what is stored here. A missing or unreadable key leaves the stored one.
+ */
+function devbase_relay_store_ping_key( array $data ) {
+	$key = isset( $data['ping_key'] ) && is_string( $data['ping_key'] ) ? $data['ping_key'] : '';
+	$raw = '' !== $key ? base64_decode( $key, true ) : false;
+
+	if ( false !== $raw && SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES === strlen( $raw ) && get_option( DEVBASE_RELAY_PING_KEY_OPTION ) !== $key ) {
+		update_option( DEVBASE_RELAY_PING_KEY_OPTION, $key, false );
+	}
+}
+
+/** Brand Relay's ping key, raw bytes, or '' when none is known. DEVBASE_RELAY_PING_KEY (base64) wins when defined. */
+function devbase_relay_ping_key() {
+	$key = defined( 'DEVBASE_RELAY_PING_KEY' ) ? (string) DEVBASE_RELAY_PING_KEY : (string) get_option( DEVBASE_RELAY_PING_KEY_OPTION, '' );
+	$raw = '' !== $key ? base64_decode( trim( $key ), true ) : false;
+
+	return ( false !== $raw && SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES === strlen( $raw ) ) ? $raw : '';
+}
+
+/**
+ * Whether a ping carries Brand Relay's own signature: X-Relay-Ed25519, base64 Ed25519 over the same
+ * {timestamp}.{nonce}.{origin}.{raw body} as the HMAC. The HMAC proves the sender holds the site key; this proves it
+ * holds Brand Relay's private key, which never leaves Brand Relay. Remote login requires it.
+ *
+ * @return bool|null True signed, false missing or wrong, null when no key is known.
+ */
+function devbase_relay_ping_signed_by_relay( WP_REST_Request $request ) {
+	$key = devbase_relay_ping_key();
+
+	if ( '' === $key ) {
+		return null;
+	}
+
+	$signature = base64_decode( (string) $request->get_header( 'x-relay-ed25519' ), true );
+
+	if ( false === $signature || SODIUM_CRYPTO_SIGN_BYTES !== strlen( $signature ) ) {
+		return false;
+	}
+
+	$origin  = strtolower( rtrim( trim( (string) $request->get_header( 'origin' ) ), '/' ) );
+	$message = (string) $request->get_header( 'x-relay-timestamp' ) . '.' . (string) $request->get_header( 'x-relay-nonce' ) . '.' . $origin . '.' . $request->get_body();
+
+	try {
+		return sodium_crypto_sign_verify_detached( $signature, $message, $key );
+	} catch ( SodiumException $e ) {
+		return false;
+	}
 }
 
 /**
@@ -508,6 +563,12 @@ function devbase_relay_verify_ping( WP_REST_Request $request ) {
 	$expected = hash_hmac( 'sha256', $timestamp . '.' . $nonce . '.' . $origin . '.' . $request->get_body(), $secret );
 
 	if ( ! hash_equals( $expected, $signature ) ) {
+		return $denied;
+	}
+
+	// A ping that carries Brand Relay's signature must carry a valid one. One without it is still accepted here (a
+	// Brand Relay before 0.49 does not sign); routes that need it, such as remote login, require it themselves.
+	if ( '' !== (string) $request->get_header( 'x-relay-ed25519' ) && false === devbase_relay_ping_signed_by_relay( $request ) ) {
 		return $denied;
 	}
 

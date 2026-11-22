@@ -1146,3 +1146,102 @@ msgstr "Nouvelle fonctionnalité"
 #, php-format
 msgid "Labels: %s"
 msgstr "Étiquettes : %s"
+
+#: inc/maintenance/remote-login.php
+msgid "Remote access"
+msgstr "Accès à distance"
+
+#: inc/maintenance/remote-login.php
+msgid "Remote login"
+msgstr "Connexion à distance"
+
+#: inc/maintenance/remote-login.php
+msgid "Remote support"
+msgstr "Assistance à distance"
+
+#: inc/maintenance/remote-login.php
+msgid "Made for remote login from the developer's management service. Deleted when remote login is switched off."
+msgstr "Créé pour la connexion à distance depuis le service de gestion du développeur. Supprimé quand la connexion à distance est désactivée."
+
+#: inc/maintenance/remote-login.php
+#, php-format
+msgid "[%s] Your developer logged in remotely"
+msgstr "[%s] Votre développeur s’est connecté à distance"
+
+#: inc/maintenance/remote-login.php
+#, php-format
+msgid "Your developer logged in to %1$s remotely as %2$s.\n\nAsked by: %3$s\nFrom: %4$s\n\nThe session ends by itself after %5$d hours. To stop remote logins, switch them off here (this also ends any remote session now):\n%6$s"
+msgstr "Votre développeur s’est connecté à distance à %1$s en tant que %2$s.\n\nDemandé par : %3$s\nDepuis : %4$s\n\nLa session se termine d’elle-même après %5$d heures. Pour arrêter les connexions à distance, désactivez-les ici (cela met aussi fin à toute session à distance en cours) :\n%6$s"
+
+#: inc/maintenance/remote-login.php
+msgid "Open WP admin from the management service again."
+msgstr "Ouvrez à nouveau l’administration WordPress depuis le service de gestion."
+
+#: inc/maintenance/remote-login.php
+msgid "You are not allowed to change remote login."
+msgstr "Vous n’êtes pas autorisé à modifier la connexion à distance."
+
+#: inc/maintenance/remote-login.php
+msgid "Remote login is ON."
+msgstr "La connexion à distance est ACTIVÉE."
+
+#: inc/maintenance/remote-login.php
+msgid "Remote login is off."
+msgstr "La connexion à distance est désactivée."
+
+#: inc/maintenance/remote-login.php
+#, php-format
+msgid "Allowed by %1$s on %2$s."
+msgstr "Autorisée par %1$s le %2$s."
+
+#: inc/maintenance/remote-login.php
+msgid "What this allows"
+msgstr "Ce que cela permet"
+
+#: inc/maintenance/remote-login.php
+msgid "While this is on, your developer can open this site's dashboard from their management service and is logged in as an administrator, without your password. They can then do anything an administrator can: change content, settings, plugins and users. Each login is recorded below, and a session ends by itself after 4 hours. Switch it off at any time: that also ends any remote session at once."
+msgstr "Tant que cette option est activée, votre développeur peut ouvrir le tableau de bord de ce site depuis son service de gestion et y est connecté en tant qu’administrateur, sans votre mot de passe. Il peut alors faire tout ce qu’un administrateur peut faire : modifier le contenu, les réglages, les extensions et les utilisateurs. Chaque connexion est enregistrée ci-dessous, et une session se termine d’elle-même après 4 heures. Désactivez-la à tout moment : cela met aussi fin immédiatement à toute session à distance."
+
+#: inc/maintenance/remote-login.php
+msgid "I allow my developer to log in to this site remotely, as an administrator, without my password."
+msgstr "J’autorise mon développeur à se connecter à ce site à distance, en tant qu’administrateur, sans mon mot de passe."
+
+#: inc/maintenance/remote-login.php
+msgid "Log in as"
+msgstr "Se connecter en tant que"
+
+#: inc/maintenance/remote-login.php
+msgid "A separate support user (made at the first login, deleted when this is switched off)"
+msgstr "Un utilisateur d’assistance distinct (créé à la première connexion, supprimé quand cette option est désactivée)"
+
+#: inc/maintenance/remote-login.php
+msgid "Email me each time my developer logs in."
+msgstr "M’envoyer un e-mail à chaque connexion de mon développeur."
+
+#: inc/maintenance/remote-login.php
+msgid "Save remote access"
+msgstr "Enregistrer l’accès à distance"
+
+#: inc/maintenance/remote-login.php
+msgid "The management service has not given this site its signing key yet, so logins will be refused until the next sync."
+msgstr "Le service de gestion n’a pas encore transmis sa clé de signature à ce site : les connexions seront refusées jusqu’à la prochaine synchronisation."
+
+#: inc/maintenance/remote-login.php
+msgid "Recent activity"
+msgstr "Activité récente"
+
+#: inc/maintenance/remote-login.php
+msgid "This login link is not valid."
+msgstr "Ce lien de connexion n’est pas valide."
+
+#: inc/maintenance/remote-login.php
+msgid "This login link was already used or is not valid."
+msgstr "Ce lien de connexion a déjà été utilisé ou n’est pas valide."
+
+#: inc/maintenance/remote-login.php
+msgid "This login link has expired."
+msgstr "Ce lien de connexion a expiré."
+
+#: inc/maintenance/remote-login.php
+msgid "Remote login is switched off on this site."
+msgstr "La connexion à distance est désactivée sur ce site."

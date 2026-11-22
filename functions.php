@@ -101,6 +101,7 @@ require_once __DIR__ . '/inc/maintenance/maintenance.php';
 require_once __DIR__ . '/inc/maintenance/heartbeat.php';
 require_once __DIR__ . '/inc/maintenance/events.php';
 require_once __DIR__ . '/inc/maintenance/updates.php';
+require_once __DIR__ . '/inc/maintenance/remote-login.php';
 require_once __DIR__ . '/inc/backups/relay.php';
 require_once __DIR__ . '/inc/backups/backups.php';
 

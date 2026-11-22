@@ -142,7 +142,7 @@ Cloudflare zone tested with a real token (the rule, the purge, the connection te
 done on purpose: a page cache of the theme's own (it would run after WordPress has loaded, and a drop-in written from a
 theme is fragile), GoDaddy's cache (no documented way to clear it from code), and Cloudflare APO.
 
-**11. Remote site management from Brand Relay (designed 2026-11-21; steps 1 and 2 released in 1.54.0).** Do the work on a client site
+**11. Remote site management from Brand Relay (designed 2026-11-21; steps 1 and 2 released in 1.54.0, step 4 built for 1.55.0).** Do the work on a client site
 without opening its wp-admin, as a Brand Relay plan service of its own, `updates` (in force only while the plan has it, like
 the others, and switched off at once when the plan lapses). Each step its own release on both sides.
 
@@ -176,11 +176,18 @@ WPvivid: the theme's release control). The site refuses them even if asked. Thir
    a broken release is usually pulled or fixed first), in a nightly window in the site's time zone. Core: minor releases
    automatically and without the wait (WordPress ships them as security and maintenance releases); major versions only by
    Update now.
-4. *One-click login.* Brand Relay asks the site for a single-use, short-lived login ticket and opens a site endpoint that
-   checks and uses up the ticket, then starts a normal WordPress session. No client password or Application Password is
-   stored in Brand Relay. Needs its own security design before any code (which user, audit log entries on both sides, a
-   ticket lifetime of seconds bound to the site and one use, a notice to the client's administrators if the owner wants
-   one), and "A stronger ping" under Considered first.
+4. *One-click login* (built for 1.55.0, 2026-11-22; Brand Relay 0.49.0; tested end to end on a throwaway WordPress
+   against a local Brand Relay). Owner's design (2026-11-22): the client allows it on the site, on the Licence page's
+   **Remote access** tab: a checkbox under a plain warning, "Log in as" (an existing administrator they pick, or a
+   separate support user made at the first login and deleted when it is switched off, its content given to the admin
+   who switched it off), and "Email me each time". The setting is a plain option saved only by that form (nonce,
+   `manage_options`): not an SCF field, so neither Brand Relay's sync nor the MCP abilities can write it. Brand Relay's
+   **WP admin** button asks `POST /devbase/v1/login`, signed with the site key AND Brand Relay's own Ed25519 key (the
+   stronger ping, below), and the site answers a link to `wp-login.php?action=devbase_relay_login` with a 256-bit ticket,
+   kept only as its hash, single use, 60 seconds. Opening it starts a normal 4-hour WordPress session marked as remote.
+   Switching it off, or changing who is logged in as, ends every remote session at once and leaves the others. Each
+   attempt is recorded on both sides (the tab's Recent activity, Brand Relay's site_logins) and Brand Relay can notify
+   `remote_login`. No password, Application Password or session is ever held by Brand Relay.
 
 Notifications (owner's request, 2026-11-21): new Brand Relay notification events, chosen per channel like the others.
 `update_available` (step 1): one alert per site when its inventory first shows new versions, listing them; a version
@@ -272,12 +279,14 @@ example an old "Payment overdue" from a first installation) shows to the
 client's admins beside an active status. It could be shown only when the status
 is not plainly active, or during a grace period.
 
-**A stronger ping.** The sync ping proves the sender holds the site key, but its
-`Origin` header is a claim a non-browser caller can write, and an IP allowlist
-does not work for a Cloudflare Worker. Brand Relay signing the ping with its
-own Ed25519 key, with the public key stored here as Warden's is, would prove
-the sender is Brand Relay itself, and would stop a stolen site key being enough.
-It needs a change in Brand Relay.
+**A stronger ping** (built for 1.55.0 with remote login; Brand Relay 0.49.0). Brand
+Relay signs every ping with its own Ed25519 key (`X-Relay-Ed25519`, over the same
+string as the HMAC), derived from its server secret, and gives the public key to
+sites as `ping_key` in `GET /v1/site`; the site keeps it (or takes
+`DEVBASE_RELAY_PING_KEY`). A ping carrying a wrong signature is refused; one
+without it is still accepted for the existing services, so older Brand Relays keep
+working. Remote login requires it. Requiring it for every ping is a later choice,
+once every Brand Relay in use signs.
 
 **Per-site credit overrides.** The brand credit uses Brand Relay's public brand
 address on purpose: the site address carries private values. A site that needs
