@@ -1,0 +1,25 @@
+<p>Your developer can open this site's dashboard straight from their management service, without your password, but <strong>only while you allow it</strong>. It is off until you switch it on, and you can switch it off at any time. The setting is in Theme Settings &gt; <a href="{{ go.licence }}"><strong>Licence &amp; Updates</strong></a> &gt; <strong>Remote access</strong>.</p>
+{{ shot( 'remote-access', 'Remote access: whether your developer may log in, as whom, and every login.' ) }}
+
+<h3>Allowing it</h3>
+<ol class="guide-steps">
+	<li>Read <em>What this allows</em>: while it is on, your developer is logged in as an administrator and can do anything an administrator can, including changing content, settings, plugins and users.</li>
+	<li>Tick <strong>I allow my developer to log in to this site remotely</strong>.</li>
+	<li>Choose <strong>Log in as</strong>:
+		<ul class="guide-list">
+			<li><strong>A separate support user</strong> (recommended): an administrator called <em>remote-support</em>, made at the first login and deleted when you switch remote access off. What your developer does is easy to tell apart from what you do.</li>
+			<li><strong>An existing administrator</strong>: your developer works as that person.</li>
+		</ul>
+	</li>
+	<li>Tick <strong>Email me each time my developer logs in</strong> if you want to hear about every login.</li>
+	<li>Click <strong>Save remote access</strong>. The tab now says <em>Remote login is ON</em>, with who allowed it and when.</li>
+</ol>
+
+<h3>What keeps it safe</h3>
+<ul class="guide-list">
+	<li><strong>No password is shared or stored.</strong> Each login uses a link that works once and expires after a minute. Only your developer's management service can ask for one, and the site checks that the request really comes from it.</li>
+	<li><strong>A remote session ends by itself after 4 hours.</strong></li>
+	<li><strong>Every login is recorded</strong> under <em>Recent activity</em> on the same tab: when, as whom and from where.</li>
+	<li><strong>Switching it off ends any remote session at once</strong>, and deletes the support user. Anything it wrote stays on the site, with you as its author.</li>
+</ul>
+<div class="guide-tip">If the tab says the management service has not given this site its signing key yet, logins are refused until the next automatic sync. Your developer can start one from their side, so there is nothing for you to do.</div>

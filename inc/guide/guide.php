@@ -141,6 +141,11 @@ function devbase_guide_theme_chapters() {
 			'icon'       => 'dashicons-update',
 			'capability' => $admin,
 		),
+		'remote'    => array(
+			'title'      => __( 'Remote access for your developer', 'devbase_parent_theme' ),
+			'icon'       => 'dashicons-admin-network',
+			'capability' => $admin,
+		),
 		'trouble'   => array(
 			'title' => __( 'When something goes wrong', 'devbase_parent_theme' ),
 			'icon'  => 'dashicons-sos',

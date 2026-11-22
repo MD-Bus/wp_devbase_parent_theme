@@ -10,6 +10,13 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.55.1] — 2026-11-22
+
+### Added
+
+- **Guide: a "Remote access for your developer" chapter** (administrators only), after "Updates and backups": where the setting is, what allowing it means, the steps, the choice between the support user and an existing administrator, the email at each login, what keeps it safe (single-use one-minute links, 4-hour sessions, the activity log, switching off ends sessions and deletes the support user) and what "no signing key yet" means. With an annotated screenshot, `assets/guide/remote-access.jpg`.
+- **Guide: "WordPress and plugin updates"** in the "Updates and backups" chapter: the developer installs them from their management service when the plan includes updates, with WordPress's own protections.
+
 ## [1.55.0] — 2026-11-22
 
 ### Added
