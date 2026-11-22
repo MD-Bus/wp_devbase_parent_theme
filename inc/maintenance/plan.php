@@ -67,22 +67,17 @@ function devbase_relay_plan() {
 }
 
 /**
- * Whether a service is in force right now: there is a subscription, it is active,
- * it has started and not expired, and it lists the service.
+ * Whether the site has a maintenance plan in force right now, whatever it includes: there is a subscription, it is
+ * active, it has started and not expired. Remote login asks this (it is not a service a plan lists).
  *
- * @param string   $service uptime, health, events or backup.
- * @param int|null $now     A timestamp (tests); the clock by default.
+ * @param int|null $now A timestamp (tests); the clock by default.
  */
-function devbase_relay_service_in_force( $service, $now = null ) {
+function devbase_relay_plan_active( $now = null ) {
 	$now     = null === $now ? time() : (int) $now;
 	$plan    = devbase_relay_plan();
 	$licence = isset( $plan['licence'] ) && is_array( $plan['licence'] ) ? $plan['licence'] : null;
 
 	if ( ! $licence || 'active' !== ( $licence['status'] ?? '' ) ) {
-		return false;
-	}
-
-	if ( ! in_array( $service, (array) ( $licence['services'] ?? array() ), true ) ) {
 		return false;
 	}
 
@@ -105,6 +100,22 @@ function devbase_relay_service_in_force( $service, $now = null ) {
 	}
 
 	return true;
+}
+
+/**
+ * Whether a service is in force right now: the plan is (devbase_relay_plan_active()) and it lists the service.
+ *
+ * @param string   $service uptime, health, events or backup.
+ * @param int|null $now     A timestamp (tests); the clock by default.
+ */
+function devbase_relay_service_in_force( $service, $now = null ) {
+	if ( ! devbase_relay_plan_active( $now ) ) {
+		return false;
+	}
+
+	$licence = devbase_relay_plan()['licence'];
+
+	return in_array( $service, (array) ( $licence['services'] ?? array() ), true );
 }
 
 /**

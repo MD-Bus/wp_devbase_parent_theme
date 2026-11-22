@@ -1243,3 +1243,12 @@ msgstr ""
 #: inc/maintenance/remote-login.php
 msgid "Remote login is switched off on this site."
 msgstr ""
+
+msgid "Remote login was switched off: this site has no active maintenance plan."
+msgstr ""
+
+msgid "Remote login needs an active maintenance plan."
+msgstr ""
+
+msgid "This site has none (or it is suspended or expired), so remote login is off and cannot be switched on. Remote login switches itself off when the plan ends."
+msgstr ""

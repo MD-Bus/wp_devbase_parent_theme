@@ -17,6 +17,12 @@
 // plain option (not an SCF field, so neither Brand Relay's sync nor the MCP abilities can write it), saved only by an
 // administrator's own form post with a nonce. Switching it off ends every remote session at once and deletes the
 // support user, if one was made.
+//
+// It also needs a maintenance plan in force (devbase_remote_login_plan_active()). Without one it cannot be switched
+// on, and when the plan lapses the site switches it off itself (devbase_remote_login_enforce_plan()), exactly as the
+// client's own switch-off does. That is checked when the plan arrives from Brand Relay, at every login request and
+// link, at every request of a remote session, and when the tab is shown. After a renewal the client switches it on
+// again themselves.
 
 define( 'DEVBASE_REMOTE_LOGIN_OPTION', 'devbase_remote_login' );
 define( 'DEVBASE_REMOTE_LOGIN_LOG', 'devbase_remote_login_log' );
@@ -156,6 +162,13 @@ function devbase_remote_login_issue( WP_REST_Request $request ) {
 		return new WP_REST_Response( array( 'ok' => false, 'error' => 'not_allowed', 'message' => 'The site\'s administrators have not allowed remote login (Theme Settings > Licence & Updates > Remote access).' ), 403 );
 	}
 
+	if ( devbase_remote_login_enforce_plan() ) {
+		devbase_remote_login_log( array( 'by' => $by, 'ip' => $ip, 'note' => 'Refused: the site has no active maintenance plan.' ) );
+
+		// 409: Brand Relay shows a 409's own message.
+		return new WP_REST_Response( array( 'ok' => false, 'error' => 'no_plan', 'message' => 'The site has no active maintenance plan (none, or it is suspended or expired), so remote login was switched off. The client can switch it on again once the plan is active.' ), 409 );
+	}
+
 	$user = devbase_remote_login_user( false );
 
 	if ( is_wp_error( $user ) && 'support' !== devbase_remote_login_settings()['user'] ) {
@@ -222,6 +235,12 @@ function devbase_remote_login_redeem( $ticket ) {
 		devbase_remote_login_log( array( 'by' => $by, 'ip' => $ip, 'note' => 'Refused: remote login was switched off.' ) );
 
 		return new WP_Error( 'not_allowed', __( 'Remote login is switched off on this site.', 'devbase_parent_theme' ) );
+	}
+
+	if ( devbase_remote_login_enforce_plan() ) {
+		devbase_remote_login_log( array( 'by' => $by, 'ip' => $ip, 'note' => 'Refused: the site has no active maintenance plan.' ) );
+
+		return new WP_Error( 'no_plan', __( 'Remote login was switched off: this site has no active maintenance plan.', 'devbase_parent_theme' ) );
 	}
 
 	$user = devbase_remote_login_user( true );
@@ -303,6 +322,62 @@ add_action( 'login_form_devbase_relay_login', function () {
 	exit;
 } );
 
+/** Whether the site has a maintenance plan in force now (any plan: active, started, not expired), as Brand Relay last said. */
+function devbase_remote_login_plan_active() {
+	return (bool) apply_filters( 'devbase/remote_login/plan_active', function_exists( 'devbase_relay_plan_active' ) && devbase_relay_plan_active() );
+}
+
+/**
+ * Switches remote login off when it is on and the site has no maintenance plan in force, the same way the client's
+ * own switch-off does (remote sessions end, the support user is deleted). Returns true when there is no plan, whether
+ * it was on or not.
+ */
+function devbase_remote_login_enforce_plan() {
+	if ( devbase_remote_login_plan_active() ) {
+		return false;
+	}
+
+	$settings = devbase_remote_login_settings();
+
+	if ( $settings['on'] ) {
+		devbase_remote_login_save( array( 'on' => false, 'user' => $settings['user'], 'email' => $settings['email'] ), (int) $settings['by'], 'the site has no active maintenance plan' );
+	}
+
+	return true;
+}
+
+// When the plan arrives from Brand Relay (every pull of /v1/site).
+add_action( 'add_option_devbase_relay_plan', 'devbase_remote_login_enforce_plan' );
+add_action( 'update_option_devbase_relay_plan', 'devbase_remote_login_enforce_plan' );
+
+/**
+ * At every request of a remote session: when remote login is off, or the plan lapsed (which switches it off), the
+ * session ends now. A look at the session already loaded; nothing else runs for anyone else.
+ */
+function devbase_remote_login_guard_session() {
+	if ( ! is_user_logged_in() ) {
+		return;
+	}
+
+	$token   = wp_get_session_token();
+	$session = '' !== $token ? WP_Session_Tokens::get_instance( get_current_user_id() )->get( $token ) : null;
+
+	if ( ! is_array( $session ) || ! isset( $session[ DEVBASE_REMOTE_LOGIN_SESSION_KEY ] ) ) {
+		return;
+	}
+
+	devbase_remote_login_enforce_plan();
+
+	if ( devbase_remote_login_settings()['on'] ) {
+		return;
+	}
+
+	WP_Session_Tokens::get_instance( get_current_user_id() )->destroy( $token );
+	wp_clear_auth_cookie();
+	wp_set_current_user( 0 );
+}
+add_action( 'init', 'devbase_remote_login_guard_session', 1 );
+
 // --- 3. Switching it off ------------------------------------------------------------------------------------------
 
 /** Ends every remote session, on every user. Returns how many. */
@@ -351,10 +426,11 @@ function devbase_remote_login_delete_support_user( $reassign ) {
  * the support user is deleted once it is no longer the choice.
  *
  * @param array $input { on, user, email } as posted.
- * @param int   $by The administrator saving it.
+ * @param int    $by  The administrator saving it (or, when the site switches it off itself, the one who switched it on).
+ * @param string $why Why, when the site switches it off itself.
  * @return array The saved setting.
  */
-function devbase_remote_login_save( array $input, $by ) {
+function devbase_remote_login_save( array $input, $by, $why = '' ) {
 	$before = devbase_remote_login_settings();
 	$user   = isset( $input['user'] ) && 'support' !== $input['user'] ? absint( $input['user'] ) : 'support';
 
@@ -362,12 +438,15 @@ function devbase_remote_login_save( array $input, $by ) {
 		$user = 'support';
 	}
 
+	// Without a maintenance plan in force it cannot be switched on.
+	$on = ! empty( $input['on'] ) && devbase_remote_login_plan_active();
+
 	$after = array(
-		'on'    => ! empty( $input['on'] ),
+		'on'    => $on,
 		'user'  => $user,
 		'email' => ! empty( $input['email'] ),
-		'by'    => $before['on'] && ! empty( $input['on'] ) ? $before['by'] : (int) $by,
-		'at'    => $before['on'] && ! empty( $input['on'] ) ? $before['at'] : time(),
+		'by'    => $before['on'] && $on ? $before['by'] : (int) $by,
+		'at'    => $before['on'] && $on ? $before['at'] : time(),
 	);
 
 	// The email goes to whoever last chose it.
@@ -379,14 +458,14 @@ function devbase_remote_login_save( array $input, $by ) {
 
 	if ( $before['on'] !== $after['on'] || $before['user'] !== $after['user'] ) {
 		$ended = devbase_remote_login_end_sessions();
-		$note  = $after['on'] ? 'Remote login switched on.' : 'Remote login switched off.';
+		$note  = $after['on'] ? 'Remote login switched on.' : ( '' !== $why ? "Remote login switched off: {$why}." : 'Remote login switched off.' );
 
 		if ( ! $after['on'] || 'support' !== $after['user'] ) {
 			devbase_remote_login_delete_support_user( $by );
 		}
 
 		$actor = get_userdata( (int) $by );
-		devbase_remote_login_log( array( 'by' => $actor ? $actor->user_login : '', 'ok' => true, 'note' => $note . ( $ended ? " {$ended} remote session(s) ended." : '' ) ) );
+		devbase_remote_login_log( array( 'by' => '' !== $why ? 'site' : ( $actor ? $actor->user_login : '' ), 'ok' => true, 'note' => $note . ( $ended ? " {$ended} remote session(s) ended." : '' ) ) );
 	}
 
 	return $after;
@@ -421,6 +500,7 @@ function devbase_remote_login_settings_url() {
 
 /** The tab's content: what it does, the controls, and the last logins. */
 function devbase_remote_login_panel_html() {
+	$plan     = ! devbase_remote_login_enforce_plan(); // First: a lapsed plan switches it off (and deletes the support user).
 	$settings = devbase_remote_login_settings();
 	$admins   = get_users( array( 'role' => 'administrator', 'orderby' => 'display_name', 'number' => 100 ) );
 	$support  = devbase_remote_login_support_user();
@@ -448,7 +528,7 @@ function devbase_remote_login_panel_html() {
 			<p style="margin:0"><?php esc_html_e( 'While this is on, your developer can open this site\'s dashboard from their management service and is logged in as an administrator, without your password. They can then do anything an administrator can: change content, settings, plugins and users. Each login is recorded below, and a session ends by itself after 4 hours. Switch it off at any time: that also ends any remote session at once.', 'devbase_parent_theme' ); ?></p>
 		</div>
 		<input type="hidden" name="devbase_remote_login_nonce" value="<?php echo esc_attr( wp_create_nonce( 'devbase_remote_login' ) ); ?>" />
-		<p><label><input type="checkbox" name="devbase_remote_login_on" value="1" <?php checked( $on ); ?> />
+		<p><label><input type="checkbox" name="devbase_remote_login_on" value="1" <?php checked( $on ); ?> <?php disabled( ! $plan ); ?> />
 			<?php esc_html_e( 'I allow my developer to log in to this site remotely, as an administrator, without my password.', 'devbase_parent_theme' ); ?></label></p>
 		<p><label for="devbase-remote-login-user"><?php esc_html_e( 'Log in as', 'devbase_parent_theme' ); ?></label><br />
 			<select id="devbase-remote-login-user" name="devbase_remote_login_user">
@@ -460,6 +540,9 @@ function devbase_remote_login_panel_html() {
 		<p><label><input type="checkbox" name="devbase_remote_login_email" value="1" <?php checked( $settings['email'] ); ?> />
 			<?php esc_html_e( 'Email me each time my developer logs in.', 'devbase_parent_theme' ); ?></label></p>
 		<p><button type="submit" class="button button-primary" formaction="<?php echo esc_url( admin_url( 'admin-post.php?action=devbase_remote_login' ) ); ?>" formmethod="post" formnovalidate><?php esc_html_e( 'Save remote access', 'devbase_parent_theme' ); ?></button></p>
+		<?php if ( ! $plan ) : ?>
+			<p class="description"><strong><?php esc_html_e( 'Remote login needs an active maintenance plan.', 'devbase_parent_theme' ); ?></strong> <?php esc_html_e( 'This site has none (or it is suspended or expired), so remote login is off and cannot be switched on. Remote login switches itself off when the plan ends.', 'devbase_parent_theme' ); ?></p>
+		<?php endif; ?>
 		<?php if ( $on && ! $key ) : ?>
 			<p class="description"><?php esc_html_e( 'The management service has not given this site its signing key yet, so logins will be refused until the next sync.', 'devbase_parent_theme' ); ?></p>
 		<?php endif; ?>

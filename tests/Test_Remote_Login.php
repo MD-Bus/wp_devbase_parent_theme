@@ -30,6 +30,7 @@ class Test_Remote_Login extends WP_UnitTestCase {
 		foreach ( array( DEVBASE_REMOTE_LOGIN_OPTION, DEVBASE_REMOTE_LOGIN_LOG ) as $option ) {
 			delete_option( $option );
 		}
+		$this->plan( 'active' );
 		add_filter( 'send_auth_cookies', '__return_false' );
 
 		$this->mails       = array();
@@ -45,6 +46,7 @@ class Test_Remote_Login extends WP_UnitTestCase {
 		remove_filter( 'send_auth_cookies', '__return_false' );
 		remove_filter( 'pre_wp_mail', $this->mail_filter, 10 );
 		delete_option( DEVBASE_RELAY_PING_KEY_OPTION );
+		delete_option( DEVBASE_RELAY_PLAN_OPTION );
 		parent::tear_down();
 	}
 
@@ -66,6 +68,18 @@ class Test_Remote_Login extends WP_UnitTestCase {
 		}
 
 		return $request;
+	}
+
+	/** The plan as Brand Relay's /v1/site answer gives it: active (until next year), expired, suspended or none. */
+	private function plan( $state ) {
+		$licence = 'none' === $state ? null : array(
+			'plan'       => 'Care',
+			'status'     => 'expired' === $state ? 'expired' : $state,
+			'services'   => array( 'health' ),
+			'starts_at'  => gmdate( 'c', time() - YEAR_IN_SECONDS ),
+			'expires_at' => gmdate( 'c', 'expired' === $state ? time() - 60 : time() + YEAR_IN_SECONDS ),
+		);
+		devbase_relay_store_plan( array( 'licence' => $licence ) );
 	}
 
 	private function allow( $user = 'support', $email = false ) {
@@ -290,4 +304,151 @@ class Test_Remote_Login extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'admin-post.php?action=devbase_remote_login', $html );
 		$this->assertStringContainsString( 'value="support"', $html );
 	}
+
+	// --- The maintenance plan -----------------------------------------------------------------------------------
+
+	public function test_without_an_active_plan_it_cannot_be_switched_on_and_the_tab_says_why() {
+		foreach ( array( 'none', 'expired', 'suspended' ) as $state ) {
+			$this->plan( $state );
+			$admin = self::factory()->user->create( array( 'role' => 'administrator' ) );
+
+			$this->assertFalse( devbase_remote_login_save( array( 'on' => true, 'user' => 'support' ), $admin )['on'], $state );
+
+			wp_set_current_user( $admin );
+			$html = devbase_remote_login_panel_html();
+			$this->assertMatchesRegularExpression( '/name="devbase_remote_login_on"[^>]*disabled/', $html, $state );
+			$this->assertStringContainsString( esc_html__( 'Remote login needs an active maintenance plan.', 'devbase_parent_theme' ), $html );
+		}
+	}
+
+	public function test_when_the_plan_lapses_the_site_switches_it_off_itself_and_it_stays_off_after_a_renewal() {
+		$admin    = $this->allow();
+		$redeemed = devbase_remote_login_redeem( $this->ticket_of( $this->ticket_url() ) );
+		devbase_remote_login_start_session( $redeemed['user'], $redeemed['by'], $redeemed['ip'] );
+		$support = $redeemed['user']->ID;
+		$post    = self::factory()->post->create( array( 'post_author' => $support ) );
+
+		// Brand Relay's next answer says the plan expired: switched off on arrival, like the client's own switch-off.
+		$this->plan( 'expired' );
+
+		$this->assertFalse( devbase_remote_login_settings()['on'] );
+		$this->assertSame( array(), WP_Session_Tokens::get_instance( $support )->get_all(), 'Remote session ended.' );
+		$this->assertFalse( get_userdata( $support ), 'Support user deleted.' );
+		$this->assertSame( $admin, (int) get_post( $post )->post_author, 'Its post given to the admin who switched it on.' );
+		$this->assertStringContainsString( 'no active maintenance plan', end( get_option( DEVBASE_REMOTE_LOGIN_LOG ) )['note'] );
+
+		// Renewed: the door stays closed until the client opens it again.
+		$this->plan( 'active' );
+		$this->assertFalse( devbase_remote_login_settings()['on'] );
+		$response = rest_get_server()->dispatch( $this->signed( '/devbase/v1/login', '{"by":"owner"}' ) );
+		$this->assertSame( 'not_allowed', $response->get_data()['error'] );
+	}
+
+	public function test_a_plan_that_ends_by_the_clock_closes_it_at_the_next_login_request_with_a_reason_brand_relay_shows() {
+		$this->allow();
+		// Expired by the clock, before any new answer from Brand Relay (stored directly: no hook runs).
+		$plan                          = get_option( DEVBASE_RELAY_PLAN_OPTION );
+		$plan['licence']['expires_at'] = gmdate( 'c', time() - 60 );
+		remove_all_actions( 'update_option_' . DEVBASE_RELAY_PLAN_OPTION );
+		update_option( DEVBASE_RELAY_PLAN_OPTION, $plan );
+		$this->assertTrue( devbase_remote_login_settings()['on'] );
+
+		$response = rest_get_server()->dispatch( $this->signed( '/devbase/v1/login', '{"by":"owner"}' ) );
+
+		$this->assertSame( 409, $response->get_status(), 'Brand Relay shows the message of a 409.' );
+		$this->assertSame( 'no_plan', $response->get_data()['error'] );
+		$this->assertFalse( devbase_remote_login_settings()['on'] );
+	}
+
+	public function test_a_link_issued_before_the_plan_lapsed_does_not_log_in() {
+		$this->allow();
+		$ticket = $this->ticket_of( $this->ticket_url() );
+		add_filter( 'devbase/remote_login/plan_active', '__return_false' );
+
+		$this->assertSame( 'no_plan', devbase_remote_login_redeem( $ticket )->get_error_code() );
+		$this->assertFalse( devbase_remote_login_settings()['on'] );
+		remove_filter( 'devbase/remote_login/plan_active', '__return_false' );
+	}
+
+	public function test_an_open_remote_session_ends_at_its_next_request_once_the_plan_has_lapsed() {
+		$this->allow();
+		$user = devbase_remote_login_redeem( $this->ticket_of( $this->ticket_url() ) )['user'];
+		$mark = function ( $info ) {
+			return $info + array( DEVBASE_REMOTE_LOGIN_SESSION_KEY => 'owner' );
+		};
+		add_filter( 'attach_session_information', $mark );
+		$token = WP_Session_Tokens::get_instance( $user->ID )->create( time() + HOUR_IN_SECONDS );
+		remove_filter( 'attach_session_information', $mark );
+
+		// This request comes from the remote session.
+		$_COOKIE[ LOGGED_IN_COOKIE ] = wp_generate_auth_cookie( $user->ID, time() + HOUR_IN_SECONDS, 'logged_in', $token );
+		wp_set_current_user( $user->ID );
+
+		devbase_remote_login_guard_session();
+		$this->assertSame( $user->ID, get_current_user_id(), 'Plan active: nothing happens.' );
+
+		add_filter( 'devbase/remote_login/plan_active', '__return_false' );
+		devbase_remote_login_guard_session();
+		remove_filter( 'devbase/remote_login/plan_active', '__return_false' );
+		unset( $_COOKIE[ LOGGED_IN_COOKIE ] );
+
+		$this->assertSame( 0, get_current_user_id(), 'Logged out now.' );
+		$this->assertFalse( devbase_remote_login_settings()['on'], 'And switched off.' );
+		$this->assertNull( WP_Session_Tokens::get_instance( $user->ID )->get( $token ) );
+	}
+
+
+	public function test_the_health_report_says_whether_it_is_on_and_a_lapsed_plan_reports_off() {
+		$this->assertSame( array( 'on' => false, 'as' => 'support' ), devbase_heartbeat_report()['remote_login'] );
+
+		$chosen = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		$this->allow( $chosen );
+		$this->assertSame( array( 'on' => true, 'as' => 'admin' ), devbase_heartbeat_report()['remote_login'], 'Which administrator is not said.' );
+
+		add_filter( 'devbase/remote_login/plan_active', '__return_false' );
+		$this->assertFalse( devbase_heartbeat_report()['remote_login']['on'] );
+		remove_filter( 'devbase/remote_login/plan_active', '__return_false' );
+	}
+
+
+	/** A remote session as the browser holds it: its logged-in cookie. */
+	private function remote_cookie( WP_User $user ) {
+		$mark = function ( $info ) {
+			return $info + array( DEVBASE_REMOTE_LOGIN_SESSION_KEY => 'owner' );
+		};
+		add_filter( 'attach_session_information', $mark );
+		$token = WP_Session_Tokens::get_instance( $user->ID )->create( time() + HOUR_IN_SECONDS );
+		remove_filter( 'attach_session_information', $mark );
+
+		return wp_generate_auth_cookie( $user->ID, time() + HOUR_IN_SECONDS, 'logged_in', $token );
+	}
+
+	public function test_an_open_remote_session_stops_working_at_once_when_the_user_changes_it_is_switched_off_or_the_plan_lapses() {
+		$cases = array(
+			'the chosen user changes' => function ( $admin ) {
+				devbase_remote_login_save( array( 'on' => true, 'user' => $admin ), $admin );
+			},
+			'switched off'            => function ( $admin ) {
+				devbase_remote_login_save( array( 'on' => false ), $admin );
+			},
+			'the plan lapses'         => function () {
+				$this->plan( 'expired' );
+			},
+		);
+
+		$_SERVER['REQUEST_METHOD'] = 'GET'; // wp_validate_auth_cookie() reads it.
+
+		foreach ( $cases as $case => $change ) {
+			$this->plan( 'active' );
+			$admin  = $this->allow();
+			$user   = devbase_remote_login_redeem( $this->ticket_of( $this->ticket_url() ) )['user'];
+			$cookie = $this->remote_cookie( $user );
+			$this->assertSame( $user->ID, wp_validate_auth_cookie( $cookie, 'logged_in' ), "{$case}: works before." );
+
+			$change( $admin );
+
+			$this->assertFalse( wp_validate_auth_cookie( $cookie, 'logged_in' ), "{$case}: the cookie no longer logs anyone in." );
+		}
+	}
+
 }

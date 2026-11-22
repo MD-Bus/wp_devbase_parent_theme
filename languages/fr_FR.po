@@ -1245,3 +1245,12 @@ msgstr "Ce lien de connexion a expiré."
 #: inc/maintenance/remote-login.php
 msgid "Remote login is switched off on this site."
 msgstr "La connexion à distance est désactivée sur ce site."
+
+msgid "Remote login was switched off: this site has no active maintenance plan."
+msgstr "La connexion à distance a été désactivée : ce site n’a aucun forfait de maintenance actif."
+
+msgid "Remote login needs an active maintenance plan."
+msgstr "La connexion à distance nécessite un forfait de maintenance actif."
+
+msgid "This site has none (or it is suspended or expired), so remote login is off and cannot be switched on. Remote login switches itself off when the plan ends."
+msgstr "Ce site n’en a pas (ou il est suspendu ou expiré) : la connexion à distance est désactivée et ne peut pas être activée. Elle se désactive d’elle-même à la fin du forfait."

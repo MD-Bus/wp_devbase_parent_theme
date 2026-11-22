@@ -10,6 +10,18 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.56.0] — 2026-11-22
+
+### Changed
+
+- **Remote login needs an active maintenance plan.** Without one (no plan, or it is suspended, expired or not started) the Remote access tab cannot switch it on and says why. When the plan ends, the site switches remote login off by itself, exactly like the client's own switch-off: remote sessions end, the support user is deleted (its content goes to the administrator who switched it on) and the activity log says why. It is checked when the plan arrives from Brand Relay, at every login request and link, at every request of a remote session, and when the tab is shown. After a renewal it stays off until the client switches it on again. Brand Relay gets `409 no_plan` with a message it shows as is. New `devbase_relay_plan_active()` (any plan in force), which `devbase_relay_service_in_force()` now uses. French translations included.
+
+### Added
+
+- **The health report says whether remote login is on**: `remote_login: { on, as: support|admin }`, for Brand Relay's light on the site's page. The plan is checked first, so a lapsed plan reports off.
+
+Brand Relay 0.50.0 shows the light; older versions ignore the field.
+
 ## [1.55.1] — 2026-11-22
 
 ### Added

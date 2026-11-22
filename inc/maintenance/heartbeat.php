@@ -13,6 +13,26 @@
 // content, its users or its plugin files.
 
 /**
+ * Whether remote login is on, for Brand Relay's light: { on, as: support|admin }. The plan is checked first, so a
+ * lapsed plan is reported as off (it switches it off). Null without the remote login code.
+ *
+ * @return array{on: bool, as: string}|null
+ */
+function devbase_heartbeat_remote_login() {
+	if ( ! function_exists( 'devbase_remote_login_settings' ) ) {
+		return null;
+	}
+
+	devbase_remote_login_enforce_plan();
+	$settings = devbase_remote_login_settings();
+
+	return array(
+		'on' => (bool) $settings['on'],
+		'as' => 'support' === $settings['user'] ? 'support' : 'admin',
+	);
+}
+
+/**
  * The report. Fields Brand Relay does not know are ignored by it, and a field
  * that cannot be read here is left out rather than sent empty.
  *
@@ -36,6 +56,7 @@ function devbase_heartbeat_report() {
 		// Filled in once there is a backup to report (inc/maintenance/ will grow one).
 		'last_backup_at' => apply_filters( 'devbase/maintenance/last_backup_at', null ),
 		'site_health'    => devbase_heartbeat_site_health(),
+		'remote_login'   => devbase_heartbeat_remote_login(),
 	);
 
 	$report = array_filter( $report, function ( $value ) {
