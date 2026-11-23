@@ -10,6 +10,16 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.56.2] — 2026-11-23
+
+### Security
+
+- **Secure Custom Fields 6.9.9 → 6.9.10**, a security release from the plugin. Highlights: `script` tags in block preview HTML no longer run in the block editor unless the block or site opts in; the `[acf]` shortcode no longer shows fields from draft or private posts; fields registered in code (including Local JSON) no longer expose values through the `[acf]` shortcode or Block Bindings unless `allow_in_bindings` is on; Options Page saves and front-end forms only write options that belong to their own fields; REST responses reduce User objects; user, comment and term saves check permission before the nonce. The Beta Features page is replaced by a new **SCF > Settings** page. The theme registers its options pages and fields in code but does not itself use the `[acf]` shortcode or Block Bindings, so nothing in the theme changes behaviour. A client site that reads a code-registered field through the shortcode or a binding must now set `allow_in_bindings` on that field.
+
+### Changed
+
+- **Admin and Site Enhancements 9.3.3 → 9.4.0**: adds a User Role Manager (Users > Roles), an option to disable WordPress 7.2's random-content redirect, a Change Login URL hardening (REST detection, custom slug hidden from visitors who have not opened it) and Elementor Pro Login widget support. Pro-only items do not apply. Both updates arrived as a Dependabot PR; `vendor/` is synced with `composer.lock`.
+
 ## [1.56.1] — 2026-11-22
 
 ### Fixed
