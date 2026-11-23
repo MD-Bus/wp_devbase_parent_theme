@@ -10,6 +10,12 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.57.0] — 2026-11-23
+
+### Added
+
+- **A warning or notice now sends the call stack that led to it** (error tracking, Brand Relay). Until now only an uncaught exception had a trace, so a warning raised inside WordPress core ("Array to string conversion" in `wp-includes/formatting.php`, say) could not be traced to the plugin or theme function that caused it. The first time a place is seen in a request, the handler keeps a short stack (no arguments, so nothing private; at most 10 frames, scrubbed like an exception's trace) and sends it with the event. It is not part of the fingerprint: one place stays one issue, and the first trace seen is kept. Brand Relay 0.46.0+ shows it on the event's page.
+
 ## [1.56.2] — 2026-11-23
 
 ### Security

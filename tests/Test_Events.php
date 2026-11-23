@@ -348,6 +348,48 @@ class Test_Events extends WP_UnitTestCase {
 		$this->assertFalse( devbase_events_flush(), 'Flushed once: the request has nothing left.' );
 	}
 
+	public function test_a_warning_sends_the_call_stack_that_led_to_it_without_arguments() {
+		$this->warn_from_a_helper( 'secret@example.com' );
+		devbase_events_flush();
+
+		$event = array_values( $this->queue() )[0];
+
+		$this->assertArrayHasKey( 'trace', $event );
+		$this->assertLessThanOrEqual( DEVBASE_EVENTS_TRACE_FRAMES, count( $event['trace'] ) );
+		$this->assertStringContainsString( 'warn_from_a_helper', implode( "\n", $event['trace'] ), 'The function that was running is in the stack.' );
+		$this->assertStringNotContainsString( 'devbase_events_handler', implode( "\n", $event['trace'] ), 'The handler\'s own frame is left out.' );
+		$this->assertStringNotContainsString( 'secret@example.com', wp_json_encode( $event ), 'No arguments in a frame.' );
+		$this->assertStringNotContainsString( __DIR__, implode( "\n", $event['trace'] ), 'Paths are cut down.' );
+	}
+
+	public function test_the_trace_does_not_change_which_warnings_are_one_issue() {
+		$this->warn_from_a_helper( 'a' );
+		$first = devbase_events_fingerprint( devbase_events_build( array( 'type' => E_WARNING, 'message' => 'm', 'file' => '/x/wp-content/plugins/p/a.php', 'line' => 1 ) ) );
+		devbase_events_flush();
+
+		$this->assertNotEmpty( $this->queue() );
+		$this->assertSame( $first, devbase_events_fingerprint( devbase_events_build( array( 'type' => E_WARNING, 'message' => 'm', 'file' => '/x/wp-content/plugins/p/a.php', 'line' => 1 ) ) ), 'A trace is not part of the fingerprint.' );
+	}
+
+	public function test_captured_frames_become_exception_style_strings_within_the_limits() {
+		$frames = array();
+		for ( $i = 0; $i < 30; $i++ ) {
+			$frames[] = array( 'file' => "/home/u/wp-content/plugins/p/f{$i}.php", 'line' => $i, 'call' => 'Foo->bar' );
+		}
+		$frames[0]['file'] = '';
+
+		$trace = devbase_events_frames_to_trace( $frames );
+
+		$this->assertCount( DEVBASE_EVENTS_TRACE_FRAMES, $trace );
+		$this->assertSame( '[internal function]: Foo->bar', $trace[0] );
+		$this->assertSame( 'wp-content/plugins/p/f1.php(1): Foo->bar', $trace[1] );
+		$this->assertSame( array(), devbase_events_frames_to_trace( array() ) );
+	}
+
+	private function warn_from_a_helper( $secret ) {
+		$this->warn( E_WARNING, 'Array to string conversion', '/var/www/wp-includes/formatting.php', 1128 );
+	}
+
 	public function test_a_deprecation_from_a_bundled_plugin_is_not_kept_but_its_warnings_are() {
 		$dir = WP_PLUGIN_DIR . '/wpvivid-backuprestore/vendor/guzzlehttp/promises/src/Promise.php';
 		$this->warn( E_DEPRECATED, 'Implicitly marking parameter $waitFn as nullable is deprecated', $dir, 22 );
@@ -536,6 +578,13 @@ class Test_Events extends WP_UnitTestCase {
 			}
 		}
 		$this->crash( 'Late fatal', '/a/wp-content/plugins/p/late.php', 99 );
+
+		// This test is about order and the batch size, not bytes: traces under PHPUnit's deep stack would trim the batch (see the byte cap).
+		update_option( DEVBASE_EVENTS_QUEUE, array_map( function ( $event ) {
+			unset( $event['trace'] );
+
+			return $event;
+		}, $this->queue() ), false );
 
 		devbase_events_run();
 

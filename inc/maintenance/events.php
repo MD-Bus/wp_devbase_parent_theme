@@ -13,7 +13,8 @@
 // before it is queued and again by Brand Relay: first line of the message, paths cut to
 // wp-content/..., no emails, no tokens, no query strings, never request data. An uncaught
 // exception also sends its stack trace as `trace` (frames without their arguments, see
-// devbase_events_trace()); warnings and notices never have one.
+// devbase_events_trace()); a warning or notice sends the call stack that led to it, from the place it was first seen
+// (see devbase_events_capture_frames()), so an issue can be traced to the plugin or theme function that caused it.
 
 /** The queue of errors waiting to be sent: fingerprint => event. Not autoloaded. */
 const DEVBASE_EVENTS_QUEUE = 'devbase_events_queue';
@@ -118,9 +119,7 @@ function devbase_events_trace( $message ) {
 
 		// The call up to its own "(": PHP 8.4 names closures {closure:/path/file.php:12}, which may hold a path and "()".
 		$call = preg_match( '/^(?:[^({]|\{[^}]*\})*/', $text, $c ) ? trim( $c[0] ) : '';
-		$call = preg_replace_callback( '/\{closure:([^}]*?)(:\d+)?\}/', function ( $c ) {
-			return '{closure:' . ( preg_match( '~[\\\\/]~', $c[1] ) ? devbase_events_relative_path( $c[1] ) : $c[1] ) . ( $c[2] ?? '' ) . '}';
-		}, $call );
+		$call = devbase_events_clean_closure( $call );
 
 		$frame = devbase_events_scrub( '' !== $where && '' !== $call ? "{$where}: {$call}" : $where . $call, DEVBASE_EVENTS_TRACE_FRAME );
 
@@ -136,6 +135,75 @@ function devbase_events_trace( $message ) {
 	}
 
 	return $frames;
+}
+
+/** PHP 8.4 names closures {closure:/path/file.php:12}: the path inside goes through devbase_events_relative_path(). */
+function devbase_events_clean_closure( $call ) {
+	return preg_replace_callback( '/\{closure:([^}]*?)(:\d+)?\}/', function ( $c ) {
+		return '{closure:' . ( preg_match( '~[\\\\/]~', $c[1] ) ? devbase_events_relative_path( $c[1] ) : $c[1] ) . ( $c[2] ?? '' ) . '}';
+	}, $call );
+}
+
+/**
+ * The call stack at the moment of a warning or notice, raw and cheap: no arguments (DEBUG_BACKTRACE_IGNORE_ARGS, so no
+ * email, token or form data can be in it), a few frames more than are sent, and without this function's and the handler's own frames. Each frame
+ * is the call site (file, line) and what was called, as in an exception's trace. Scrubbed later, by
+ * devbase_events_frames_to_trace(), only for a request that goes on to queue it.
+ *
+ * @return array[] { file, line, call } innermost first.
+ */
+function devbase_events_capture_frames() {
+	$frames = array();
+
+	foreach ( debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, DEVBASE_EVENTS_TRACE_FRAMES + 4 ) as $frame ) { // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
+		$function = $frame['function'];
+
+		if ( 'devbase_events_handler' === $function || 'devbase_events_capture_frames' === $function ) {
+			continue;
+		}
+
+		$frames[] = array(
+			'file' => (string) ( $frame['file'] ?? '' ),
+			'line' => (int) ( $frame['line'] ?? 0 ),
+			'call' => (string) ( $frame['class'] ?? '' ) . (string) ( $frame['type'] ?? '' ) . $function,
+		);
+	}
+
+	return $frames;
+}
+
+/**
+ * Frames from devbase_events_capture_frames() as the same strings an exception's trace sends ("path(line): Class->method"),
+ * under the same limits (DEVBASE_EVENTS_TRACE_FRAMES frames, DEVBASE_EVENTS_TRACE_FRAME characters each, DEVBASE_EVENTS_TRACE_BYTES in all).
+ *
+ * @param array[] $frames
+ * @return string[]
+ */
+function devbase_events_frames_to_trace( array $frames ) {
+	$trace = array();
+	$size  = 0;
+
+	foreach ( $frames as $frame ) {
+		if ( count( $trace ) >= DEVBASE_EVENTS_TRACE_FRAMES ) {
+			break;
+		}
+
+		$where = '' !== (string) ( $frame['file'] ?? '' ) ? devbase_events_relative_path( $frame['file'] ) . '(' . (int) ( $frame['line'] ?? 0 ) . ')' : '[internal function]';
+		$call  = devbase_events_clean_closure( (string) ( $frame['call'] ?? '' ) );
+		$text  = devbase_events_scrub( '' !== $call ? "{$where}: {$call}" : $where, DEVBASE_EVENTS_TRACE_FRAME );
+
+		if ( '' === $text ) {
+			continue;
+		}
+		if ( $size + strlen( $text ) > DEVBASE_EVENTS_TRACE_BYTES ) {
+			break;
+		}
+
+		$size    += strlen( $text ) + 1;
+		$trace[]  = $text;
+	}
+
+	return $trace;
 }
 
 /** Where the request came from, in a word. */
@@ -349,8 +417,9 @@ function devbase_events_enqueue( array $events ) {
 // - It is only installed while the saved plan says error tracking is in force (a plan without it costs nothing).
 // - It calls whatever handler was there before it (WordPress's own, Query Monitor ...) and returns that handler's answer, or
 //   false (PHP's normal handling goes on) when there was none. What the site shows and logs does not change.
-// - Per error it does an array lookup and a counter: no database, no regular expressions, no backtrace. The message is
-//   kept once per distinct place (file, line, kind), the rest only count. At most DEVBASE_EVENTS_REQUEST_MAX places per request.
+// - Per error it does an array lookup and a counter: no database, no regular expressions. The message is kept once per
+//   distinct place (file, line, kind), the rest only count. The first time a place is seen it also keeps a short call stack
+//   (debug_backtrace without arguments, a few frames), so the cost is once per place, not once per error. At most DEVBASE_EVENTS_REQUEST_MAX places per request.
 // - It leaves errors silenced with `@` alone.
 // - Everything else (scrubbing, the queue) happens ONCE, in a shutdown function, and only for a request that had something.
 
@@ -463,7 +532,7 @@ function devbase_events_handler( $errno, $errstr, $errfile = '', $errline = 0 ) 
 			if ( isset( $notes[ $key ] ) ) {
 				++$notes[ $key ]['count'];
 			} elseif ( count( $notes ) < DEVBASE_EVENTS_REQUEST_MAX ) {
-				$notes[ $key ] = array( 'type' => $errno, 'message' => substr( (string) $errstr, 0, 1000 ), 'file' => (string) $errfile, 'line' => (int) $errline, 'count' => 1 );
+				$notes[ $key ] = array( 'type' => $errno, 'message' => substr( (string) $errstr, 0, 1000 ), 'file' => (string) $errfile, 'line' => (int) $errline, 'count' => 1, 'frames' => devbase_events_capture_frames() );
 			}
 		}
 
@@ -494,6 +563,12 @@ function devbase_events_flush() {
 			$event          = devbase_events_build( array( 'type' => $note['type'], 'message' => $note['message'], 'file' => $note['file'], 'line' => $note['line'] ) );
 			$event['level'] = devbase_events_level( $note['type'] );
 			$event['count'] = $note['count'];
+
+			$trace = devbase_events_frames_to_trace( (array) ( $note['frames'] ?? array() ) );
+			if ( $trace ) {
+				$event['trace'] = $trace; // Not in the fingerprint: one place stays one issue; the queue keeps the first trace.
+			}
+
 			$event['type']  = in_array( $note['type'], array( E_DEPRECATED, E_USER_DEPRECATED ), true ) ? 'deprecated' : $event['type'];
 			$events[]       = $event;
 		} catch ( Throwable $e ) {
