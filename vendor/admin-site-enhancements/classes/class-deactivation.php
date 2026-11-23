@@ -61,4 +61,19 @@ class Deactivation {
 		flush_rewrite_rules( false );
 	}
 
+	/**
+	 * Part of Disable Smaller Components module
+	 * Restore the random content (/random/) rewrite rules of WordPress 7.2+ on plugin deactivation.
+	 *
+	 * The stored rules are deleted instead of flushed: during this request ASE's
+	 * wp_enable_random_content_redirect filter is still attached, so a flush would save the rules
+	 * without the /random/ endpoints. WordPress regenerates the rules on the next request, when ASE
+	 * is no longer loaded and any other code that uses the filter is still respected.
+	 *
+	 * @since 9.3.4
+	 */
+	public function disable_random_content_restore_rewrite_rules() {
+		delete_option( 'rewrite_rules' );
+	}
+
 }

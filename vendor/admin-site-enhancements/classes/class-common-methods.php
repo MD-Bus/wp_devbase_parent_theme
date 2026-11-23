@@ -1166,6 +1166,35 @@ class Common_Methods {
     }
 
     /**
+     * Whether the current request is a User Role Manager REST API request.
+     *
+     * Disable REST API, Password Protection and Maintenance Mode gate REST requests.
+     * The User Role Manager admin page talks to asenha-role-manager/v1, so that
+     * namespace must pass those gates while the module is enabled. Every route of
+     * the namespace still enforces its own capability, nonce and same-origin checks.
+     * Matching is a prefix with a slash boundary, so asenha-role-manager/v1-extra stays gated.
+     *
+     * @since 9.2.0
+     *
+     * @return bool
+     */
+    public function is_user_role_manager_rest_request() {
+        $options = get_option( ASENHA_SLUG_U, array() );
+        if ( !is_array( $options ) || empty( $options['user_role_manager'] ) ) {
+            return false;
+        }
+        $rest_route = '';
+        if ( isset( $GLOBALS['wp']->query_vars['rest_route'] ) ) {
+            $rest_route = (string) $GLOBALS['wp']->query_vars['rest_route'];
+        }
+        $rest_route = trim( $rest_route, '/' );
+        if ( '' === $rest_route ) {
+            return false;
+        }
+        return $this->path_matches_boundary( $rest_route, 'asenha-role-manager/v1' );
+    }
+
+    /**
      * Whether a path equals a prefix or continues with a slash.
      *
      * @since 9.1.4
@@ -1365,6 +1394,104 @@ class Common_Methods {
             $cache[$cache_key] = array_intersect_key( $cache[$cache_key], $post_types );
         }
         return $cache;
+    }
+
+    /**
+     * Whether a widget is the Elementor Pro Login widget rendered on the frontend.
+     *
+     * Used by Change Login URL and CAPTCHA Protection to add their hidden fields and
+     * CAPTCHA to the widget's login form, which posts to wp-login.php but never fires
+     * the login_form action. Returns false in the Elementor editor and preview, so
+     * nothing is added to the editing canvas.
+     *
+     * @since 9.3.4
+     *
+     * @param mixed $widget Widget passed to the elementor/widget/render_content filter.
+     * @return bool
+     */
+    public function is_elementor_frontend_login_widget( $widget ) {
+        if ( !class_exists( '\\Elementor\\Widget_Base' ) || !$widget instanceof \Elementor\Widget_Base ) {
+            return false;
+        }
+        if ( 'login' !== $widget->get_name() ) {
+            return false;
+        }
+        if ( class_exists( '\\Elementor\\Plugin' ) && isset( \Elementor\Plugin::$instance ) ) {
+            $elementor = \Elementor\Plugin::$instance;
+            if ( isset( $elementor->editor ) && is_object( $elementor->editor ) && method_exists( $elementor->editor, 'is_edit_mode' ) && $elementor->editor->is_edit_mode() ) {
+                return false;
+            }
+            if ( isset( $elementor->preview ) && is_object( $elementor->preview ) && method_exists( $elementor->preview, 'is_preview_mode' ) && $elementor->preview->is_preview_mode() ) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Insert HTML into the Elementor Pro Login widget's form markup.
+     *
+     * Positions:
+     * - 'after_form_open': right after the opening <form> tag.
+     * - 'before_submit': before the <div> that opens the submit button row
+     *   (class elementor-field-type-submit), or before </form> if that row is missing.
+     *
+     * Content without a <form> tag, e.g. the widget's "You are logged in" message,
+     * is returned unchanged.
+     *
+     * @since 9.3.4
+     *
+     * @param string $content  Widget HTML.
+     * @param string $html     HTML to insert.
+     * @param string $position 'after_form_open' or 'before_submit'.
+     * @return string
+     */
+    public function insert_into_elementor_login_form( $content, $html, $position = 'before_submit' ) {
+        $content = (string) $content;
+        $html = (string) $html;
+        if ( '' === $html ) {
+            return $content;
+        }
+        $form_start = stripos( $content, '<form' );
+        if ( false === $form_start ) {
+            return $content;
+        }
+        $form_tag_end = strpos( $content, '>', $form_start );
+        if ( false === $form_tag_end ) {
+            return $content;
+        }
+        if ( 'after_form_open' === $position ) {
+            return substr_replace(
+                $content,
+                $html,
+                $form_tag_end + 1,
+                0
+            );
+        }
+        // before_submit: find the opening <div> of the submit button row.
+        $submit_class_pos = strpos( $content, 'elementor-field-type-submit', $form_tag_end );
+        if ( false !== $submit_class_pos ) {
+            $before_submit_class = substr( $content, 0, $submit_class_pos );
+            $submit_div_start = strripos( $before_submit_class, '<div' );
+            if ( false !== $submit_div_start && $submit_div_start > $form_tag_end ) {
+                return substr_replace(
+                    $content,
+                    $html,
+                    $submit_div_start,
+                    0
+                );
+            }
+        }
+        $form_end = stripos( $content, '</form>', $form_tag_end );
+        if ( false !== $form_end ) {
+            return substr_replace(
+                $content,
+                $html,
+                $form_end,
+                0
+            );
+        }
+        return $content;
     }
 
 }

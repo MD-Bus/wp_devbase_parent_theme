@@ -179,7 +179,7 @@ if ( ! class_exists( 'ACF_Post_Type' ) ) {
 				'advanced_configuration'   => false,
 				'import_source'            => '',
 				'import_date'              => '',
-				'allow_ai_access'          => false,
+				'enable_acf_abilities'     => true,
 				'ai_description'           => '',
 				// Settings passed to register_post_type().
 				'labels'                   => array(
@@ -781,6 +781,26 @@ if ( ! class_exists( 'ACF_Post_Type' ) ) {
 			}
 
 			return $post;
+		}
+
+		/**
+		 * Updates a post type, keeping the stored meta box callback when the current user can't edit it.
+		 *
+		 * Local JSON sync and other trusted saves wrapped in acf_skip_internal_post_sanitization() are left as given.
+		 *
+		 * @since SCF 6.9.10
+		 *
+		 * @param array $post The ACF post array.
+		 * @return array
+		 */
+		public function update_post( $post ) {
+			if ( ! acf_get_data( 'skip_internal_post_sanitization' ) && ! acf_get_setting( 'enable_meta_box_cb_edit' ) ) {
+				$existing_post = ! empty( $post['ID'] ) ? $this->get_raw_post( $post['ID'] ) : false;
+
+				$post['register_meta_box_cb'] = ( is_array( $existing_post ) && ! empty( $existing_post['register_meta_box_cb'] ) ) ? (string) $existing_post['register_meta_box_cb'] : '';
+			}
+
+			return parent::update_post( $post );
 		}
 
 		/**

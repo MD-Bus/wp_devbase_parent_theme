@@ -9,6 +9,107 @@ namespace ASENHA\Classes;
  */
 class Change_Login_URL {
     /**
+     * Nonce action for the hidden marker added to frontend login forms, e.g. the Elementor Pro Login widget.
+     *
+     * @since 9.3.4
+     */
+    const FRONTEND_LOGIN_NONCE_ACTION = 'asenha_clu_frontend_login';
+
+    /**
+     * POST field name of the frontend login form marker.
+     *
+     * @since 9.3.4
+     */
+    const FRONTEND_LOGIN_NONCE_FIELD = 'asenha_clu_login_nonce';
+
+    /**
+     * Add a hidden marker to the Elementor Pro Login widget's form.
+     *
+     * The widget posts log/pwd straight to wp-login.php from any page, e.g. an
+     * Elementor Maintenance Mode page. The marker lets redirect_on_default_login_urls()
+     * accept that POST without the custom login slug in the Referer. It never skips
+     * CAPTCHA Protection, which uses its own markers.
+     *
+     * Hooked to elementor/widget/render_content.
+     *
+     * @since 9.3.4
+     *
+     * @param string $content Widget HTML.
+     * @param mixed  $widget  Elementor widget instance.
+     * @return string
+     */
+    public function add_marker_to_elementor_login_widget( $content, $widget ) {
+        $common_methods = new Common_Methods();
+        if ( !$common_methods->is_elementor_frontend_login_widget( $widget ) ) {
+            return $content;
+        }
+        $marker = wp_nonce_field(
+            self::FRONTEND_LOGIN_NONCE_ACTION,
+            self::FRONTEND_LOGIN_NONCE_FIELD,
+            false,
+            false
+        );
+        return $common_methods->insert_into_elementor_login_form( $content, $marker, 'after_form_open' );
+    }
+
+    /**
+     * Whether the current POST carries a valid frontend login form marker.
+     *
+     * @since 9.3.4
+     *
+     * @return bool
+     */
+    public function has_valid_frontend_login_marker() {
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- this is the nonce check.
+        if ( !isset( $_POST[self::FRONTEND_LOGIN_NONCE_FIELD] ) || !is_string( $_POST[self::FRONTEND_LOGIN_NONCE_FIELD] ) ) {
+            return false;
+        }
+        $nonce = sanitize_text_field( wp_unslash( $_POST[self::FRONTEND_LOGIN_NONCE_FIELD] ) );
+        if ( '' === $nonce ) {
+            return false;
+        }
+        return false !== wp_verify_nonce( $nonce, self::FRONTEND_LOGIN_NONCE_ACTION );
+    }
+
+    /**
+     * Whether a login POST comes from a frontend login form that Change Login URL allows.
+     *
+     * That is a form on an "Allow login from" path (including `/` for the homepage),
+     * or a form carrying the frontend login marker, e.g. the Elementor Pro Login widget.
+     *
+     * @since 9.3.4
+     *
+     * @param string $http_referrer Referer URL of the request.
+     * @return bool
+     */
+    public function is_allowed_frontend_login_form( $http_referrer ) {
+        if ( $this->has_valid_frontend_login_marker() ) {
+            return true;
+        }
+        return $this->is_whitelisted_login_referer( $http_referrer );
+    }
+
+    /**
+     * Where to send a failed login from an allowed frontend login form.
+     *
+     * Back to the page with the form, with `login=failed` added, instead of
+     * wp-login.php?{custom-slug}, which would reveal the custom login slug.
+     * Falls back to the homepage when the Referer is not a safe redirect target.
+     *
+     * @since 9.3.4
+     *
+     * @param string $http_referrer Referer URL of the request.
+     * @return string
+     */
+    public function get_frontend_login_failed_url( $http_referrer ) {
+        $target = wp_validate_redirect( (string) $http_referrer, home_url( '/' ) );
+        if ( !is_string( $target ) || '' === $target ) {
+            $target = home_url( '/' );
+        }
+        return add_query_arg( 'login', 'failed', remove_query_arg( 'login', $target ) );
+    }
+
+    /**
      * Redirect to valid login URL when custom login slug is part of the request URL
      *
      * @link https://plugins.trac.wordpress.org/browser/admin-login-url-change/trunk/admin-login-url-change.php#L134
@@ -167,6 +268,10 @@ class Change_Login_URL {
      * @since 5.8.0
      */
     public function customize_login_url( $login_url, $redirect, $force_reauth ) {
+        // Keep the slug hidden on wp-login.php and wp-admin from visitors who have not used it.
+        if ( $this->should_hide_custom_login_slug() ) {
+            return $login_url;
+        }
         $options = get_option( ASENHA_SLUG_U );
         $custom_login_slug = $options['custom_login_slug'];
         $login_url = home_url( '/' . $custom_login_slug . '/' );
@@ -187,6 +292,9 @@ class Change_Login_URL {
      * @since 5.8.0
      */
     public function customize_lost_password_url( $lostpassword_url ) {
+        if ( $this->should_hide_custom_login_slug() ) {
+            return $lostpassword_url;
+        }
         $options = get_option( ASENHA_SLUG_U );
         $custom_login_slug = $options['custom_login_slug'];
         // return home_url( '/wp-login.php?backend&action=lostpassword' );
@@ -199,6 +307,9 @@ class Change_Login_URL {
      * @since 6.2.5
      */
     public function customize_register_url( $registration_url ) {
+        if ( $this->should_hide_custom_login_slug() ) {
+            return $registration_url;
+        }
         $options = get_option( ASENHA_SLUG_U );
         $custom_login_slug = $options['custom_login_slug'];
         // return home_url( '/wp-login.php?action=register&custom_login_slug' );
@@ -233,6 +344,67 @@ class Change_Login_URL {
             }
         }
         return $paths;
+    }
+
+    /**
+     * Whether "Allow login from" contains the homepage, entered as `/`.
+     *
+     * get_custom_login_whitelist_paths() drops such lines, because they are empty
+     * once surrounding slashes are trimmed. A line made only of slashes means
+     * "the homepage" (the home URL with no path below it).
+     *
+     * @since 9.3.4
+     *
+     * @return bool
+     */
+    public function is_homepage_whitelisted() {
+        $options = get_option( ASENHA_SLUG_U, array() );
+        if ( !is_array( $options ) || !isset( $options['custom_login_whitelist'] ) || !is_string( $options['custom_login_whitelist'] ) ) {
+            return false;
+        }
+        foreach ( preg_split( '/\\r\\n|\\r|\\n/', $options['custom_login_whitelist'] ) as $line ) {
+            $trimmed = trim( $line );
+            if ( '' !== $trimmed && '' === trim( $trimmed, '/' ) ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Path of a URL or request path relative to the home URL, without surrounding slashes.
+     *
+     * On a subfolder install (home URL https://example.com/site), the referer
+     * https://example.com/site/dashboard/ gives `dashboard`, and the homepage
+     * https://example.com/site/ gives an empty string. Query and fragment are ignored.
+     *
+     * @since 9.3.4
+     *
+     * @param string $url_or_path Absolute URL or path.
+     * @return string|null Relative path, '' for the homepage, or null when the path is outside the home path.
+     */
+    public function get_home_relative_path( $url_or_path ) {
+        $url_or_path = (string) $url_or_path;
+        $path = $url_or_path;
+        if ( preg_match( '#^https?://#i', $url_or_path ) ) {
+            $parsed_path = wp_parse_url( $url_or_path, PHP_URL_PATH );
+            $path = ( is_string( $parsed_path ) ? $parsed_path : '' );
+        }
+        $normalized = $this->normalize_request_path( $path );
+        $path_only = wp_parse_url( $normalized, PHP_URL_PATH );
+        $path_only = ( is_string( $path_only ) ? trim( $path_only, '/' ) : '' );
+        $home_path = wp_parse_url( home_url(), PHP_URL_PATH );
+        $home_path = ( is_string( $home_path ) ? trim( $this->normalize_request_path( $home_path ), '/' ) : '' );
+        if ( '' === $home_path ) {
+            return $path_only;
+        }
+        if ( $path_only === $home_path ) {
+            return '';
+        }
+        if ( 0 === strpos( $path_only, $home_path . '/' ) ) {
+            return trim( substr( $path_only, strlen( $home_path ) ), '/' );
+        }
+        return null;
     }
 
     /**
@@ -325,10 +497,14 @@ class Change_Login_URL {
     /**
      * Whether the Referer's first path segment is a real "Allow login from" path.
      *
-     * Empty segments never match. `wp-login.php` and `wp-signup.php` are never
-     * treated as whitelist paths, even if listed in the setting.
+     * The homepage matches only when `/` is listed (see is_homepage_whitelisted()).
+     * Other paths are matched by their first segment below the home URL, so
+     * subfolder installs work, and by the first segment of the full path, as
+     * before 9.3.4. `wp-login.php` and `wp-signup.php` are never treated as
+     * whitelist paths, even if listed in the setting.
      *
      * @since 9.1.3
+     * @since 9.3.4 Supports `/` for the homepage and subfolder installs.
      *
      * @param string $referer Absolute Referer URL.
      * @return bool
@@ -338,18 +514,30 @@ class Change_Login_URL {
         if ( '' === $referer ) {
             return false;
         }
+        $relative_path = $this->get_home_relative_path( $referer );
+        if ( '' === $relative_path && $this->is_homepage_whitelisted() ) {
+            return true;
+        }
         $whitelist = $this->get_custom_login_whitelist_paths();
         if ( empty( $whitelist ) ) {
             return false;
         }
-        $segment = $this->get_first_path_segment( $referer );
-        if ( '' === $segment ) {
-            return false;
+        $candidates = array();
+        if ( is_string( $relative_path ) ) {
+            $relative_segments = explode( '/', $relative_path );
+            $candidates[] = $relative_segments[0];
         }
-        if ( in_array( $segment, array('wp-login.php', 'wp-signup.php'), true ) ) {
-            return false;
+        // Backward compatibility: the first segment of the full path.
+        $candidates[] = $this->get_first_path_segment( $referer );
+        foreach ( array_unique( $candidates ) as $segment ) {
+            if ( '' === $segment || in_array( $segment, array('wp-login.php', 'wp-signup.php'), true ) ) {
+                continue;
+            }
+            if ( in_array( $segment, $whitelist, true ) ) {
+                return true;
+            }
         }
-        return in_array( $segment, $whitelist, true );
+        return false;
     }
 
     /**
@@ -533,6 +721,135 @@ class Change_Login_URL {
     }
 
     /**
+     * Whether a path has a given segment, e.g. `wp-admin` in `/blog/wp-admin/index.php`.
+     *
+     * @since 9.3.4
+     *
+     * @param string $url_input Normalized request URI.
+     * @param string $segment   Path segment to look for.
+     * @return bool
+     */
+    private function request_path_has_segment( $url_input, $segment ) {
+        $path = wp_parse_url( (string) $url_input, PHP_URL_PATH );
+        if ( !is_string( $path ) || '' === $path ) {
+            return false;
+        }
+        return in_array( $segment, explode( '/', trim( $path, '/' ) ), true );
+    }
+
+    /**
+     * Whether the current request is a front-end REST API request.
+     *
+     * REST_REQUEST is not defined yet on wp_loaded (it is set later, in
+     * rest_api_loaded() during parse_request), so the request is also detected
+     * by `?rest_route=` and by the REST prefix in the path.
+     *
+     * wp-login.php, wp-signup.php and wp-admin requests are never REST requests,
+     * whatever their query string or path info. Otherwise
+     * /wp-login.php?rest_route=/, /wp-login.php/wp-json/ and
+     * /wp-admin/?rest_route=/ would skip every Change Login URL check.
+     *
+     * @since 9.3.4
+     *
+     * @param string $url_input Normalized request URI (path plus query).
+     * @return bool
+     */
+    private function is_rest_api_request( $url_input ) {
+        $url_input = (string) $url_input;
+        if ( is_admin() || $this->is_wp_login_script_request() || $this->is_wp_signup_script_request() ) {
+            return false;
+        }
+        $request_path = (string) wp_parse_url( $url_input, PHP_URL_PATH );
+        // Fallback for servers where $pagenow / SCRIPT_FILENAME are unusual.
+        if ( false !== strpos( $request_path, 'wp-login.php' ) || false !== strpos( $request_path, 'wp-signup.php' ) || $this->request_path_has_segment( $url_input, 'wp-admin' ) ) {
+            return false;
+        }
+        if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+            return true;
+        }
+        if ( isset( $_GET['rest_route'] ) ) {
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only route detection
+            return true;
+        }
+        $rest_prefix = trim( rest_get_url_prefix(), '/' );
+        // typically 'wp-json'
+        if ( '' !== $rest_prefix && '' !== $request_path ) {
+            if ( false !== strpos( $request_path, '/' . $rest_prefix . '/' ) || '/' . $rest_prefix === rtrim( $request_path, '/' ) ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Whether the visitor has shown that they know the custom login slug.
+     *
+     * Used to decide whether login, lost password and registration URLs on
+     * wp-login.php and wp-admin may contain the slug.
+     *
+     * @since 9.3.4
+     *
+     * @return bool
+     */
+    public function visitor_knows_custom_login_slug() {
+        // wp_login_url() can run while plugins load, before pluggable.php defines
+        // is_user_logged_in() (e.g. in the Code Snippets Manager setup in bootstrap.php).
+        // The user is unknown then, so rely on the other checks below.
+        if ( function_exists( 'is_user_logged_in' ) && is_user_logged_in() ) {
+            return true;
+        }
+        $options = get_option( ASENHA_SLUG_U, array() );
+        $custom_login_slug = ( is_array( $options ) && isset( $options['custom_login_slug'] ) ? (string) $options['custom_login_slug'] : '' );
+        if ( '' === $custom_login_slug ) {
+            return false;
+        }
+        // The slug is in the request, e.g. wp-login.php?{slug}&redirect=false.
+        $request_uri = ( isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '' );
+        if ( false !== strpos( $request_uri, $custom_login_slug ) ) {
+            return true;
+        }
+        // The visitor comes from a page with the slug, e.g. a lost password form
+        // opened at wp-login.php?action=lostpassword&{slug}. Faking it requires knowing the slug.
+        $http_referrer = ( isset( $_SERVER['HTTP_REFERER'] ) ? sanitize_url( wp_unslash( $_SERVER['HTTP_REFERER'] ) ) : '' );
+        if ( '' !== $http_referrer && $this->is_same_site_referer( $http_referrer ) && false !== strpos( $http_referrer, $custom_login_slug ) ) {
+            return true;
+        }
+        // Reset password screens. WordPress renders them only after checking the
+        // reset key cookie, and otherwise redirects with site_url(), which these filters do not change.
+        if ( $this->is_wp_login_script_request() ) {
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only action detection
+            $action = ( isset( $_REQUEST['action'] ) && is_string( $_REQUEST['action'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['action'] ) ) : '' );
+            if ( in_array( $action, array('rp', 'resetpass'), true ) ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Whether login, lost password and registration URLs must not contain the custom login slug.
+     *
+     * True on wp-login.php and wp-admin (except AJAX and admin-post.php) when the
+     * visitor has not shown that they know the slug. Front-end links, e.g. the
+     * comment form's "log in" link, keep the slug.
+     *
+     * @since 9.3.4
+     *
+     * @return bool
+     */
+    public function should_hide_custom_login_slug() {
+        $request_uri_raw = ( isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '' );
+        $url_input = $this->normalize_request_path( $request_uri_raw );
+        $request_path = (string) wp_parse_url( $url_input, PHP_URL_PATH );
+        $is_login_screen = $this->is_wp_login_script_request() || false !== strpos( $request_path, 'wp-login.php' );
+        $is_admin_screen = is_admin() && !wp_doing_ajax() && !$this->is_request_script( 'admin-post.php' ) && false === strpos( $request_path, 'admin-post.php' );
+        if ( !$is_login_screen && !$is_admin_screen ) {
+            return false;
+        }
+        return !$this->visitor_knows_custom_login_slug();
+    }
+
+    /**
      * Destination for a logged-in visit to the custom login slug when no
      * Redirect After Login role rule applies.
      *
@@ -565,28 +882,12 @@ class Change_Login_URL {
         if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
             return;
         }
-        // Skip REST API requests. REST_REQUEST is not defined yet on wp_loaded
-        // (set later in rest_api_loaded during parse_request), so also detect by URL.
-        // Prevents blocking plugin auth endpoints whose path contains a "login" segment,
-        // e.g. /wp-json/storeengine/v1/auth/login.
-        if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
-            return;
-        }
-        if ( isset( $_GET['rest_route'] ) ) {
-            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only route detection
-            return;
-        }
         $request_uri_raw = ( isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '' );
         $url_input = $this->normalize_request_path( $request_uri_raw );
-        $request_path_for_rest = (string) wp_parse_url( $url_input, PHP_URL_PATH );
-        $rest_prefix = trim( rest_get_url_prefix(), '/' );
-        // typically 'wp-json'
-        if ( '' !== $rest_prefix && '' !== $request_path_for_rest ) {
-            $rest_prefix_slash = '/' . $rest_prefix . '/';
-            $rest_prefix_exact = '/' . $rest_prefix;
-            if ( false !== strpos( $request_path_for_rest, $rest_prefix_slash ) || $rest_prefix_exact === rtrim( $request_path_for_rest, '/' ) ) {
-                return;
-            }
+        // Skip front-end REST API requests, e.g. /wp-json/storeengine/v1/auth/login.
+        // Never skips wp-login.php, wp-signup.php or wp-admin requests.
+        if ( $this->is_rest_api_request( $url_input ) ) {
+            return;
         }
         $options = get_option( ASENHA_SLUG_U );
         $custom_login_slug = $options['custom_login_slug'];
@@ -613,8 +914,9 @@ class Change_Login_URL {
                 exit;
             } elseif ( !empty( $http_referrer ) && false === strpos( $http_referrer, $custom_login_slug ) ) {
                 // The referrer URL does not contain the custom login slug. Could be an attempt to login via cURL POST.
-                if ( $this->is_whitelisted_login_referer( $http_referrer ) ) {
-                    // Do nothing. i.e. do not redirect to /not_found/ as this contains a URL keyword that's been exlucded from redirection
+                if ( $this->is_allowed_frontend_login_form( $http_referrer ) ) {
+                    // Do nothing. i.e. do not redirect to /not_found/. The form is on an "Allow login from" path
+                    // (or the homepage, entered as /), or carries the frontend login marker, e.g. the Elementor Pro Login widget.
                 } else {
                     wp_safe_redirect( home_url( $redirect_slug . '/' ), 302 );
                     exit;
@@ -676,7 +978,7 @@ class Change_Login_URL {
                 wp_safe_redirect( home_url( $redirect_slug . '/' ), 302 );
                 exit;
             } elseif ( $is_wp_login_request ) {
-                if ( isset( $_GET['action'] ) && ('logout' == $_GET['action'] || 'rp' == $_GET['action'] || 'resetpass' == $_GET['action']) || isset( $_GET['checkemail'] ) && ('confirm' == $_GET['checkemail'] || 'registered' == $_GET['checkemail']) || isset( $_GET['interim-login'] ) && '1' == $_GET['interim-login'] || 'success' == $interim_login || isset( $_GET['redirect_to'] ) && isset( $_GET['reauth'] ) && false !== strpos( $url_input, 'comment' ) ) {
+                if ( isset( $_GET['action'] ) && ('logout' == $_GET['action'] || 'rp' == $_GET['action'] || 'resetpass' == $_GET['action']) || isset( $_GET['checkemail'] ) && ('confirm' == $_GET['checkemail'] || 'registered' == $_GET['checkemail']) || isset( $_GET['interim-login'] ) && '1' == $_GET['interim-login'] || 'success' == $interim_login ) {
                     // When we're logging out, inside the reset password flow, inside the registration flow or within the interim login flow
                     // e.g. https://www.example.com/wp-login.php?action=logout&_wpnonce=49bb818269
                     // e.g. https://www.example.com/wp-login.php?action=rp --> reset password
@@ -684,7 +986,9 @@ class Change_Login_URL {
                     // e.g. https://www.example.com/wp-login.php?checkmail=confirm --> reset password
                     // e.g. https://www.example.com/wp-login.php?checkmail=registered --> register account
                     // e.g. https://www.example.com/wp-login.php?interim-login=1&wp_lang=en_US
-                    // e.g. https://www.example.com/wp-admin/comment.php?action=approve&c=14#wpbody-content --> https://www.example.com/wp-login.php?redirect_to=https%3A%2F%2Fwww.example.com%2Fwp-admin%2Fcomment.php%3Faction%3Dapprove%26c%3D14&reauth=1#wpbody-content --> comment approve
+                    // Comment moderation links (wp-login.php?redirect_to=...comment.php...&reauth=1) are no longer
+                    // allowed without the slug (since 9.3.4). Logged-out visits to /wp-admin/ are redirected
+                    // before auth_redirect() builds that URL, so it only exposed the default login form.
                     // Do nothing.. proceed...
                 } elseif ( isset( $_GET['action'] ) && ('lostpassword' == $_GET['action'] || 'register' == $_GET['action']) ) {
                     // When resetting password or registering an account
@@ -752,9 +1056,17 @@ class Change_Login_URL {
                 $request_uri = ( isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '' );
                 $http_referrer = ( isset( $_SERVER['HTTP_REFERER'] ) ? sanitize_url( wp_unslash( $_SERVER['HTTP_REFERER'] ) ) : '' );
                 $has_custom_slug = '' !== $custom_login_slug && (false !== strpos( $request_uri, $custom_login_slug ) || false !== strpos( $http_referrer, $custom_login_slug ));
-                if ( !$has_custom_slug && !$this->is_whitelisted_login_referer( $http_referrer ) ) {
+                $is_frontend_login_form = !$has_custom_slug && $this->is_allowed_frontend_login_form( $http_referrer );
+                if ( !$has_custom_slug && !$is_frontend_login_form ) {
                     $redirect_slug = 'not_found';
                     wp_safe_redirect( home_url( $redirect_slug . '/' ), 302 );
+                    exit;
+                }
+                if ( $is_frontend_login_form ) {
+                    // Clear the pending Disable User Account flag, as the redirect below does not use it.
+                    Disable_User_Account::consume_pending_disabled_login_redirect_user_id();
+                    // Send the visitor back to the page with the login form, so the custom login slug stays hidden.
+                    wp_safe_redirect( $this->get_frontend_login_failed_url( $http_referrer ), 302 );
                     exit;
                 }
                 $is_disabled_account = false;

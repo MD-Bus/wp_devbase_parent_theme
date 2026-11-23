@@ -1058,6 +1058,9 @@ html[dir=rtl] .acf-field-object.open > .handle {
 .acf-admin-page .acf-switch.-on .acf-switch-slider {
   left: 20px;
 }
+html[dir=rtl] .acf-admin-page .acf-switch.-on .acf-switch-slider {
+  right: 20px;
+}
 .acf-admin-page .acf-switch .acf-switch-off,
 .acf-admin-page .acf-switch .acf-switch-on {
   visibility: hidden;
@@ -2973,10 +2976,16 @@ html[dir=rtl] .acf-field-object.open > .handle {
     border: none;
     flex-direction: column;
   }
-  .acf-field {
+  .acf-field-settings-split .acf-field {
     border-top-width: 1px;
     border-top-style: solid;
     border-top-color: #EAECF0;
+  }
+  .acf-field-settings-split .acf-field:nth-child(2n) {
+    border-left: none;
+  }
+  #acf-field-group-fields.hide-tabs .acf-field-settings-split .acf-field + .acf-field {
+    border-top: none;
   }
 }
 /*----------------------------------------------------------------------------

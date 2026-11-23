@@ -40,6 +40,11 @@ class Admin_Site_Enhancements {
         add_action( 'admin_init', [$settings, 'register_sections_fields'] );
         // Move admin caches out of the autoloaded extra option before settings registration reads it.
         add_action( 'admin_init', array('ASENHA\\Classes\\Common_Methods', 'migrate_admin_cache'), 1 );
+        // Move role history and snapshots out of the autoloaded extra option before settings registration reads it.
+        add_action( 'admin_init', static function () {
+            require_once ASENHA_PATH . 'includes/user-role-manager/class-role-manager-storage.php';
+            \ASENHA\UserRoleManager\Role_Manager_Storage::migrate_role_archive();
+        }, 1 );
         // Suppress all notices on the plugin's main page. Then add notification for successful settings update.
         add_action( 'admin_notices', 'asenha_suppress_add_notices', 5 );
         add_action( 'all_admin_notices', 'asenha_suppress_generic_notices', 5 );
@@ -543,6 +548,13 @@ class Admin_Site_Enhancements {
                 add_action( 'wp_loaded', [$change_login_url, 'redirect_on_default_login_urls'] );
                 add_action( 'wp_login_failed', [$change_login_url, 'redirect_to_custom_login_url_on_login_fail'] );
                 add_filter( 'login_message', [$change_login_url, 'add_failed_login_message'] );
+                // Let the Elementor Pro Login widget's form post to wp-login.php from any page
+                add_filter(
+                    'elementor/widget/render_content',
+                    [$change_login_url, 'add_marker_to_elementor_login_widget'],
+                    10,
+                    2
+                );
                 // No need to modify logout_url or perform redirect on logout
                 // The customized login URL is already being returned after logout
                 // add_action( 'wp_logout', [ $change_login_url, 'redirect_to_custom_login_url_on_logout_success' ] );
@@ -1007,6 +1019,17 @@ class Admin_Site_Enhancements {
             if ( array_key_exists( 'disable_user_email_notification_after_password_change', $options ) && $options['disable_user_email_notification_after_password_change'] ) {
                 add_filter( 'send_password_change_email', '__return_false' );
             }
+            // Disable the random content redirect, i.e. the /random/ URL added in WordPress 7.2
+            // https://make.wordpress.org/core/2026/11/05/your-content-is-going-to-get-more-random/
+            if ( array_key_exists( 'disable_random_content_redirect', $options ) && $options['disable_random_content_redirect'] ) {
+                add_filter( 'wp_enable_random_content_redirect', '__return_false', 0 );
+            }
+        }
+        // Rebuild rewrite rules after the random content redirect state changed. Registered outside the
+        // module check above, so the /random/ rules are also restored when the module or option is turned off.
+        if ( !empty( $options['disable_random_content_flush_rewrite_rules_needed'] ) ) {
+            $disable_smaller_components_flush = new ASENHA\Classes\Disable_Smaller_Components();
+            add_action( 'init', [$disable_smaller_components_flush, 'maybe_flush_random_content_rewrite_rules'], 9999 );
         }
         // =================================================================
         // SECURITY
@@ -1234,6 +1257,10 @@ class Admin_Site_Enhancements {
             // for when editing other user's profile
             add_action( 'user_register', [$multiple_user_roles, 'save_roles_assignment'] );
             // new user creation
+        }
+        // User Role Manager
+        if ( array_key_exists( 'user_role_manager', $options ) && $options['user_role_manager'] ) {
+            require_once ASENHA_PATH . 'includes/user-role-manager/user-role-manager.php';
         }
         // Image Sizes Panel
         if ( array_key_exists( 'image_sizes_panel', $options ) && $options['image_sizes_panel'] ) {

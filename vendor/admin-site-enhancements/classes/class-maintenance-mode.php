@@ -99,6 +99,10 @@ class Maintenance_Mode {
         if ( $common_methods->is_novamira_auth_request() || $common_methods->is_mcp_toolkit_auth_request() ) {
             return true;
         }
+        // The User Role Manager REST namespace stays reachable. Its routes enforce capability, nonce and same-origin checks.
+        if ( $common_methods->is_user_role_manager_rest_request() ) {
+            return true;
+        }
         if ( $this->is_user_allowed_frontend_access() ) {
             return true;
         }

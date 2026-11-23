@@ -168,6 +168,10 @@ function scf_rest_sanitize_user_data( $formatted_value, $raw_value, $field ) {
 	if ( 'flexible_content' === $field['type'] ) {
 		$raw_value = is_array( $raw_value ) ? $raw_value : array();
 
+		// Resolve each row's layout the way the field formats it: by the stored
+		// layout name, with the last layout winning when names repeat.
+		$layouts = array_column( $field['layouts'] ?? array(), 'sub_fields', 'name' );
+
 		foreach ( $formatted_value as $row_index => $formatted_row ) {
 			if ( ! is_array( $formatted_row ) ) {
 				continue;
@@ -176,20 +180,15 @@ function scf_rest_sanitize_user_data( $formatted_value, $raw_value, $field ) {
 			$raw_row     = array_key_exists( $row_index, $raw_value ) && is_array( $raw_value[ $row_index ] )
 				? $raw_value[ $row_index ]
 				: array();
-			$layout_name = $formatted_row['acf_fc_layout'] ?? $raw_row['acf_fc_layout'] ?? '';
+			$layout_name = $raw_row['acf_fc_layout'] ?? '';
 
-			foreach ( $field['layouts'] ?? array() as $layout ) {
-				if ( ! isset( $layout['name'] ) || $layout_name !== $layout['name'] ) {
-					continue;
-				}
-
+			if ( isset( $layouts[ $layout_name ] ) ) {
 				$formatted_value[ $row_index ] = scf_rest_sanitize_user_sub_fields(
 					$formatted_row,
 					$raw_row,
-					$layout['sub_fields'] ?? array(),
+					$layouts[ $layout_name ],
 					'_name'
 				);
-				break;
 			}
 		}
 	}
@@ -431,12 +430,19 @@ function acf_rest_reduce_reference( $formatted_value, $raw_value, $field ) {
  * attachment array in standard-format mode. The other variants (`dashicons`,
  * `url`, `svg`) carry user-provided data with no permission gate needed.
  *
+ * With the "Icon String" return format (the default), the formatted value is
+ * a string rather than an array; for `media_library` icons it is the
+ * attachment URL from `wp_get_attachment_url()`. In that case the type and
+ * attachment ID are read from the stored raw value instead.
+ *
  * When the type is `media_library` and the caller cannot read the target
  * attachment, the field is reduced to the same shape
- * `?acf_format=light` would return: `{ type: 'media_library', value: <int> }`.
- * Everything else passes through unchanged.
+ * `?acf_format=light` would return: `{ type: 'media_library', value: <int> }`,
+ * whatever the field's return format. Everything else passes through
+ * unchanged.
  *
  * @since SCF 6.9.6
+ * @since SCF 6.9.10 Media Library icons using the string return format are also reduced.
  *
  * @param mixed $formatted_value The formatted field value.
  * @param mixed $raw_value       The raw field value.
@@ -445,7 +451,25 @@ function acf_rest_reduce_reference( $formatted_value, $raw_value, $field ) {
  */
 function acf_rest_reduce_icon_picker_reference( $formatted_value, $raw_value, $field ) {
 	if ( ! is_array( $formatted_value ) ) {
-		return $formatted_value;
+		// String return format: a media_library icon is formatted to the bare attachment URL, so gate it on the stored ID.
+		if (
+			! is_array( $raw_value ) ||
+			'media_library' !== ( $raw_value['type'] ?? null ) ||
+			! isset( $raw_value['value'] ) ||
+			! is_numeric( $raw_value['value'] )
+		) {
+			return $formatted_value;
+		}
+
+		$target_id = (int) $raw_value['value'];
+		if ( $target_id <= 0 || acf_rest_reference_is_exposable( $target_id, $field ) ) {
+			return $formatted_value;
+		}
+
+		return array(
+			'type'  => 'media_library',
+			'value' => $target_id,
+		);
 	}
 
 	$type = $formatted_value['type'] ?? ( is_array( $raw_value ) ? $raw_value['type'] ?? null : null );
@@ -563,6 +587,21 @@ function acf_rest_reference_is_exposable( $target_id, $field ) {
 function scf_rest_format_standard_value( $value, $post_id, $field ) {
 	$value_formatted = acf_format_value( $value, $post_id, $field );
 	$value_formatted = scf_rest_sanitize_user_data( $value_formatted, $value, $field );
+
+	// A full user object never reaches the response, whatever the field definitions say.
+	if ( $value_formatted instanceof WP_User ) {
+		$value_formatted = (int) $value_formatted->ID;
+	} elseif ( is_array( $value_formatted ) ) {
+		array_walk_recursive(
+			$value_formatted,
+			static function ( &$item ) {
+				if ( $item instanceof WP_User ) {
+					$item = (int) $item->ID;
+				}
+			}
+		);
+	}
+
 	return acf_rest_sanitize_reference_data( $value_formatted, $value, $field );
 }
 

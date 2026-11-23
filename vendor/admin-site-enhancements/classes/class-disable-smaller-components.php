@@ -288,4 +288,33 @@ class Disable_Smaller_Components {
             // Keep ownership flag so a later writable request can still reverse ASE's write.
         }
     }
+
+    /**
+     * Rebuild the stored rewrite rules after the "random content redirect" option
+     * (the /random/ URL added in WordPress 7.2) was turned on or off.
+     *
+     * Runs on init (late priority) so all CPTs and taxonomies are registered, and on the request
+     * after the settings save, so the wp_enable_random_content_redirect filter reflects the new state.
+     *
+     * @since 9.3.4
+     */
+    public function maybe_flush_random_content_rewrite_rules() {
+        $options = get_option( ASENHA_SLUG_U );
+
+        if ( ! is_array( $options ) ) {
+            return;
+        }
+
+        if ( ! isset( $options['disable_random_content_flush_rewrite_rules_needed'] )
+            || true !== $options['disable_random_content_flush_rewrite_rules_needed']
+        ) {
+            return;
+        }
+
+        flush_rewrite_rules( false );
+
+        $options['disable_random_content_flush_rewrite_rules_needed'] = false;
+        update_option( ASENHA_SLUG_U, $options, true );
+    }
+
 }

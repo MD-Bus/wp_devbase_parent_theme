@@ -602,21 +602,21 @@
         },
         {
             "name": "wp-plugin/admin-site-enhancements",
-            "version": "9.3.3",
-            "version_normalized": "9.3.3.0",
+            "version": "9.4.0",
+            "version_normalized": "9.4.0.0",
             "source": {
                 "type": "svn",
                 "url": "https://plugins.svn.wordpress.org/admin-site-enhancements/",
-                "reference": "tags/9.3.3"
+                "reference": "tags/9.4.0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/admin-site-enhancements.9.3.3.zip"
+                "url": "https://downloads.wordpress.org/plugin/admin-site-enhancements.9.4.0.zip"
             },
             "require": {
                 "composer/installers": "~1.0|~2.0"
             },
-            "time": "2026-11-16T00:21:46+00:00",
+            "time": "2026-11-23T02:07:22+00:00",
             "type": "wordpress-plugin",
             "installation-source": "dist",
             "notification-url": "https://wp-packages.org/downloads",
@@ -670,21 +670,21 @@
         },
         {
             "name": "wp-plugin/secure-custom-fields",
-            "version": "6.9.9",
-            "version_normalized": "6.9.9.0",
+            "version": "6.9.10",
+            "version_normalized": "6.9.10.0",
             "source": {
                 "type": "svn",
                 "url": "https://plugins.svn.wordpress.org/secure-custom-fields/",
-                "reference": "tags/6.9.9"
+                "reference": "tags/6.9.10"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/secure-custom-fields.6.9.9.zip"
+                "url": "https://downloads.wordpress.org/plugin/secure-custom-fields.6.9.10.zip"
             },
             "require": {
                 "composer/installers": "~1.0|~2.0"
             },
-            "time": "2026-11-11T15:25:06+00:00",
+            "time": "2026-11-20T15:20:38+00:00",
             "type": "wordpress-plugin",
             "installation-source": "dist",
             "notification-url": "https://wp-packages.org/downloads",

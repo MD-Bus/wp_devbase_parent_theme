@@ -1345,6 +1345,19 @@ class Settings_Fields_Render {
         if ( in_array( $field_id, $json_option_field_ids, true ) ) {
             $field_option_value = $this->normalize_admin_menu_json_option_for_output( $field_option_value );
         }
+        // These fields are objects keyed by ID in the organizer's JS. An empty
+        // value stored as "[]" would load as a JS array, and keyed entries added
+        // to it are dropped by JSON.stringify(), so output it as "{}".
+        $json_object_field_ids = array(
+            'custom_menu_new_separators',
+            'custom_menu_always_hidden',
+            'custom_submenu_always_hidden',
+            'custom_menu_new_items',
+            'custom_menu_nested_parents'
+        );
+        if ( in_array( $field_id, $json_object_field_ids, true ) && is_string( $field_option_value ) && '[]' === trim( $field_option_value ) ) {
+            $field_option_value = '{}';
+        }
         echo '<input type="hidden" id="' . esc_attr( $field_name ) . '" class="asenha-subfield-text" name="' . esc_attr( $field_name ) . '" value="' . esc_attr( $field_option_value ) . '">';
     }
 

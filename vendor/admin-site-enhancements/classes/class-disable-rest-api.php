@@ -30,10 +30,14 @@ class Disable_REST_API {
         // Ref: https://developer.wordpress.org/reference/hooks/rest_authentication_errors/#comment-6463
         $route = ltrim( $GLOBALS['wp']->query_vars['rest_route'], '/' );
         $route = rtrim( $route, '/' );
+        // The User Role Manager REST namespace is always reachable while the module is enabled.
+        // Its routes enforce capability, nonce and same-origin checks themselves.
+        $common_methods = new Common_Methods();
+        $is_user_role_manager_route = $common_methods->is_user_role_manager_rest_request();
         if ( empty( $route ) ) {
             // This is when visiting /wp-json root
             $allow_rest_api_access = false;
-        } elseif ( false !== strpos( $route, 'altcha/v1' ) || false !== strpos( $route, 'two-factor/1.0' ) || false !== strpos( $route, 'novamira/v1/oauth' ) || false !== strpos( $route, 'mcp/novamira' ) || ( new Common_Methods() )->is_mcp_toolkit_auth_request() || $this->is_mcp_toolkit_memory_rest_route( $route ) || in_array( 'contact-form-7/wp-contact-form-7.php', get_option( 'active_plugins', array() ) ) && false !== strpos( $route, 'contact-form-7/' ) || in_array( 'the-events-calendar/the-events-calendar.php', get_option( 'active_plugins', array() ) ) && false !== strpos( $route, 'tribe/' ) ) {
+        } elseif ( $is_user_role_manager_route || false !== strpos( $route, 'altcha/v1' ) || false !== strpos( $route, 'two-factor/1.0' ) || false !== strpos( $route, 'novamira/v1/oauth' ) || false !== strpos( $route, 'mcp/novamira' ) || ( new Common_Methods() )->is_mcp_toolkit_auth_request() || $this->is_mcp_toolkit_memory_rest_route( $route ) || in_array( 'contact-form-7/wp-contact-form-7.php', get_option( 'active_plugins', array() ) ) && false !== strpos( $route, 'contact-form-7/' ) || in_array( 'the-events-calendar/the-events-calendar.php', get_option( 'active_plugins', array() ) ) && false !== strpos( $route, 'tribe/' ) ) {
             $allow_rest_api_access = true;
         } else {
         }

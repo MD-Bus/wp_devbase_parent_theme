@@ -671,6 +671,15 @@ class Settings_Sanitization {
             $options['disable_admin_email_notification_after_password_change'] = false;
         }
         $options['disable_admin_email_notification_after_password_change'] = ( 'on' == $options['disable_admin_email_notification_after_password_change'] ? true : false );
+        if ( !isset( $options['disable_random_content_redirect'] ) ) {
+            $options['disable_random_content_redirect'] = false;
+        }
+        $options['disable_random_content_redirect'] = ( 'on' == $options['disable_random_content_redirect'] ? true : false );
+        // The /random/ URL (WP 7.2+) is disabled only when both the module and the option are on.
+        // When that effective state changes, the stored rewrite rules must be rebuilt on the next request.
+        $random_content_was_disabled = !empty( $existing_options['disable_smaller_components'] ) && !empty( $existing_options['disable_random_content_redirect'] );
+        $random_content_is_disabled = $options['disable_smaller_components'] && $options['disable_random_content_redirect'];
+        $options['disable_random_content_flush_rewrite_rules_needed'] = ( $random_content_was_disabled !== $random_content_is_disabled ? true : !empty( $options['disable_random_content_flush_rewrite_rules_needed'] ) );
         // =================================================================
         // SECURITY
         // =================================================================
@@ -998,6 +1007,11 @@ class Settings_Sanitization {
             $options['contact_form_use_theme_styles'] = false;
         }
         $options['contact_form_use_theme_styles'] = ( 'on' == $options['contact_form_use_theme_styles'] ? true : false );
+        // User Role Manager
+        if ( !isset( $options['user_role_manager'] ) ) {
+            $options['user_role_manager'] = false;
+        }
+        $options['user_role_manager'] = ( 'on' == $options['user_role_manager'] ? true : false );
         // Multiple User Roles
         if ( !isset( $options['multiple_user_roles'] ) ) {
             $options['multiple_user_roles'] = false;

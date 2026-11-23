@@ -7,6 +7,7 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'SCF\\Site_Health\\' => array($baseDir . '/src/Site_Health'),
+    'SCF\\Settings_Page\\' => array($baseDir . '/src/Settings_Page'),
     'SCF\\Meta\\' => array($baseDir . '/includes/Meta'),
     'SCF\\Forms\\' => array($baseDir . '/includes/forms'),
     'SCF\\Fields\\FlexibleContent\\' => array($baseDir . '/includes/fields/FlexibleContent'),

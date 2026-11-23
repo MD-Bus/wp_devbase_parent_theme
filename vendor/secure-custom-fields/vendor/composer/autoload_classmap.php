@@ -73,6 +73,7 @@ return array(
     'SCF\\Datastore\\Revisions' => $baseDir . '/includes/Datastore/Revisions.php',
     'SCF\\Fields\\FlexibleContent\\Layout' => $baseDir . '/includes/fields/FlexibleContent/Layout.php',
     'SCF\\Fields\\FlexibleContent\\Render' => $baseDir . '/includes/fields/FlexibleContent/Render.php',
+    'SCF\\Forms\\Option_Save_Guard' => $baseDir . '/includes/forms/Option_Save_Guard.php',
     'SCF\\Forms\\WC_Order' => $baseDir . '/includes/forms/WC_Order.php',
     'SCF\\Meta\\Comment' => $baseDir . '/includes/Meta/Comment.php',
     'SCF\\Meta\\MetaLocation' => $baseDir . '/includes/Meta/MetaLocation.php',
@@ -81,6 +82,7 @@ return array(
     'SCF\\Meta\\Term' => $baseDir . '/includes/Meta/Term.php',
     'SCF\\Meta\\User' => $baseDir . '/includes/Meta/User.php',
     'SCF\\Meta\\WooOrder' => $baseDir . '/includes/Meta/WooOrder.php',
+    'SCF\\Settings_Page\\Settings_Page' => $baseDir . '/src/Settings_Page/Settings_Page.php',
     'SCF\\Site_Health\\AI_Usage' => $baseDir . '/src/Site_Health/AI_Usage.php',
     'SCF\\Site_Health\\Site_Health' => $baseDir . '/src/Site_Health/Site_Health.php',
 );
