@@ -1525,6 +1525,11 @@ function asenha_admin_scripts(  $hook_suffix  ) {
  * @since 7.11.0
  */
 function asenha_block_editor_scripts() {
+    // Front-end block editors (e.g. forum / membership plugins) may fire
+    // enqueue_block_editor_assets outside wp-admin, where the screen API is not loaded.
+    if ( ! is_admin() || ! function_exists( 'get_current_screen' ) ) {
+        return;
+    }
     $current_screen = get_current_screen();
     // Only load on post edit / new post block editor screens.
     if ( !$current_screen instanceof \WP_Screen || 'post' !== $current_screen->base || !method_exists( $current_screen, 'is_block_editor' ) || !$current_screen->is_block_editor() ) {

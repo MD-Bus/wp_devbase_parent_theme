@@ -4,8 +4,8 @@ Contributors: qriouslad
 Donate link: https://bowo.io/asenha-sp-rdm  
 Tags: enhancements, tweaks, optimizations, tools  
 Requires at least: 4.6  
-Tested up to: 7.1.4  
-Stable tag: 9.3.3  
+Tested up to: 7.1.5  
+Stable tag: 9.4.0  
 Requires PHP: 5.6  
 License: GPLv2 or later  
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -42,8 +42,8 @@ _"ASE is an amazing plugin! **Time and money saver**. Thank you!"_ ~[Iulian Baci
 
 ### FEATURES & MODULES
 
-**80 modules** in total:  
-**62 free modules** (34 has Pro features) | **18 Pro modules**
+**81 modules** in total:  
+**63 free modules** (35 has Pro features) | **18 Pro modules**
 
 [**See all features >>**](https://www.wpase.com/features/)
 
@@ -147,6 +147,7 @@ _"ASE is an amazing plugin! **Time and money saver**. Thank you!"_ ~[Iulian Baci
 * **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Form Builder**. Drag-and-drop forms with 33 field types (incl. NPS, Likert, Matrix and CAPTCHA), custom styles, multi-column layouts, conditional logic, multi-step, notifications, entries and webhooks to Zapier, n8n, etc.
 * **[[ASE Pro](https://www.wpase.com/rdme-to-web)] File Manager**. Browse, manage and edit files and folders.
 * **[[ASE Pro](https://www.wpase.com/rdme-to-web)] Local User Avatar**. Use any media library image as a user avatar.
+* **User Role Manager**. Create, edit, clone and delete roles and their capabilities, with lockout protection. [ASE Pro](https://www.wpase.com/rdme-to-web) adds custom capabilities, per-user overrides, undo history, audits and migration from other role plugins.
 * **Multiple User Roles**. Assign multiple roles to a user.
 * **Image Sizes Panel**. List and link all sizes of an image in the media library. [ASE Pro](https://www.wpase.com/rdme-to-web) adds a copy URL button.
 * **View Admin as Role**. View the admin and site as a non-administrator role.
@@ -210,45 +211,34 @@ ASE does not officially support multisite. Please use at your own risk. That sai
 
 ## Changelog
 
-**Admin and Site Enhancements (ASE) v1.0.0** was released on October 17, 2022. Since then, there have been **93 _major_ releases** (e.g. 1.1.0 ) and **215 _minor_ releases** (e.g. 4.9.1), for a **total of 308 releases**.
+**Admin and Site Enhancements (ASE) v1.0.0** was released on October 17, 2022. Since then, there have been **94 _major_ releases** (e.g. 1.1.0 ) and **215 _minor_ releases** (e.g. 4.9.1), for a **total of 309 releases**.
 
 Each **_major release_** usually corresponds with the addition of one new module/feature. Each module/feature usually is the equivalent of one (or more) single-purpose plugin. Each **_minor release_** usually contain one or more bugfix or improvements to existing modules/features.
 
 [**Upgrade to ASE Pro**](https://www.wpase.com/chnlg-to-web). **Currently on YEAR END SALE, 20% discount on new license and license upgrade**. Lifetime Deal (LTD) available.
 
-### 9.3.3 (2026.11.16) - ASE Free and Pro
+### 9.4.0 (unreleased) - ASE Free and Pro
 
-* **[IMPROVED in Free and Pro] Utilities >> View Admin as Role**: Screen layout changes made while viewing as another role now only last until you switch back. This covers dashboard widgets and meta box order, collapsed and hidden boxes, hidden list columns and the column count. The administrator's own layout on the dashboard and edit screens stays as it was. Props to [@lucasp1](https://wordpress.org/support/users/lucasp1/) for [reporting](https://wordpress.org/support/topic/view-admin-as-role-switch-back-and-recovery-url-stop-working-after-opening-the/#post-19063058) the issue in detail.
+* **[ADDED in Free and Pro] Utilities >> User Role Manager**: Create, edit, clone and delete user roles and manage capabilities from Users >> Roles, with essentials-first editing, capabilities grouped by area, batch select / deselect and lockout protection. **[ADDED in Pro]**: the All capabilities view (explicit deny, filters and batch actions), adding custom capabilities, two-role compare, undo history with snapshots, per-user capability overrides, bulk actions, permissions audit, roles JSON export / import (in Enhancements >> Export | Import), and a migration wizard for User Role Editor, Members, PublishPress Capabilities and WPFront User Role Editor.
 
-* **[IMPROVED in Free and Pro] Log In/Out & Register >> Change Login URL**: The custom login URL now keeps the query parameters other plugins add to the login URL when it hands over to the login form. This fixes FluentAuth's two-factor authentication step, where the email verification code field was missing and users could not finish logging in. Props to [@berthold1](https://wordpress.org/support/users/berthold1/) for [reporting](https://wordpress.org/support/topic/compatibility-issue-ase-custom-login-url-and-fluentauth-2fa/) the issue.
+* **[IMPROVED in Free and Pro] Disable Components >> Disable Smaller Components**: added an option to disable the [random content redirect](https://make.wordpress.org/core/2026/11/05/your-content-is-going-to-get-more-random/) (the /random/ URL) introduced in WordPress 7.2. Props to Ed H. for prompting this improvement.
 
-* **[IMPROVED in Free] Disable Components >> Disable All Updates**: Added an admin bar status and switcher to quickly re-enable updates and re-disable it. Props to [Edward B.](https://wordpress.org/support/users/edviser/) for [suggesting](https://wordpress.org/support/topic/suggestion-for-disble-updates-feature/) this.
+* **[FIXED in Free and Pro] Change Login URL / CAPTCHA Protection**: Change Login URL now recognizes logins from the Elementor Pro Login widget on any page and CAPTCHA Protection now adds the selected CAPTCHA (ALTCHA, reCAPTCHA or Turnstile) to the widget when the "Login form" location is enabled. Props to Nils L. for reporting the issue in great detail and facilitating the troubleshooting process.
 
-* **[IMPROVED and FIXED in Pro] Admin Interface >> Admin Menu Organizer**: 
-  * Custom menu separators and section headers can now take a typed color in addition to the color picker. Accepted values are hex, rgb() / rgba(), hsl() / hsla(), named colors and CSS variables.
-  * Hex backgrounds keep automatic light or dark title text, including 3-digit hex such as #999. Other background colors show a Text color choice of Light or Dark.
-  * Allow parent menu items to be dragged / repositioned as a submenu of another parent menu, effectively creating a three-level menu structure. Props to Geert L., Naazim M., Rick A., Jarosław K., Nadja v.M. and Benjamin v.d.B.
+* **[FIXED in Free and Pro] Log In/Out & Register >> Change Login URL**: hardened REST API detection to prevent skippage of the custom login URL checks, and hid the custom login slug in login, lost-password and register links on wp-login.php and wp-admin for visitors who haven't opened the custom login URL. Props to Kim v.D. for reporting the issue in detail.
 
-* **[IMPROVED and FIXED in Pro] Utilities >> Form Builder**: Implemented the option to add BCC email addresses for email notification. Props to Simon for suggesting this improvement.
+* **[IMPROVED in Pro] Utilities >> Site Backup and Migration**: New "Site Backup and Migration" section under "Export | Import" in ASE settings to copy backup templates, remote locations and policies to another site. Props to Uli L. for prompting this improvement.
 
-* **[FIXED in Pro] Admin Interface >> Admin Columns Manager**: 
-  * Fixed a regression introduced in v9.2.1 causing columns for custom fields to show blank values.
-  * Sorting by columns that other plugins already made sortable now works again. For example, EventON's "Start Date" and "End Date" columns no longer fall back to the wrong order when Admin Columns Manager is enabled. Props to Markus F. for reporting the issue in detail and facilitating the troubleshooting process.
-  * Taxonomy columns that other plugins add and fill in themselves no longer show each term twice. For example, EventON's "Location", "Organizer" and "Event Type" columns now list their terms only once when Admin Columns Manager is enabled. Props to Markus F. for reporting the issue.
-  * Fixed an issue where a column set as the default sort did not take effect on sites where WordPress is installed in a subdirectory, e.g. example.com/sub/. The list table now correctly opens in the default sort order. Props to Markus F. for reporting the issue.
+* **[IMPROVED in Pro] Content Management >> Custom Content Types >> Custom Post Types**. Props to Stijn V. for prompting the following improvements:
+  * Menu icon preview now works when copy pasting a custom `data:image/svg+xml;base64` value, i.e. using an icon not part of the preset icons.
+  * The Frntend tab now are in sync between the create and edit screens regarding field visibility, i.e. which field shows up on page load when other field is checked/shown.
 
-* **[FIXED in Pro] Admin Interface >> Admin Logo**: The logo's hover background in the admin menu now follows the selected admin color scheme, matching how menu items are highlighted, instead of always being dark grey. With the Light scheme, hovering no longer puts a dark patch behind the logo that hides dark-colored logos. Props to Maan D. for reporting the issue in detail along with the code fix.
-
-* **[FIXED in Pro] Content Management >> Custom Content Types >> Custom Field Groups**: 
-  * Fixed an issue where WYSIWYG field can not be set to a height smaller than 150 pixels. Props to Stijn V. for reporting the issue.
-  * Removed extranous border around the WYSIWYG field. Props to Stijn V. for reporting the issue.
-
-* **[FIXED in Pro] Utilities >> Site Backup and Migration**: The Sync database export now removes WordPress's internal % placeholder before sending rows to the other site, as the full backup export already does. Before, the placeholder stayed in the destination database in place of every %. This broke percentage values in post content and styles and made serialized options containing a % unreadable. Please sync again after updating to repair sites that were synced before. Props to Matija S. for reporting the issue in detail.
+* **[FIXED in Pro] Admin Interface >> Admin Menu Organizer**: Custom menu items added via "Add Menu or Separator" now save again on sites where they silently disappeared after saving. Props to Kristopher H. for reporting the issue in detail.
 
 * **[TRANSLATION in Free and Pro]** ASE is now being translated into [41 languages](https://translate.wpase.com/):
   * **Added new/improved translation** for:
-    * ASE Free: Updated Indonesian, Turkish, Spanish (Spain), Spanish (Chile), Slovak, Portuguese (Brazil), Polish, Norwegian, Hungarian, Galician, French, Dutch.
-  * ASE Pro: Updated Spanish (Spain), Hungarian, Slovak, Indonesian, Czech.
+    * ASE Free: Updated Turkish, Spanish (Spain), Slovak, Serbian, Portuguese (Brazil), Polish, Norwegian, German (Formal), Galician, Dutch (Netherlands).
+    * ASE Pro: Updated Portuguese (Brazil), Norwegian.
   * **More strings have been internationalized**. @Translators, please visit the respective project pages for the Free and Pro versions to translate the new strings, if you havent' done so already.
   * **Interested to help translate or improve the translation?** Please go to [https://translate.wpase.com](https://translate.wpase.com) for more info.
   * **[Chinese (China)](https://translate.wordpress.org/locale/zh-cn/default/wp-plugins/admin-site-enhancements/)**: ASE Free and Pro (completed). Props to [@bricksvip](https://profiles.wordpress.org/bricksvip/) et al. Current status: [39 strings untranslated](https://translate.wordpress.org/projects/wp-plugins/admin-site-enhancements/stable/zh-cn/default/?filters%5Bstatus%5D=untranslated).

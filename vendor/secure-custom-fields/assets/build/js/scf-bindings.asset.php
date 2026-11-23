@@ -9,10 +9,11 @@
 		'wp-data',
 		'wp-editor',
 		'wp-element',
+		'wp-escape-html',
 		'wp-hooks',
 		'wp-i18n',
 		'wp-polyfill',
 		'wp-url'
 	),
-	'version' => '5696300c6892b8d299f1'
+	'version' => 'a8519ace1d5c172e7e64'
 );

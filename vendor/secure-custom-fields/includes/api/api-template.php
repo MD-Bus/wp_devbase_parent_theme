@@ -1053,8 +1053,16 @@ function acf_shortcode( $atts ) {
 	}
 
 	// If we've decoded to a post, ensure the post is publicly visible.
-	if ( $decoded_post_id['type'] === 'post' ) {
-		if ( $atts['post_id'] !== false && ( (int) $atts['post_id'] !== (int) acf_get_valid_post_id() ) && ( ! is_post_publicly_viewable( $decoded_post_id['id'] ) ) && apply_filters( 'acf/shortcode/prevent_access_to_fields_on_non_public_posts', true ) ) {
+	if ( false !== $atts['post_id'] && 'post' === $decoded_post_id['type'] ) {
+		$current_post_id = acf_decode_post_id( acf_get_valid_post_id() );
+		$is_current_post = false;
+
+		// In previews the current post resolves to its latest revision, so the revision's parent also counts as the current post.
+		if ( 'post' === $current_post_id['type'] && $current_post_id['id'] ) {
+			$is_current_post = in_array( $decoded_post_id['id'], array( $current_post_id['id'], wp_is_post_revision( $current_post_id['id'] ) ), true );
+		}
+
+		if ( ! $is_current_post && ! is_post_publicly_viewable( $decoded_post_id['id'] ) && apply_filters( 'acf/shortcode/prevent_access_to_fields_on_non_public_posts', true ) ) {
 			if ( is_preview() ) {
 				return apply_filters( 'acf/shortcode/post_not_public_message', esc_html__( '[The ACF shortcode cannot display fields from non-public posts]', 'secure-custom-fields' ) );
 			} else {
@@ -1090,7 +1098,7 @@ function acf_shortcode( $atts ) {
 
 	if ( isset( $field['allow_in_bindings'] ) && ! $field['allow_in_bindings'] ) {
 		if ( is_preview() || current_user_can( $display_errors_to_user ) ) {
-			return apply_filters( 'acf/shortcode/field_not_allowed_message', '[' . esc_html__( 'The requested ACF field is not allowed to be output in bindings or the ACF Shortcode.', 'secure-custom-fields' ) . ']' );
+			return apply_filters( 'acf/shortcode/field_not_allowed_message', '[' . esc_html__( 'The requested ACF field is not available through Block Bindings or the ACF Shortcode. Enable "Allow Access to Value in Editor UI" for this field or set allow_in_bindings to true in the field definition.', 'secure-custom-fields' ) . ']' );
 		} else {
 			return;
 		}

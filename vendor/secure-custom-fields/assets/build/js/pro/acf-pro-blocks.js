@@ -36,6 +36,14 @@ __webpack_require__.r(__webpack_exports__);
 
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 const md5 = __webpack_require__(/*! md5 */ "./node_modules/md5/md5.js");
+const {
+  applyInnerBlocksDefaults,
+  getInnerBlocksSettings
+} = __webpack_require__(/*! ./blocks-v3/utils/inner-blocks */ "./assets/src/js/pro/blocks-v3/utils/inner-blocks.js");
+const {
+  shouldRenderPreviewNode,
+  removeExecutablePreviewScripts
+} = __webpack_require__(/*! ./blocks-v3/utils/preview-scripts */ "./assets/src/js/pro/blocks-v3/utils/preview-scripts.js");
 (($, undefined) => {
   // Dependencies.
   const {
@@ -512,14 +520,16 @@ const md5 = __webpack_require__(/*! md5 */ "./node_modules/md5/md5.js");
    *
    * @param	string html The HTML to convert.
    * @param	int acfBlockVersion The ACF block version number.
+   * @param	string blockName The block name, used to check whether preview scripts may run.
    * @return	object Result of React.createElement().
    */
-  acf.parseJSX = (html, acfBlockVersion) => {
+  acf.parseJSX = (html, acfBlockVersion, blockName) => {
     // Apply a temporary wrapper for the jQuery parse to prevent text nodes triggering errors.
     html = '<div>' + html + '</div>';
     // Correctly balance InnerBlocks tags for jQuery's initial parse.
     html = html.replace(/<InnerBlocks([^>]+)?\/>/, '<InnerBlocks$1></InnerBlocks>');
-    return parseNode($(html)[0], acfBlockVersion, 0).props.children;
+    const root = parseNode($(html)[0], acfBlockVersion, 0, blockName);
+    return root.props.children;
   };
 
   /**
@@ -531,9 +541,15 @@ const md5 = __webpack_require__(/*! md5 */ "./node_modules/md5/md5.js");
    * @param	DOM node The DOM node.
    * @param	int acfBlockVersion The ACF block version number.
    * @param	int level The recursion level.
+   * @param	string blockName The block name, used to check whether preview scripts may run.
    * @return	object Result of React.createElement().
    */
-  function parseNode(node, acfBlockVersion, level = 0) {
+  function parseNode(node, acfBlockVersion, level = 0, blockName) {
+    // Drop <script> nodes unless the block or site opts in to preview scripts.
+    if (!shouldRenderPreviewNode(node, !!blockName && getBlockType(blockName), blockName)) {
+      return null;
+    }
+
     // Get node name.
     const nodeName = parseNodeName(node.nodeName.toLowerCase(), acfBlockVersion);
     if (!nodeName) {
@@ -552,7 +568,12 @@ const md5 = __webpack_require__(/*! md5 */ "./node_modules/md5/md5.js");
     }) => {
       nodeAttrs[name] = value;
     });
-    if ('ACFInnerBlocks' === nodeName) {
+    if ('ACFInnerBlocks' === nodeName || InnerBlocks === nodeName) {
+      const blockType = !!blockName && getBlockType(blockName);
+      applyInnerBlocksDefaults(nodeAttrs, blockType);
+      if (InnerBlocks === nodeName) {
+        return /*#__PURE__*/React.createElement(InnerBlocks, getInnerBlocksSettings(nodeAttrs));
+      }
       return /*#__PURE__*/React.createElement(ACFInnerBlocks, nodeAttrs);
     }
 
@@ -565,7 +586,7 @@ const md5 = __webpack_require__(/*! md5 */ "./node_modules/md5/md5.js");
           args.push(text);
         }
       } else {
-        args.push(parseNode(child, acfBlockVersion, level + 1));
+        args.push(parseNode(child, acfBlockVersion, level + 1, blockName));
       }
     });
 
@@ -659,7 +680,7 @@ const md5 = __webpack_require__(/*! md5 */ "./node_modules/md5/md5.js");
     } = props;
     const innerBlockProps = useInnerBlocksProps({
       className: className
-    }, props);
+    }, getInnerBlocksSettings(props));
     return /*#__PURE__*/React.createElement("div", innerBlockProps, innerBlockProps.children);
   }
 
@@ -998,6 +1019,7 @@ const md5 = __webpack_require__(/*! md5 */ "./node_modules/md5/md5.js");
       this.el = false;
       this.subscribed = true;
       this.renderMethod = 'jQuery';
+      this.isPreview = false;
       this.passedValidation = false;
       this.setup(props);
 
@@ -1092,13 +1114,14 @@ const md5 = __webpack_require__(/*! md5 */ "./node_modules/md5/md5.js");
         html
       };
       if (this.renderMethod === 'jsx') {
-        state.jsx = acf.parseJSX(html, getBlockVersion(this.props.name));
+        state.jsx = acf.parseJSX(html, getBlockVersion(this.props.name), this.props.name);
 
-        // Handle templates which don't contain any valid JSX parsable elements.
-        if (!state.jsx) {
+        // Handle templates which don't contain any valid JSX parsable elements,
+        // including ones whose only elements were dropped (such as blocked preview scripts).
+        if (!state.jsx || Array.isArray(state.jsx) && !state.jsx.some(element => React.isValidElement(element))) {
           console.warn('Your ACF block template contains no valid HTML elements. Appending a empty div to prevent React JS errors.');
           state.html += '<div></div>';
-          state.jsx = acf.parseJSX(state.html, getBlockVersion(this.props.name));
+          state.jsx = acf.parseJSX(state.html, getBlockVersion(this.props.name), this.props.name);
         }
 
         // If we've got an object (as an array) find the first valid React ref.
@@ -1111,6 +1134,11 @@ const md5 = __webpack_require__(/*! md5 */ "./node_modules/md5/md5.js");
         state.$el = $(this.el);
       } else {
         state.$el = $(html);
+
+        // Strip executable preview scripts unless the block or site opts in.
+        if (this.isPreview) {
+          state.$el = removeExecutablePreviewScripts(state.$el, getBlockType(this.props.name), this.props.name);
+        }
       }
       this.setState(state);
     }
@@ -1470,6 +1498,7 @@ const md5 = __webpack_require__(/*! md5 */ "./node_modules/md5/md5.js");
       const blockType = getBlockType(props.name);
       const contextPostId = acf.isget(this.props, 'context', 'postId');
       this.id = `BlockPreview-${props.clientId}`;
+      this.isPreview = true;
       super.setup(props);
 
       // Apply the contextPostId to the ID if set to stop query loop ID duplication.
@@ -1948,9 +1977,11 @@ const md5 = __webpack_require__(/*! md5 */ "./node_modules/md5/md5.js");
     crossorigin: 'crossOrigin',
     dangerouslysetinnerhtml: 'dangerouslySetInnerHTML',
     datetime: 'dateTime',
+    defaultblock: 'defaultBlock',
     defaultchecked: 'defaultChecked',
     defaultvalue: 'defaultValue',
     diffuseconstant: 'diffuseConstant',
+    directinsert: 'directInsert',
     disablepictureinpicture: 'disablePictureInPicture',
     disableremoteplayback: 'disableRemotePlayback',
     'dominant-baseline': 'dominantBaseline',
@@ -2225,12 +2256,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _inline_editing_toolbar__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./inline-editing-toolbar */ "./assets/src/js/pro/blocks-v3/components/inline-editing-toolbar.js");
 /* harmony import */ var _popover_wrapper__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./popover-wrapper */ "./assets/src/js/pro/blocks-v3/components/popover-wrapper.js");
 /* harmony import */ var _utils_post_locking__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../utils/post-locking */ "./assets/src/js/pro/blocks-v3/utils/post-locking.js");
+/* harmony import */ var _utils_content_editable__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../utils/content-editable */ "./assets/src/js/pro/blocks-v3/utils/content-editable.js");
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 /**
  * BlockEdit Component
  * Main component for editing ACF blocks in the Gutenberg editor
  * Handles form fetching, validation, preview rendering, and user interactions
  */
+
 
 
 
@@ -3024,7 +3057,7 @@ function BlockEditInner(props) {
           }
           if (element && element.hasAttribute('data-acf-inline-contenteditable')) {
             const fieldSlug = element.attributes.getNamedItem('data-acf-inline-contenteditable-field-slug').value;
-            let content = element.innerHTML.trim();
+            let content = (0,_utils_content_editable__WEBPACK_IMPORTED_MODULE_12__.getContentEditableText)(element);
             if (!content) content = '';
             updateFieldValueFromContentEditable(content, fieldSlug);
           }
@@ -3036,7 +3069,7 @@ function BlockEditInner(props) {
           if (!element || !blockElement || blockElement.getAttribute('data-block') !== clientId) return;
           if (element) {
             const fieldSlug = element.attributes.getNamedItem('data-acf-inline-contenteditable-field-slug').value;
-            let content = element.innerHTML.trim();
+            let content = (0,_utils_content_editable__WEBPACK_IMPORTED_MODULE_12__.getContentEditableText)(element);
 
             // Handle empty content - remove empty BR tags
             if (!content || element.textContent.trim().length === 0 && element.children.length === 1 && element.firstElementChild && element.firstElementChild.nodeName === 'BR') {
@@ -3129,7 +3162,7 @@ function BlockEditInner(props) {
       setBlockFormModalOpen(true);
     },
     icon: "edit"
-  }, blockType?.expanded_editor_button_text || acf.__('Open Expanded Editor'))), /*#__PURE__*/React.createElement(InspectorBlockFormContainer, {
+  }, blockType?.expanded_editor_button_text ? acf.decode(blockType.expanded_editor_button_text) : acf.__('Open Expanded Editor'))), /*#__PURE__*/React.createElement(InspectorBlockFormContainer, {
     inspectorBlockFormRef: inspectorControlsRef,
     setCurrentBlockFormContainer: setCurrentFormContainer
   })), portalTarget && mountPortal && (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.createPortal)(/*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(_block_form__WEBPACK_IMPORTED_MODULE_5__.BlockForm, {
@@ -3238,12 +3271,15 @@ function BlockEditInner(props) {
     }) => /*#__PURE__*/React.createElement(_error_boundary__WEBPACK_IMPORTED_MODULE_7__.BlockPreviewErrorFallback, {
       blockLabel: blockType?.title || acf.__('ACF Block'),
       setBlockFormModalOpen: setBlockFormModalOpen,
+      buttonText: blockType?.placeholder_button_text,
       error: error
     })
   }, blockPreviewHtml === 'acf-block-preview-no-html' ? /*#__PURE__*/React.createElement(_block_placeholder__WEBPACK_IMPORTED_MODULE_4__.BlockPlaceholder, {
     setBlockFormModalOpen: setBlockFormModalOpen,
-    blockLabel: blockType.title
-  }) : null, blockPreviewHtml === 'acf-block-preview-loading' && /*#__PURE__*/React.createElement(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.Placeholder, null, /*#__PURE__*/React.createElement(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.Spinner, null)), blockPreviewHtml !== 'acf-block-preview-loading' && blockPreviewHtml !== 'acf-block-preview-no-html' && blockPreviewHtml && acf.parseJSX(blockPreviewHtml, handleNewInlineEditingElementSelected, updateFieldValueFromContentEditable, handleNewContentEditableElementSelected, blockFieldInfo, $)))));
+    blockLabel: blockType.title,
+    blockIcon: blockType.icon,
+    buttonText: blockType.placeholder_button_text
+  }) : null, blockPreviewHtml === 'acf-block-preview-loading' && /*#__PURE__*/React.createElement(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.Placeholder, null, /*#__PURE__*/React.createElement(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.Spinner, null)), blockPreviewHtml !== 'acf-block-preview-loading' && blockPreviewHtml !== 'acf-block-preview-no-html' && blockPreviewHtml && acf.parseJSX(blockPreviewHtml, handleNewInlineEditingElementSelected, updateFieldValueFromContentEditable, handleNewContentEditableElementSelected, blockFieldInfo, $, blockType)))));
 }
 
 /***/ }),
@@ -3402,6 +3438,11 @@ const BlockForm = ({
       acf.doAction('remount', $form);
       onMount?.($form);
       setHasRemounted(true);
+
+      // Save default field values for blocks inserted and left unedited.
+      if (!Object.keys(attributes?.data ?? {}).length) {
+        onChange($form);
+      }
     }
     const handleChange = () => {
       onChange($form);
@@ -3527,7 +3568,7 @@ __webpack_require__.r(__webpack_exports__);
  * SVG icon for the block placeholder
  * Represents a generic block/form icon
  */
-const blockIcon = /*#__PURE__*/React.createElement("svg", {
+const defaultBlockIcon = /*#__PURE__*/React.createElement("svg", {
   xmlns: "http://www.w3.org/2000/svg",
   viewBox: "0 0 24 24",
   width: "24",
@@ -3546,16 +3587,28 @@ const blockIcon = /*#__PURE__*/React.createElement("svg", {
  * @param {Object} props - Component props
  * @param {Function} props.setBlockFormModalOpen - Function to open the block form modal
  * @param {string} props.blockLabel - The block's title/label
+ * @param {Object|string} props.blockIcon - The block type's icon; string icons fall back to the default icon
+ * @param {string} props.buttonText - Custom button text, HTML-escaped by the server
+ * @param {string} props.instructions - Optional instructions, such as an error message
  * @returns {JSX.Element} - Rendered placeholder
  */
 const BlockPlaceholder = ({
   setBlockFormModalOpen,
   blockLabel,
+  blockIcon,
+  buttonText,
   instructions
 }) => {
+  // Registered block icons may be wrapped in an object with a `src` key.
+  let icon = blockIcon?.src || blockIcon;
+
+  // String icons (dashicon names or SVG markup) aren't rendered here.
+  if (typeof icon === 'string') {
+    icon = null;
+  }
   return /*#__PURE__*/React.createElement(_wordpress_components__WEBPACK_IMPORTED_MODULE_0__.Placeholder, {
     icon: /*#__PURE__*/React.createElement(_wordpress_components__WEBPACK_IMPORTED_MODULE_0__.Icon, {
-      icon: blockIcon
+      icon: icon || defaultBlockIcon
     }),
     label: blockLabel,
     instructions: instructions
@@ -3564,7 +3617,7 @@ const BlockPlaceholder = ({
     onClick: () => {
       setBlockFormModalOpen(true);
     }
-  }, acf.__('Edit Block')));
+  }, buttonText ? acf.decode(buttonText) : acf.__('Edit Block')));
 };
 
 /***/ }),
@@ -3923,6 +3976,7 @@ function hasResetKeysChanged(prevKeys = [], nextKeys = []) {
 const BlockPreviewErrorFallback = ({
   setBlockFormModalOpen,
   blockLabel,
+  buttonText,
   error
 }) => {
   let errorMessage = null;
@@ -3933,6 +3987,7 @@ const BlockPreviewErrorFallback = ({
   return /*#__PURE__*/React.createElement(_block_placeholder__WEBPACK_IMPORTED_MODULE_1__.BlockPlaceholder, {
     setBlockFormModalOpen: setBlockFormModalOpen,
     blockLabel: blockLabel,
+    buttonText: buttonText,
     instructions: errorMessage
   });
 };
@@ -4234,6 +4289,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(jquery__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @wordpress/element */ "@wordpress/element");
 /* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_wordpress_element__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var _utils_inner_blocks__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../utils/inner-blocks */ "./assets/src/js/pro/blocks-v3/utils/inner-blocks.js");
+/* harmony import */ var _utils_preview_scripts__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../utils/preview-scripts */ "./assets/src/js/pro/blocks-v3/utils/preview-scripts.js");
 /**
  * JSX Parser for ACF Blocks - Based on 6.7.0.2
  * Converts HTML strings to React/JSX elements for rendering in the block editor
@@ -4242,6 +4299,8 @@ __webpack_require__.r(__webpack_exports__);
 /* global acf, React, Text */
 
 // eslint-disable-next-line import/no-unresolved -- WordPress provides jquery as an external script dependency.
+
+
 
 
 const useInnerBlocksProps = wp.blockEditor.__experimentalUseInnerBlocksProps || wp.blockEditor.useInnerBlocksProps;
@@ -4268,7 +4327,7 @@ function ACFInnerBlocksComponent(props) {
   } = props;
   const innerBlocksProps = useInnerBlocksProps({
     className
-  }, props);
+  }, (0,_utils_inner_blocks__WEBPACK_IMPORTED_MODULE_2__.getInnerBlocksSettings)(props));
   return (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.createElement)('div', {
     ...innerBlocksProps,
     children: innerBlocksProps.children
@@ -4385,11 +4444,17 @@ function parseAttribute(attribute) {
  * Main parseNodeToJSX function - Based on 6.7.0.2's function `O`
  * Recursively converts DOM nodes to React/JSX elements
  *
- * @param {Node}   node  DOM node.
- * @param {number} depth Recursion depth.
+ * @param {Node}         node      DOM node.
+ * @param {number}       depth     Recursion depth.
+ * @param {Object}       callbacks Inline editing callbacks and field metadata.
+ * @param {Object|false} blockType The registered block type, used for preview script and InnerBlocks settings.
  * @return {JSX.Element|null} Parsed JSX element.
  */
-function parseNodeToJSX(node, depth = 0, callbacks = {}) {
+function parseNodeToJSX(node, depth = 0, callbacks = {}, blockType = null) {
+  // Drop <script> nodes unless the block or site opts in to preview scripts.
+  if (!(0,_utils_preview_scripts__WEBPACK_IMPORTED_MODULE_3__.shouldRenderPreviewNode)(node, blockType, blockType?.name)) {
+    return null;
+  }
   const {
     onNewInlineEditingElementSelected,
     onNewContentEditableElementSelected,
@@ -4549,6 +4614,7 @@ function parseNodeToJSX(node, depth = 0, callbacks = {}) {
 
   // Handle ACFInnerBlocks component
   if (componentType === 'ACFInnerBlocks') {
+    (0,_utils_inner_blocks__WEBPACK_IMPORTED_MODULE_2__.applyInnerBlocksDefaults)(props, blockType);
     return (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.createElement)(ACFInnerBlocksComponent, {
       ...props
     });
@@ -4563,7 +4629,7 @@ function parseNodeToJSX(node, depth = 0, callbacks = {}) {
         elementArgs.push(textContent);
       }
     } else {
-      elementArgs.push(parseNodeToJSX(childNode, depth + 1, callbacks));
+      elementArgs.push(parseNodeToJSX(childNode, depth + 1, callbacks, blockType));
     }
   });
   const element = _wordpress_element__WEBPACK_IMPORTED_MODULE_1__.createElement.apply(this, elementArgs);
@@ -4571,7 +4637,7 @@ function parseNodeToJSX(node, depth = 0, callbacks = {}) {
 }
 
 // Preserve the legacy parser for v1/v2 blocks, which pass the block version
-// as the second argument.
+// as the second argument and the block name as the third.
 const legacyParseJSX = acf.parseJSX;
 
 /**
@@ -4584,11 +4650,14 @@ const legacyParseJSX = acf.parseJSX;
  * @param {Function} onNewContentEditableElementSelected ContentEditable selection callback.
  * @param {Array}    blockFieldInfo                     Field metadata.
  * @param {Function} $                                  jQuery-compatible parser.
+ * @param {Object}   blockType                          The registered block type, used for preview script and InnerBlocks settings.
  * @return {JSX.Element|Array} Parsed JSX children.
  */
-function parseJSX(htmlString, onNewInlineEditingElementSelected = (jquery__WEBPACK_IMPORTED_MODULE_0___default()), onContentEditableChange = null, onNewContentEditableElementSelected = null, blockFieldInfo = null, $ = null) {
+function parseJSX(htmlString, onNewInlineEditingElementSelected = (jquery__WEBPACK_IMPORTED_MODULE_0___default()), onContentEditableChange = null, onNewContentEditableElementSelected = null, blockFieldInfo = null, $ = null, blockType = null) {
   if (typeof onNewInlineEditingElementSelected === 'number' && typeof legacyParseJSX === 'function') {
-    return legacyParseJSX(htmlString, onNewInlineEditingElementSelected);
+    // Legacy signature: ( html, acfBlockVersion, blockName ). Forward the block
+    // name so v1/v2 blocks keep their per-block preview script opt-in.
+    return legacyParseJSX(htmlString, onNewInlineEditingElementSelected, onContentEditableChange);
   }
   const isJQueryParser = typeof onNewInlineEditingElementSelected === 'function' && (arguments.length === 2 || onNewInlineEditingElementSelected.fn && onNewInlineEditingElementSelected.fn.jquery);
   const parser = isJQueryParser ? onNewInlineEditingElementSelected : $ || (jquery__WEBPACK_IMPORTED_MODULE_0___default());
@@ -4606,7 +4675,7 @@ function parseJSX(htmlString, onNewInlineEditingElementSelected = (jquery__WEBPA
   htmlString = htmlString.replace(/<InnerBlocks([^>]+)?\/>/, '<InnerBlocks$1></InnerBlocks>');
 
   // Parse with jQuery, convert to React, and extract children from wrapper div
-  const parsedElement = parseNodeToJSX(parser(htmlString)[0], 0, callbacks);
+  const parsedElement = parseNodeToJSX(parser(htmlString)[0], 0, callbacks, blockType);
   return parsedElement.props.children;
 }
 acf.parseJSXV3 = parseJSX;
@@ -5325,6 +5394,128 @@ wp.hooks.addFilter('editor.BlockListBlock', 'acf/with-default-attributes', withD
 
 /***/ }),
 
+/***/ "./assets/src/js/pro/blocks-v3/utils/content-editable.js":
+/*!***************************************************************!*\
+  !*** ./assets/src/js/pro/blocks-v3/utils/content-editable.js ***!
+  \***************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__),
+/* harmony export */   getContentEditableText: () => (/* binding */ getContentEditableText)
+/* harmony export */ });
+/**
+ * Contenteditable helpers for SCF blocks auto inline editing.
+ */
+
+/**
+ * Returns the plain text of a contenteditable element.
+ *
+ * Line breaks the browser inserts while typing (`<br>`, `<div>` and `<p>`) become
+ * newlines, and HTML entities are decoded, so the field is saved as plain text
+ * rather than HTML-encoded text.
+ *
+ * @since SCF 6.9.10
+ *
+ * @param {Element} element The contenteditable element.
+ * @return {string} The element's text.
+ */
+const getContentEditableText = element => {
+  const clone = element.cloneNode(true);
+  clone.querySelectorAll('br').forEach(br => {
+    // A trailing <br> in a line wrapper only keeps the line open; it isn't a line break.
+    const isTrailing = !br.nextSibling && br.parentNode.matches('div, p');
+    br.replaceWith(isTrailing ? '' : '\n');
+  });
+  clone.querySelectorAll('div, p').forEach(line => line.before('\n'));
+  return clone.textContent.trim();
+};
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (getContentEditableText);
+
+/***/ }),
+
+/***/ "./assets/src/js/pro/blocks-v3/utils/inner-blocks.js":
+/*!***********************************************************!*\
+  !*** ./assets/src/js/pro/blocks-v3/utils/inner-blocks.js ***!
+  \***********************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   applyInnerBlocksDefaults: () => (/* binding */ applyInnerBlocksDefaults),
+/* harmony export */   getInnerBlocksSettings: () => (/* binding */ getInnerBlocksSettings)
+/* harmony export */ });
+/**
+ * InnerBlocks helpers for SCF blocks.
+ *
+ * Shared by the v1/v2 block parser (_acf-blocks.js) and the v3 JSX parser.
+ */
+
+/* global acf */
+
+/**
+ * Applies the block type's `default_block` and `direct_insert` settings to
+ * InnerBlocks props, unless the template already set them.
+ *
+ * @since SCF 6.9.10
+ *
+ * @param {Object}       props     InnerBlocks props parsed from the template.
+ * @param {Object|false} blockType The registered block type, if known.
+ * @return {Object} The props.
+ */
+function applyInnerBlocksDefaults(props, blockType) {
+  if (!blockType) {
+    return props;
+  }
+  if (props.defaultBlock === undefined && blockType.default_block && Object.keys(blockType.default_block).length) {
+    props.defaultBlock = blockType.default_block;
+  }
+  if (props.directInsert === undefined && blockType.direct_insert) {
+    props.directInsert = blockType.direct_insert;
+  }
+  return props;
+}
+
+/**
+ * Returns true on WordPress 6.2 and earlier, where InnerBlocks only reads the
+ * experimental `__experimentalDefaultBlock` and `__experimentalDirectInsert` props.
+ *
+ * @return {boolean} Whether the experimental prop names are needed.
+ */
+function needsExperimentalInnerBlocksProps() {
+  const wpVersion = acf.get('wp_version');
+  if (!wpVersion) {
+    return false;
+  }
+  const [major, minor] = String(wpVersion).split('.').map(Number);
+  return major < 6 || major === 6 && minor <= 2;
+}
+
+/**
+ * Returns InnerBlocks settings, adding the experimental prop names on
+ * WordPress versions that need them.
+ *
+ * @since SCF 6.9.10
+ *
+ * @param {Object} props InnerBlocks props.
+ * @return {Object} InnerBlocks settings.
+ */
+function getInnerBlocksSettings(props) {
+  if (!needsExperimentalInnerBlocksProps()) {
+    return props;
+  }
+  return {
+    ...props,
+    __experimentalDefaultBlock: props.defaultBlock,
+    __experimentalDirectInsert: props.directInsert
+  };
+}
+
+/***/ }),
+
 /***/ "./assets/src/js/pro/blocks-v3/utils/post-locking.js":
 /*!***********************************************************!*\
   !*** ./assets/src/js/pro/blocks-v3/utils/post-locking.js ***!
@@ -5426,6 +5617,132 @@ const sortObjectKeys = obj => {
     return sortedObj;
   }, {});
 };
+
+/***/ }),
+
+/***/ "./assets/src/js/pro/blocks-v3/utils/preview-scripts.js":
+/*!**************************************************************!*\
+  !*** ./assets/src/js/pro/blocks-v3/utils/preview-scripts.js ***!
+  \**************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   isExecutableScript: () => (/* binding */ isExecutableScript),
+/* harmony export */   previewScriptsAllowed: () => (/* binding */ previewScriptsAllowed),
+/* harmony export */   removeExecutablePreviewScripts: () => (/* binding */ removeExecutablePreviewScripts),
+/* harmony export */   shouldRenderPreviewNode: () => (/* binding */ shouldRenderPreviewNode)
+/* harmony export */ });
+/**
+ * Preview script guard for SCF blocks.
+ *
+ * Block preview HTML can contain field values entered by other, possibly
+ * lower-privileged, users, so `<script>` tags in it don't run in the block
+ * editor unless the block type or the site opts in.
+ *
+ * Shared by the v1/v2 block parser (_acf-blocks.js) and the v3 JSX parser.
+ */
+
+/* global acf, jQuery */
+
+// Script types the browser (and jQuery's DOM manipulation) will execute.
+const EXECUTABLE_SCRIPT_TYPES = /^$|^module$|\/(?:java|ecma)script/i;
+
+// Block names that already logged a warning, so each block warns only once.
+const warnedBlocks = new Set();
+
+/**
+ * Returns true if preview scripts may run for the given block type.
+ *
+ * @since SCF 6.9.10
+ *
+ * @param {Object|false} blockType The registered block type, if known.
+ * @return {boolean} Whether preview scripts may run.
+ */
+function previewScriptsAllowed(blockType) {
+  return !!(acf.get('allowDangerousPreviewScriptsInBlocks') || blockType && blockType.allow_dangerous_preview_scripts);
+}
+
+/**
+ * Returns true if the given script element would be executed by the browser.
+ *
+ * @since SCF 6.9.10
+ *
+ * @param {Element} script The script element.
+ * @return {boolean} Whether the script is executable.
+ */
+function isExecutableScript(script) {
+  const type = script.getAttribute('type') || '';
+  return EXECUTABLE_SCRIPT_TYPES.test(type.trim());
+}
+
+/**
+ * Logs a console warning, once per block, that a preview script was not run.
+ *
+ * @since SCF 6.9.10
+ *
+ * @param {string} blockName The block name.
+ */
+function warnPreviewScriptBlocked(blockName) {
+  const name = blockName || 'unknown';
+  if (warnedBlocks.has(name)) {
+    return;
+  }
+  warnedBlocks.add(name);
+
+  // eslint-disable-next-line no-console
+  console.warn(`SCF: A <script> in the preview of the "${name}" block was not run. Scripts in block preview HTML are disabled by default because it can contain content from other users. Load your script with the block instead ("script" or "editorScript" in block.json, or "enqueue_script" or "enqueue_assets" in acf_register_block_type()) and use the "render_block_preview" JS action. To allow scripts in the preview anyway, set "allowDangerousPreviewScripts" under the "acf" key in this block's block.json ("allow_dangerous_preview_scripts" in acf_register_block_type()), or use the "acf/blocks/allow_dangerous_preview_scripts" filter for all blocks.`);
+}
+
+/**
+ * Returns false if a DOM node must not be rendered in the JSX preview.
+ *
+ * Any `<script>` node is dropped unless preview scripts are allowed. A warning
+ * is logged only for scripts that would have run.
+ *
+ * @since SCF 6.9.10
+ *
+ * @param {Node}         node      The DOM node.
+ * @param {Object|false} blockType The registered block type, if known.
+ * @param {string}       blockName The block name, for the warning.
+ * @return {boolean} Whether the node may be rendered.
+ */
+function shouldRenderPreviewNode(node, blockType, blockName) {
+  if (node.nodeName.toLowerCase() !== 'script' || previewScriptsAllowed(blockType)) {
+    return true;
+  }
+  if (isExecutableScript(node)) {
+    warnPreviewScriptBlocked(blockName);
+  }
+  return false;
+}
+
+/**
+ * Removes executable `<script>` elements from a jQuery collection, both top-level
+ * and nested, unless preview scripts are allowed.
+ *
+ * @since SCF 6.9.10
+ *
+ * @param {jQuery}       $el       The parsed preview HTML.
+ * @param {Object|false} blockType The registered block type, if known.
+ * @param {string}       blockName The block name, for the warning.
+ * @return {jQuery} The collection without executable scripts.
+ */
+function removeExecutablePreviewScripts($el, blockType, blockName) {
+  if (previewScriptsAllowed(blockType)) {
+    return $el;
+  }
+  const isExecutable = (index, element) => isExecutableScript(element);
+  const $topLevel = $el.filter('script').filter(isExecutable);
+  const $nested = $el.find('script').filter(isExecutable);
+  if (!$topLevel.length && !$nested.length) {
+    return $el;
+  }
+  warnPreviewScriptBlocked(blockName);
+  $nested.remove();
+  return $el.not($topLevel);
+}
 
 /***/ }),
 

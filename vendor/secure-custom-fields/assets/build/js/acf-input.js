@@ -3813,7 +3813,7 @@ __webpack_require__.r(__webpack_exports__);
       var map = {
         street_number: ['street_number'],
         street_name: ['street_address', 'route'],
-        city: ['locality', 'postal_town'],
+        city: ['locality', 'postal_town', 'sublocality', 'neighborhood'],
         state: ['administrative_area_level_1', 'administrative_area_level_2', 'administrative_area_level_3', 'administrative_area_level_4', 'administrative_area_level_5'],
         post_code: ['postal_code'],
         country: ['country']
@@ -3826,10 +3826,12 @@ __webpack_require__.r(__webpack_exports__);
         // Loop over address components.
         for (var i = 0; i < obj.address_components.length; i++) {
           var component = obj.address_components[i];
-          var component_type = component.types[0];
 
-          // Look for matching component type.
-          if (keywords.indexOf(component_type) !== -1) {
+          // Look for a matching component type.
+          var isMatch = component.types.some(function (type) {
+            return keywords.indexOf(type) !== -1;
+          });
+          if (isMatch) {
             // Append to result.
             result[k] = component.long_name;
 
@@ -4420,6 +4422,12 @@ __webpack_require__.r(__webpack_exports__);
         attachment.url = size.url;
         attachment.width = size.width;
         attachment.height = size.height;
+      }
+
+      // Show the file type icon for attachments that are not images.
+      if (!size && attachment.type && 'image' !== attachment.type && attachment.icon) {
+        attachment.url = attachment.icon;
+        attachment.alt = attachment.alt || attachment.title;
       }
 
       // Return.
@@ -8561,6 +8569,7 @@ __webpack_require__.r(__webpack_exports__);
       this.customizeAttachmentFilters();
       this.customizeAttachmentCompat();
       this.customizeAttachmentLibrary();
+      this.customizeQuery();
     },
     customizeAttachmentsButton: function () {
       // validate
@@ -8794,6 +8803,41 @@ __webpack_require__.r(__webpack_exports__);
           return AttachmentLibrary.prototype.toggleSelection.apply(this, arguments);
         }
       });
+    },
+    /**
+     * Hides the _acfuploader arg from wp.media.model.Query initialize.
+     *
+     * A Query only watches the uploader queue for new uploads when its
+     * args contain known keys. Queries created after the first one, for
+     * example after a search returns no results, inherit _acfuploader
+     * from the mirrored args, so new uploads stopped showing up. The arg
+     * is removed while the Query initializes and restored afterwards, so
+     * it is still sent with the AJAX request.
+     *
+     * @since SCF 6.9.10
+     */
+    customizeQuery: function () {
+      // validate
+      if (!acf.isset(wp, 'media', 'model', 'Query')) {
+        return;
+      }
+
+      // vars
+      const Query = wp.media.model.Query;
+      const initialize = Query.prototype.initialize;
+
+      // extend
+      Query.prototype.initialize = function (models, options) {
+        const args = acf.isget(options, 'args');
+        const acfuploader = acf.isget(args, '_acfuploader');
+        if (acfuploader) {
+          delete args._acfuploader;
+        }
+        initialize.apply(this, arguments);
+        if (acfuploader) {
+          args._acfuploader = acfuploader;
+        }
+      };
     }
   });
 })(jQuery);
@@ -9248,10 +9292,12 @@ __webpack_require__.r(__webpack_exports__);
     renderPostScreen: function (data) {
       // Helper function to copy events
       var copyEvents = function ($from, $to) {
-        var events = $._data($from[0]).events;
-        for (var type in events) {
-          for (var i = 0; i < events[type].length; i++) {
-            $to.on(type, events[type][i].handler);
+        if ($from.length) {
+          var events = $._data($from[0]).events;
+          for (var type in events) {
+            for (var i = 0; i < events[type].length; i++) {
+              $to.on(type, events[type][i].handler);
+            }
           }
         }
       };
@@ -9322,8 +9368,8 @@ __webpack_require__.r(__webpack_exports__);
 
           // Copy default WP events onto metabox.
           if ($('.postbox').length) {
-            copyEvents($('.postbox .handlediv').first(), $postbox.children('.handlediv'));
-            copyEvents($('.postbox .hndle').first(), $postbox.children('.hndle'));
+            copyEvents($('.postbox .handlediv').first(), $postbox.find('.handlediv'));
+            copyEvents($('.postbox .hndle').first(), $postbox.find('.hndle'));
           }
 
           // Append metabox to the bottom of "side-sortables".

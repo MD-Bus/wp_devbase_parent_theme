@@ -2632,6 +2632,9 @@ html[dir=rtl] .acf-table > tbody > tr > td.order + td {
 .acf-admin-page .acf-switch.-on .acf-switch-slider {
   left: 20px;
 }
+html[dir=rtl] .acf-admin-page .acf-switch.-on .acf-switch-slider {
+  right: 20px;
+}
 .acf-admin-page .acf-switch .acf-switch-off,
 .acf-admin-page .acf-switch .acf-switch-on {
   visibility: hidden;

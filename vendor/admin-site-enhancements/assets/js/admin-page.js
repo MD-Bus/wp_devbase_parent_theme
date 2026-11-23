@@ -513,6 +513,7 @@
       $('.disable-site-admin-email-verification-screen').appendTo('.fields-disable-components .disable-smaller-components .asenha-subfields');
       $('.disable-user-email-notification-after-password-change').appendTo('.fields-disable-components .disable-smaller-components .asenha-subfields');
       $('.disable-admin-email-notification-after-password-change').appendTo('.fields-disable-components .disable-smaller-components .asenha-subfields');
+      $('.disable-random-content-redirect').appendTo('.fields-disable-components .disable-smaller-components .asenha-subfields');
       $('.disable-plugin-theme-editor').appendTo('.fields-disable-components .disable-smaller-components .asenha-subfields');
 
       // Place fields into "Security" tab
@@ -612,6 +613,7 @@
       $('.contact-form-disable-antispam').appendTo('.contact-form-advanced-wrapper');
       $('.contact-form-test-mode-description').appendTo('.contact-form-advanced-wrapper');
       
+      $('.user-role-manager').appendTo('.fields-utilities > table > tbody');
       $('.multiple-user-roles').appendTo('.fields-utilities > table > tbody');
       $('.image-sizes-panel').appendTo('.fields-utilities > table > tbody');
       $('.view-admin-as-role').appendTo('.fields-utilities > table > tbody');

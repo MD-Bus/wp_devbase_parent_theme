@@ -667,13 +667,16 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _wordpress_core_data__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_wordpress_core_data__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var _wordpress_editor__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @wordpress/editor */ "@wordpress/editor");
 /* harmony import */ var _wordpress_editor__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(_wordpress_editor__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @wordpress/i18n */ "@wordpress/i18n");
-/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var _field_processing__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./field-processing */ "./assets/src/js/bindings/field-processing.js");
-/* harmony import */ var _fieldMetadataCache__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./fieldMetadataCache */ "./assets/src/js/bindings/fieldMetadataCache.js");
+/* harmony import */ var _wordpress_escape_html__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @wordpress/escape-html */ "@wordpress/escape-html");
+/* harmony import */ var _wordpress_escape_html__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_wordpress_escape_html__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @wordpress/i18n */ "@wordpress/i18n");
+/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var _field_processing__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./field-processing */ "./assets/src/js/bindings/field-processing.js");
+/* harmony import */ var _fieldMetadataCache__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./fieldMetadataCache */ "./assets/src/js/bindings/fieldMetadataCache.js");
 /**
  * WordPress dependencies
  */
+
 
 
 
@@ -690,20 +693,20 @@ __webpack_require__.r(__webpack_exports__);
  */
 (0,_wordpress_blocks__WEBPACK_IMPORTED_MODULE_0__.registerBlockBindingsSource)({
   name: 'acf/field',
-  label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('SCF Fields', 'secure-custom-fields'),
+  label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('SCF Fields', 'secure-custom-fields'),
   getLabel({
     args,
     select
   }) {
     const fieldKey = args?.key;
     if (!fieldKey) {
-      return (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('SCF Fields', 'secure-custom-fields');
+      return (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('SCF Fields', 'secure-custom-fields');
     }
-    const fieldMetadata = (0,_fieldMetadataCache__WEBPACK_IMPORTED_MODULE_5__.getFieldMetadata)(fieldKey);
+    const fieldMetadata = (0,_fieldMetadataCache__WEBPACK_IMPORTED_MODULE_6__.getFieldMetadata)(fieldKey);
     if (fieldMetadata?.label) {
       return fieldMetadata.label;
     }
-    return (0,_field_processing__WEBPACK_IMPORTED_MODULE_4__.formatFieldLabel)(fieldKey);
+    return (0,_field_processing__WEBPACK_IMPORTED_MODULE_5__.formatFieldLabel)(fieldKey);
   },
   getValues({
     context,
@@ -727,8 +730,11 @@ __webpack_require__.r(__webpack_exports__);
           result[attribute] = '';
           return;
         }
-        const fieldMetadata = (0,_fieldMetadataCache__WEBPACK_IMPORTED_MODULE_5__.getFieldMetadata)(fieldKey);
-        result[attribute] = fieldMetadata?.label || (0,_field_processing__WEBPACK_IMPORTED_MODULE_4__.formatFieldLabel)(fieldKey);
+
+        // The key comes from block markup and the placeholder is
+        // rendered as HTML by rich text attributes, so escape it.
+        const fieldMetadata = (0,_fieldMetadataCache__WEBPACK_IMPORTED_MODULE_6__.getFieldMetadata)(fieldKey);
+        result[attribute] = (0,_wordpress_escape_html__WEBPACK_IMPORTED_MODULE_3__.escapeHTML)(fieldMetadata?.label || (0,_field_processing__WEBPACK_IMPORTED_MODULE_5__.formatFieldLabel)(fieldKey));
       });
       return result;
     }
@@ -738,12 +744,12 @@ __webpack_require__.r(__webpack_exports__);
       getEditedEntityRecord
     } = select(_wordpress_core_data__WEBPACK_IMPORTED_MODULE_1__.store);
     const post = context?.postType && context?.postId ? getEditedEntityRecord('postType', context.postType, context.postId) : undefined;
-    const scfFields = (0,_field_processing__WEBPACK_IMPORTED_MODULE_4__.getSCFFields)(post);
+    const scfFields = (0,_field_processing__WEBPACK_IMPORTED_MODULE_5__.getSCFFields)(post);
     const result = {};
     Object.entries(bindings).forEach(([attribute, {
       args
     } = {}]) => {
-      const value = (0,_field_processing__WEBPACK_IMPORTED_MODULE_4__.processFieldBinding)(attribute, args, scfFields);
+      const value = (0,_field_processing__WEBPACK_IMPORTED_MODULE_5__.processFieldBinding)(attribute, args, scfFields);
       result[attribute] = value;
     });
     return result;
@@ -1015,6 +1021,16 @@ module.exports = window["wp"]["editor"];
 /***/ ((module) => {
 
 module.exports = window["wp"]["element"];
+
+/***/ }),
+
+/***/ "@wordpress/escape-html":
+/*!************************************!*\
+  !*** external ["wp","escapeHtml"] ***!
+  \************************************/
+/***/ ((module) => {
+
+module.exports = window["wp"]["escapeHtml"];
 
 /***/ }),
 

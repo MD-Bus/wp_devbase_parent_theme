@@ -1,10 +1,33 @@
 ## Changelog
 
-**Admin and Site Enhancements (ASE) v1.0.0** was released on October 17, 2022. Since then, there have been **93 _major_ releases** (e.g. 1.1.0 ) and **215 _minor_ releases** (e.g. 4.9.1), for a **total of 308 releases**.
+**Admin and Site Enhancements (ASE) v1.0.0** was released on October 17, 2022. Since then, there have been **94 _major_ releases** (e.g. 1.1.0 ) and **215 _minor_ releases** (e.g. 4.9.1), for a **total of 309 releases**.
 
 Each **_major release_** usually corresponds with the addition of one new module/feature. Each module/feature usually is the equivalent of one (or more) single-purpose plugin. Each **_minor release_** usually contain one or more bugfix or improvements to existing modules/features.
 
 [**Upgrade to ASE Pro**](https://www.wpase.com/chnlg-to-web). **Currently on YEAR END SALE, 20% discount on new license and license upgrade**. Lifetime Deal (LTD) available.
+
+### 9.4.0 (unreleased) - ASE Free and Pro
+
+* **[ADDED in Free and Pro] Utilities >> User Role Manager**: Create, edit, clone and delete user roles and manage capabilities from Users >> Roles, with essentials-first editing, capabilities grouped by area, batch select / deselect and lockout protection. **[ADDED in Pro]**: the All capabilities view (explicit deny, filters and batch actions), adding custom capabilities, two-role compare, undo history with snapshots, per-user capability overrides, bulk actions, permissions audit, roles JSON export / import (in Enhancements >> Export | Import), and a migration wizard for User Role Editor, Members, PublishPress Capabilities and WPFront User Role Editor.
+
+* **[IMPROVED in Free and Pro] Disable Components >> Disable Smaller Components**: added an option to disable the [random content redirect](https://make.wordpress.org/core/2026/11/05/your-content-is-going-to-get-more-random/) (the /random/ URL) introduced in WordPress 7.2. Props to Ed H. for prompting this improvement.
+
+* **[FIXED in Free and Pro] Change Login URL / CAPTCHA Protection**: Change Login URL now recognizes logins from the Elementor Pro Login widget on any page and CAPTCHA Protection now adds the selected CAPTCHA (ALTCHA, reCAPTCHA or Turnstile) to the widget when the "Login form" location is enabled. Props to Nils L. for reporting the issue in great detail and facilitating the troubleshooting process.
+
+* **[FIXED in Free and Pro] Log In/Out & Register >> Change Login URL**: hardened REST API detection to prevent skippage of the custom login URL checks, and hid the custom login slug in login, lost-password and register links on wp-login.php and wp-admin for visitors who haven't opened the custom login URL. Props to Kim v.D. for reporting the issue in detail.
+
+* **[IMPROVED in Pro] Utilities >> Site Backup and Migration**: New "Site Backup and Migration" section under "Export | Import" in ASE settings to copy backup templates, remote locations and policies to another site. Props to Uli L. for prompting this improvement.
+
+* **[IMPROVED in Pro] Content Management >> Custom Content Types >> Custom Post Types**. Props to Stijn V. for prompting the following improvements:
+  * Menu icon preview now works when copy pasting a custom `data:image/svg+xml;base64` value, i.e. using an icon not part of the preset icons.
+  * The Frntend tab now are in sync between the create and edit screens regarding field visibility, i.e. which field shows up on page load when other field is checked/shown.
+
+* **[FIXED in Pro] Admin Interface >> Admin Menu Organizer**: Custom menu items added via "Add Menu or Separator" now save again on sites where they silently disappeared after saving. Props to Kristopher H. for reporting the issue in detail.
+
+* **[TRANSLATION in Free and Pro]** ASE is now being translated into [41 languages](https://translate.wpase.com/):
+  * **Added new/improved translation** for:
+    * ASE Free: Updated Turkish, Spanish (Spain), Slovak, Serbian, Portuguese (Brazil), Polish, Norwegian, German (Formal), Galician, Dutch (Netherlands).
+    * ASE Pro: Updated Portuguese (Brazil), Norwegian.
 
 ### 9.3.3 (2026.11.16) - ASE Free and Pro
 

@@ -10,6 +10,7 @@ class ComposerStaticInitb858699864578c66b2ddae4494f7a6e4
         'S' =>
         array (
             'SCF\\Site_Health\\' => 16,
+            'SCF\\Settings_Page\\' => 18,
             'SCF\\Meta\\' => 9,
             'SCF\\Forms\\' => 10,
             'SCF\\Fields\\FlexibleContent\\' => 27,
@@ -28,6 +29,10 @@ class ComposerStaticInitb858699864578c66b2ddae4494f7a6e4
         'SCF\\Site_Health\\' =>
         array (
             0 => __DIR__ . '/../..' . '/src/Site_Health',
+        ),
+        'SCF\\Settings_Page\\' =>
+        array (
+            0 => __DIR__ . '/../..' . '/src/Settings_Page',
         ),
         'SCF\\Meta\\' =>
         array (
@@ -130,6 +135,7 @@ class ComposerStaticInitb858699864578c66b2ddae4494f7a6e4
         'SCF\\Datastore\\Revisions' => __DIR__ . '/../..' . '/includes/Datastore/Revisions.php',
         'SCF\\Fields\\FlexibleContent\\Layout' => __DIR__ . '/../..' . '/includes/fields/FlexibleContent/Layout.php',
         'SCF\\Fields\\FlexibleContent\\Render' => __DIR__ . '/../..' . '/includes/fields/FlexibleContent/Render.php',
+        'SCF\\Forms\\Option_Save_Guard' => __DIR__ . '/../..' . '/includes/forms/Option_Save_Guard.php',
         'SCF\\Forms\\WC_Order' => __DIR__ . '/../..' . '/includes/forms/WC_Order.php',
         'SCF\\Meta\\Comment' => __DIR__ . '/../..' . '/includes/Meta/Comment.php',
         'SCF\\Meta\\MetaLocation' => __DIR__ . '/../..' . '/includes/Meta/MetaLocation.php',
@@ -138,6 +144,7 @@ class ComposerStaticInitb858699864578c66b2ddae4494f7a6e4
         'SCF\\Meta\\Term' => __DIR__ . '/../..' . '/includes/Meta/Term.php',
         'SCF\\Meta\\User' => __DIR__ . '/../..' . '/includes/Meta/User.php',
         'SCF\\Meta\\WooOrder' => __DIR__ . '/../..' . '/includes/Meta/WooOrder.php',
+        'SCF\\Settings_Page\\Settings_Page' => __DIR__ . '/../..' . '/src/Settings_Page/Settings_Page.php',
         'SCF\\Site_Health\\AI_Usage' => __DIR__ . '/../..' . '/src/Site_Health/AI_Usage.php',
         'SCF\\Site_Health\\Site_Health' => __DIR__ . '/../..' . '/src/Site_Health/Site_Health.php'
     );

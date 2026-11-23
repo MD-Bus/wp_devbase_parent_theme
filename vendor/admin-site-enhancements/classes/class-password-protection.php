@@ -146,6 +146,10 @@ class Password_Protection {
         if ( $common_methods->is_novamira_auth_request() || $common_methods->is_mcp_toolkit_auth_request() ) {
             return true;
         }
+        // The User Role Manager REST namespace stays reachable. Its routes enforce capability, nonce and same-origin checks.
+        if ( $common_methods->is_user_role_manager_rest_request() ) {
+            return true;
+        }
         $options = get_option( ASENHA_SLUG_U, array() );
         $stored_password = ( isset( $options['password_protection_password'] ) ? $options['password_protection_password'] : '' );
         // When user is logged-in as an administrator

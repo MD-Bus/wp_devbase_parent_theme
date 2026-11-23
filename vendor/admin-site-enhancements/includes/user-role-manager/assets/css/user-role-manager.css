@@ -1,0 +1,874 @@
+/**
+ * User Role Manager (ASE) styles.
+ *
+ * Uses WordPress admin colors and components where possible. Avoids !important:
+ * the `[hidden]` rule is placed last and has a higher specificity than the
+ * display rules of the elements that get hidden.
+ */
+
+.asenha-urm {
+	--urm-accent: var(--wp-admin-theme-color, #2271b1);
+	--urm-border: #c3c4c7;
+	--urm-border-soft: #dcdcde;
+	--urm-bg-soft: #f6f7f7;
+	--urm-text-muted: #50575e;
+	--urm-text-muted-more: #999999;
+	--urm-danger: #b32d2e;
+	--urm-warning: #8a5300;
+	--urm-success: #007017;
+}
+
+.asenha-urm .urm-notices {
+	margin: 8px 0 0;
+}
+
+.asenha-urm .urm-notice {
+	margin: 5px 0 10px;
+}
+
+.asenha-urm .urm-loading {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.asenha-urm .urm-loading .spinner {
+	float: none;
+	margin: 0;
+}
+
+/* Layout ------------------------------------------------------------------ */
+
+.asenha-urm .urm-layout {
+	display: grid;
+	grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+	gap: 20px;
+	align-items: start;
+	margin-top: 16px;
+}
+
+.asenha-urm .urm-sidebar {
+	background: #fff;
+	border: 1px solid var(--urm-border);
+	border-radius: 4px;
+	padding: 12px;
+	position: sticky;
+	top: 42px;
+	max-height: calc(100vh - 64px);
+	overflow-y: auto;
+}
+
+.asenha-urm .urm-sidebar-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	margin-bottom: 10px;
+}
+
+/* Heading stays on the left; the button group sits on the right edge. */
+.asenha-urm .urm-sidebar-actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	align-items: center;
+	gap: 8px;
+	margin-left: auto;
+}
+
+/* Keep translated button labels on one line; the header wraps instead of clipping. */
+.asenha-urm .urm-sidebar-head .button {
+	flex-shrink: 0;
+}
+
+.asenha-urm .urm-sidebar-head h2 {
+	margin: 0;
+	padding: 0;
+	font-size: 14px;
+}
+
+.asenha-urm .urm-role-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.asenha-urm .urm-role-list li {
+	margin: 0 0 4px;
+}
+
+.asenha-urm .urm-role-item {
+	display: block;
+	width: 100%;
+	text-align: left;
+	background: #fff;
+	border: 1px solid var(--urm-border-soft);
+	border-radius: 4px;
+	padding: 8px 10px;
+	cursor: pointer;
+	color: #1d2327;
+}
+
+.asenha-urm .urm-role-item:hover {
+	background: var(--urm-bg-soft);
+}
+
+.asenha-urm .urm-role-item:focus-visible {
+	outline: 2px solid var(--urm-accent);
+	outline-offset: 1px;
+}
+
+.asenha-urm .urm-role-item.is-current {
+	border-color: var(--urm-accent);
+	box-shadow: inset 3px 0 0 var(--urm-accent);
+	background: #f0f6fc;
+}
+
+.asenha-urm .urm-role-name {
+	display: block;
+	font-weight: 600;
+}
+
+.asenha-urm .urm-role-meta {
+	display: block;
+	color: var(--urm-text-muted);
+	font-size: 12px;
+	margin-top: 2px;
+}
+
+.asenha-urm .urm-role-badges {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin-top: 4px;
+}
+
+.asenha-urm .urm-badge {
+	display: inline-block;
+	font-size: 11px;
+	line-height: 1.6;
+	padding: 0 6px;
+	border-radius: 9px;
+	background: #f0f0f1;
+	color: #3c434a;
+	border: 1px solid var(--urm-border-soft);
+	font-weight: 400;
+}
+
+.asenha-urm .urm-badge-custom {
+	background: #f0f6fc;
+	border-color: #72aee6;
+	color: #0a4b78;
+}
+
+.asenha-urm .urm-badge-default {
+	background: #edfaef;
+	border-color: #68de7c;
+	color: #005c12;
+}
+
+.asenha-urm .urm-badge-modified,
+.asenha-urm .urm-badge-unrecognized {
+	background: #fcf9e8;
+	border-color: #dba617;
+	color: #614200;
+}
+
+.asenha-urm .urm-badge-sensitive {
+	background: #fcf0f1;
+	border-color: #e65054;
+	color: #8a2424;
+	margin-left: 6px;
+}
+
+.asenha-urm .urm-badge-protected {
+	background: #f0f0f1;
+	border-color: #787c82;
+}
+
+.asenha-urm .urm-main {
+	min-width: 0;
+	background: #fff;
+	border: 1px solid var(--urm-border);
+	border-radius: 4px;
+	padding: 16px 16px 0;
+}
+
+.asenha-urm .urm-main.is-loading {
+	opacity: 0.6;
+}
+
+/* Role header ------------------------------------------------------------- */
+
+.asenha-urm .urm-role-title {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+
+.asenha-urm .urm-role-title h2 {
+	margin: 0;
+	padding: 0;
+	font-size: 20px;
+}
+
+.asenha-urm .urm-role-title .urm-role-badges {
+	margin-top: 0;
+}
+
+.asenha-urm .urm-users-link {
+	margin-left: auto;
+}
+
+.asenha-urm .urm-role-description {
+	margin: 6px 0 0;
+	color: var(--urm-text-muted);
+}
+
+.asenha-urm .urm-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin: 12px 0 0;
+}
+
+.asenha-urm .urm-button-danger-outline {
+	color: var(--urm-danger);
+	border-color: var(--urm-danger);
+}
+
+.asenha-urm .urm-button-danger-outline:hover,
+.asenha-urm .urm-button-danger-outline:focus {
+	color: #fff;
+	background: var(--urm-danger);
+	border-color: var(--urm-danger);
+}
+
+.asenha-urm .urm-details {
+	margin: 6px 0 0;
+}
+
+.asenha-urm .urm-details summary {
+	display: list-item;
+	width: fit-content;
+	cursor: pointer;
+	color: var(--urm-accent);
+	font-weight: 400;
+}
+
+.asenha-urm .urm-details summary:hover,
+.asenha-urm .urm-details summary:active {
+	color: var(--wp-admin-theme-color-darker-20, #135e96);
+}
+
+.asenha-urm .urm-details summary:focus-visible {
+	color: var(--wp-admin-theme-color-darker-20, #135e96);
+	outline: 2px solid var(--urm-accent);
+	outline-offset: 2px;
+	border-radius: 2px;
+}
+
+.asenha-urm .urm-details-body {
+	padding: 12px 0 0;
+}
+
+.asenha-urm .urm-field {
+	margin: 0 0 12px;
+}
+
+.asenha-urm .urm-field label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
+.asenha-urm .urm-field input[type="text"],
+.asenha-urm .urm-field select,
+.asenha-urm .urm-field textarea {
+	width: 100%;
+	max-width: 480px;
+}
+
+/* Controls ---------------------------------------------------------------- */
+
+.asenha-urm .urm-controls-wrap {
+	margin-top: 20px;
+}
+
+.asenha-urm .urm-section-heading {
+	margin: 0 0 10px;
+	padding: 0;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 1.4;
+}
+
+.asenha-urm .urm-controls {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 10px;
+}
+
+.asenha-urm .urm-view-switch {
+	display: inline-flex;
+	flex-wrap: wrap;
+}
+
+.asenha-urm .urm-view-switch .button {
+	border-radius: 0;
+	margin-left: -1px;
+}
+
+.asenha-urm .urm-view-switch .button:first-child {
+	border-radius: 20px 0 0 20px;
+	margin-left: 0;
+}
+
+.asenha-urm .urm-view-switch .button:last-child {
+	border-radius: 0 20px 20px 0;
+}
+
+.asenha-urm .urm-view-switch .button.is-active {
+	background: var(--urm-accent);
+	border-color: var(--urm-accent);
+	color: #fff;
+	position: relative;
+	z-index: 1;
+}
+
+.asenha-urm .urm-search input[type="search"] {
+	min-width: 240px;
+}
+
+.asenha-urm .urm-controls-end {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin-left: auto;
+}
+
+.asenha-urm .urm-section-tools {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+
+
+/* Content: cards and lists ------------------------------------------------- */
+
+.asenha-urm .urm-card {
+	border: 1px solid var(--urm-border-soft);
+	border-radius: 4px;
+	margin: 0 0 12px;
+	background: #fff;
+}
+
+.asenha-urm .urm-card-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	background: var(--urm-bg-soft);
+	border-bottom: 1px solid var(--urm-border-soft);
+}
+
+.asenha-urm .urm-card.is-collapsed .urm-card-header {
+	border-bottom: 0;
+}
+
+.asenha-urm .urm-card-header > .urm-group-toggle {
+	flex: 0 0 auto;
+	margin: 0;
+}
+
+.asenha-urm .urm-card-toggle {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex: 1 1 auto;
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	box-shadow: none;
+	color: inherit;
+	font: inherit;
+	line-height: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.asenha-urm .urm-card-toggle:hover,
+.asenha-urm .urm-card-toggle:focus {
+	background: transparent;
+	color: inherit;
+	box-shadow: none;
+}
+
+.asenha-urm .urm-card-toggle:focus-visible {
+	outline: 2px solid var(--urm-accent);
+	outline-offset: 2px;
+}
+
+.asenha-urm .urm-card-chevron {
+	width: 20px;
+	height: 20px;
+	font-size: 20px;
+	line-height: 1;
+	color: var(--urm-text-muted);
+	flex: 0 0 auto;
+}
+
+.asenha-urm .urm-card-title {
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.asenha-urm .urm-card-count {
+	margin-left: auto;
+	color: var(--urm-text-muted);
+	font-size: 12px;
+	font-weight: 400;
+	white-space: nowrap;
+}
+
+.asenha-urm .urm-card > .description,
+.asenha-urm .urm-card-body > .description {
+	margin: 8px 12px 0;
+}
+
+/* Indent card body rows so their checkboxes line up with the header chevron:
+   header padding (12px) + header checkbox (1rem) + header gap (8px). */
+.asenha-urm .urm-card-body > .description {
+	margin-left: calc(12px + 1rem + 8px);
+}
+
+.asenha-urm .urm-check-list,
+.asenha-urm .urm-cap-list,
+.asenha-urm .urm-plain-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.asenha-urm .urm-check-item {
+	margin: 0;
+	padding: 8px 12px;
+	border-bottom: 1px solid var(--urm-border-soft);
+}
+
+.asenha-urm .urm-check-item:last-child {
+	border-bottom: 0;
+}
+
+/* Padding, not margin, so the row border and changed-row background stay full width. */
+.asenha-urm .urm-card-body .urm-check-item {
+	padding-left: calc(12px + 1rem + 8px);
+}
+
+/* WP core enlarges checkboxes to 1.5625rem on narrow screens. */
+@media screen and (max-width: 782px) {
+	.asenha-urm .urm-card-body > .description {
+		margin-left: calc(12px + 1.5625rem + 8px);
+	}
+
+	.asenha-urm .urm-card-body .urm-check-item {
+		padding-left: calc(12px + 1.5625rem + 8px);
+	}
+}
+
+.asenha-urm .urm-check-label {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+}
+
+.asenha-urm .urm-check-label input[type="checkbox"] {
+	margin-top: 2px;
+	flex: 0 0 auto;
+}
+
+.asenha-urm .urm-check-text {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 2px 4px;
+}
+
+.asenha-urm .urm-check-title {
+	font-weight: 600;
+}
+
+.asenha-urm .urm-check-item code,
+.asenha-urm .urm-cap-row code {
+	font-size: 12px;
+	background: var(--urm-bg-soft);
+	padding: 1px 4px;
+}
+
+.asenha-urm .urm-hint {
+	margin: 4px 0 16px;
+}
+
+/* Cap state cues ------------------------------------------------------------ */
+
+.asenha-urm .urm-state-badge {
+	display: none;
+	font-size: 11px;
+	color: #8a2424;
+	background: #fcf0f1;
+	border: 1px solid #e65054;
+	border-radius: 9px;
+	padding: 0 6px;
+	margin-left: 4px;
+}
+
+.asenha-urm .is-denied .urm-state-badge,
+.asenha-urm .has-denied .urm-state-badge {
+	display: inline-block;
+}
+
+.asenha-urm .is-changed {
+	/*box-shadow: inset 3px 0 0 #dba617;*/
+	background: #fffbea;
+}
+
+.asenha-urm .is-locked {
+	opacity: 0.7;
+}
+
+/* Matrix ------------------------------------------------------------------ */
+
+.asenha-urm .urm-table-wrap {
+	overflow-x: auto;
+	margin: 8px 12px 12px;
+}
+
+.asenha-urm .urm-matrix {
+	min-width: 720px;
+	border-collapse: collapse;
+}
+
+.asenha-urm .urm-matrix th,
+.asenha-urm .urm-matrix td {
+	text-align: center;
+	vertical-align: middle;
+	padding: 6px 8px;
+}
+
+.asenha-urm .urm-matrix thead th {
+	vertical-align: bottom;
+	font-weight: 600;
+}
+
+/* Core .widefat th input adds an 8px left margin meant for list-table
+   select-all checkboxes. Body checkboxes keep a right margin instead.
+   Center both boxes themselves so the columns line up. */
+.asenha-urm .urm-matrix thead th .urm-group-toggle,
+.asenha-urm .urm-matrix tbody td > input[type="checkbox"] {
+	display: block;
+	margin: 0 auto;
+}
+
+/* Row checkboxes also live in th, so the same 8px margin still applies.
+   Clear it so they share the left edge of the column heading and the
+   "Uses the same capabilities…" line. */
+.asenha-urm .urm-matrix tbody th.urm-matrix-name > .urm-group-toggle {
+	margin: 0;
+}
+
+.asenha-urm .urm-matrix .urm-matrix-name {
+	text-align: left;
+	position: sticky;
+	left: 0;
+	background: #fff;
+	min-width: 160px;
+}
+
+/* Same alternate row as Posts and Pages (.striped). The name cell is sticky,
+   so it needs the stripe itself or it stays white while the row scrolls. */
+.asenha-urm .urm-matrix tbody tr:nth-child(odd) > th,
+.asenha-urm .urm-matrix tbody tr:nth-child(odd) > td {
+	background: var(--urm-bg-soft);
+}
+
+.asenha-urm .urm-matrix tbody tr > td.is-changed,
+.asenha-urm .urm-matrix tbody tr > th.is-changed {
+	background: #fffbea;
+}
+
+.asenha-urm .urm-matrix .urm-matrix-name .urm-matrix-row-label {
+	margin-left: 6px;
+	font-weight: 600;
+}
+
+.asenha-urm .urm-object-slug {
+	font-weight: 400;
+	color: var(--urm-text-muted-more);
+}
+
+.asenha-urm .urm-matrix .urm-matrix-name .description {
+	display: block;
+	padding-left: 22px;
+	font-weight: 400;
+}
+
+.asenha-urm .urm-matrix-col-label {
+	display: block;
+	font-size: 12px;
+	margin-bottom: 4px;
+}
+
+.asenha-urm .urm-matrix-empty {
+	color: #a7aaad;
+}
+
+.asenha-urm .urm-matrix .urm-state-badge {
+	display: none;
+	margin: 2px 0 0;
+}
+
+.asenha-urm .urm-matrix .is-denied .urm-state-badge {
+	display: block;
+}
+
+
+
+/* Save bar ----------------------------------------------------------------- */
+
+.asenha-urm .urm-savebar {
+	position: sticky;
+	bottom: 0;
+	z-index: 10;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	margin: 16px -16px 0;
+	padding: 10px 16px;
+	background: #fff;
+	border-top: 1px solid var(--urm-border);
+	border-radius: 0 0 4px 4px;
+}
+
+.asenha-urm .urm-savebar.has-changes {
+	background: #fffbea;
+	border-top-color: #dba617;
+}
+
+.asenha-urm .urm-save-count {
+	font-weight: 600;
+}
+
+.asenha-urm .urm-save-actions {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+/* Dialogs (appended to body) ------------------------------------------------ */
+
+dialog.urm-dialog {
+	width: min(520px, calc(100vw - 32px));
+	max-height: calc(100vh - 64px);
+	padding: 0;
+	border: 1px solid var(--wp-admin-theme-color, #2271b1);
+	border-radius: 4px;
+	box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+	color: #1d2327;
+	overflow: auto;
+}
+
+dialog.urm-dialog.is-wide {
+	width: min(760px, calc(100vw - 32px));
+}
+
+dialog.urm-dialog::backdrop {
+	background: rgba(0, 0, 0, 0.6);
+}
+
+dialog.urm-dialog .urm-dialog-form {
+	display: flex;
+	flex-direction: column;
+	max-height: calc(100vh - 66px);
+}
+
+dialog.urm-dialog .urm-dialog-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 12px 16px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+dialog.urm-dialog .urm-dialog-header h2 {
+	margin: 0;
+	padding: 0;
+	font-size: 16px;
+}
+
+dialog.urm-dialog .urm-dialog-x {
+	background: transparent;
+	border: 0;
+	cursor: pointer;
+	padding: 4px;
+	color: #50575e;
+}
+
+dialog.urm-dialog .urm-dialog-x:focus-visible {
+	outline: 2px solid var(--wp-admin-theme-color, #2271b1);
+}
+
+dialog.urm-dialog .urm-dialog-body {
+	padding: 16px;
+	overflow-y: auto;
+}
+
+dialog.urm-dialog .urm-dialog-footer {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 8px;
+	padding: 12px 16px;
+	border-top: 1px solid #dcdcde;
+	background: #f6f7f7;
+}
+
+dialog.urm-dialog .urm-field {
+	margin: 0 0 12px;
+}
+
+dialog.urm-dialog .urm-field label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
+dialog.urm-dialog .urm-field input[type="text"],
+dialog.urm-dialog .urm-field select,
+dialog.urm-dialog .urm-field textarea {
+	width: 100%;
+	max-width: none;
+}
+
+dialog.urm-dialog .urm-plain-list {
+	margin: 0 0 12px;
+	padding: 0;
+	list-style: none;
+}
+
+dialog.urm-dialog .urm-plain-list li {
+	margin: 0 0 4px;
+}
+
+dialog.urm-dialog .urm-review h3 {
+	margin: 12px 0 6px;
+	font-size: 14px;
+}
+
+dialog.urm-dialog .urm-review .urm-review-granted {
+	color: #007017;
+}
+
+dialog.urm-dialog .urm-review .urm-review-denied {
+	color: #b32d2e;
+}
+
+dialog.urm-dialog .urm-review .urm-review-removed {
+	color: #50575e;
+}
+
+dialog.urm-dialog .urm-button-danger {
+	background: #b32d2e;
+	border-color: #b32d2e;
+}
+
+dialog.urm-dialog .urm-button-danger:hover,
+dialog.urm-dialog .urm-button-danger:focus {
+	background: #8a2424;
+	border-color: #8a2424;
+}
+
+
+
+/* Responsive ---------------------------------------------------------------- */
+
+@media screen and (max-width: 960px) {
+	.asenha-urm .urm-layout {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.asenha-urm .urm-sidebar {
+		position: static;
+		max-height: none;
+	}
+
+	.asenha-urm .urm-role-list {
+		display: flex;
+		gap: 6px;
+		overflow-x: auto;
+		padding-bottom: 4px;
+	}
+
+	.asenha-urm .urm-role-list li {
+		flex: 0 0 180px;
+		margin: 0;
+	}
+}
+
+@media screen and (max-width: 600px) {
+	.asenha-urm .urm-main {
+		padding: 12px 12px 0;
+	}
+
+	.asenha-urm .urm-savebar {
+		margin: 12px -12px 0;
+		padding: 8px 12px;
+	}
+
+	.asenha-urm .urm-controls-end,
+	.asenha-urm .urm-search,
+	.asenha-urm .urm-search input[type="search"] {
+		width: 100%;
+		min-width: 0;
+	}
+
+	.asenha-urm .urm-section-tools {
+		width: 100%;
+	}
+
+	.asenha-urm .urm-section-tools .button {
+		flex: 1 1 auto;
+	}
+
+	.asenha-urm .urm-users-link {
+		margin-left: 0;
+	}
+
+	.asenha-urm .urm-view-switch .button {
+		flex: 1 1 auto;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.asenha-urm .urm-main {
+		transition: none;
+	}
+}
+
+/* Must stay last: beats the display rules above thanks to the extra class. */
+.asenha-urm .urm-app [hidden],
+.asenha-urm .urm-main [hidden],
+.asenha-urm [hidden] {
+	display: none;
+}

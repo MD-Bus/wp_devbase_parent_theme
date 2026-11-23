@@ -1381,7 +1381,7 @@ class Settings_Sections_Fields {
                 'field_type'        => 'textarea',
                 'field_rows'        => 3,
                 'field_intro'       => '',
-                'field_description' => __( 'Enter one path per line', 'admin-site-enhancements' ),
+                'field_description' => __( 'Enter one path per line. Use / for the homepage.', 'admin-site-enhancements' ),
                 'field_placeholder' => __( 'e.g. dashboard', 'admin-site-enhancements' ),
                 'class'             => 'asenha-textarea margin-top-16 login-logout ' . $field_slug,
             )
@@ -2577,6 +2577,22 @@ class Settings_Sections_Fields {
                 'field_id'    => $field_id,
                 'field_name'  => ASENHA_SLUG_U . '[' . $field_id . ']',
                 'field_label' => __( 'Disable <strong>admin email notification</strong> after password change by a user.', 'admin-site-enhancements' ),
+                'class'       => 'asenha-checkbox asenha-hide-th disable-components ' . $field_slug,
+            )
+        );
+        $field_id = 'disable_random_content_redirect';
+        $field_slug = 'disable-random-content-redirect';
+        add_settings_field(
+            $field_id,
+            '',
+            [$render_field, 'render_checkbox_plain'],
+            ASENHA_SLUG,
+            'main-section',
+            array(
+                'option_name' => ASENHA_SLUG_U,
+                'field_id'    => $field_id,
+                'field_name'  => ASENHA_SLUG_U . '[' . $field_id . ']',
+                'field_label' => __( 'Disable the <strong>random content redirect</strong>, i.e. the <code>/random/</code> URL that redirects to a random post, which was added since WordPress v7.2. Make sure no menus or links point to it.', 'admin-site-enhancements' ),
                 'class'       => 'asenha-checkbox asenha-hide-th disable-components ' . $field_slug,
             )
         );
@@ -4094,6 +4110,32 @@ class Settings_Sections_Fields {
             array(
                 'field_description' => '<div class="asenha-warning">' . __( 'Only enable this while testing. Disable it on production sites to restore spam protection.', 'admin-site-enhancements' ) . '</div>',
                 'class'             => 'asenha-description margin-top-m8 margin-bottom-4 utilities ' . $field_slug,
+            )
+        );
+        // User Role Manager
+        $field_id = 'user_role_manager';
+        $field_slug = 'user-role-manager';
+        $field_title = __( 'User Role Manager', 'admin-site-enhancements' );
+        $field_description = __( 'Create, edit, clone and delete user roles, and manage their capabilities with a simple-to-detailed editor that supports batch selection and deselection.', 'admin-site-enhancements' ) . ' ' . sprintf( 
+            /* translators: %s is URL to the User Role Manager page */
+            __( 'Once enabled, you can find the <a href="%s">Roles</a> item under the Users menu.', 'admin-site-enhancements' ),
+            esc_url( admin_url( 'users.php?page=asenha-user-role-manager' ) )
+         );
+        add_settings_field(
+            $field_id,
+            $field_title,
+            [$render_field, 'render_checkbox_toggle'],
+            ASENHA_SLUG,
+            'main-section',
+            array(
+                'option_name'           => ASENHA_SLUG_U,
+                'field_id'              => $field_id,
+                'field_slug'            => $field_slug,
+                'field_title'           => $field_title,
+                'field_name'            => ASENHA_SLUG_U . '[' . $field_id . ']',
+                'field_description'     => $field_description,
+                'field_options_wrapper' => false,
+                'class'                 => 'asenha-toggle utilities ' . $field_slug,
             )
         );
         // Multiple User Roles

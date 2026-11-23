@@ -1377,6 +1377,21 @@ html[dir=rtl] .acf-button-group label:last-child {
 .acf-switch + span {
   margin-left: 6px;
 }
+.acf-switch {
+  /* rtl */
+}
+html[dir=rtl] .acf-switch .acf-switch-slider {
+  left: 50%;
+  right: 2px;
+}
+html[dir=rtl] .acf-switch.-on .acf-switch-slider {
+  left: 2px;
+  right: 50%;
+}
+html[dir=rtl] .acf-switch + span {
+  margin-left: 0;
+  margin-right: 6px;
+}
 .acf-admin-3-8 .acf-switch {
   border-color: #ccd0d4;
 }
