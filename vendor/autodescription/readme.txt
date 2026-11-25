@@ -5,7 +5,7 @@ Tags: seo, xml sitemap, google search, open graph, structured data
 Requires at least: 7.0
 Tested up to: 7.1
 Requires PHP: 7.4.0
-Stable tag: 5.2.1
+Stable tag: 5.2.2
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -161,11 +161,12 @@ Optionally, also install our free [Extension Manager](https://theseoframework.co
 
 == Screenshots ==
 
-1. The SEO Framework shows you how your site is performing, at a glance. This is what we call the SEO Bar.
-2. Hover over, tap on, or focus any SEO Bar item and it will tell you what's asserted from your environment.
-3. The SEO meta box is displayed on all pages. It's everything you need. Here you can see the pixel counters.
-4. These SEO settings are shown on the term edit screen. It seamlessly blends into your WordPress interface.
-5. The SEO settings page of The SEO Framework. Every setting is explained thoroughly. You're in full control.
+1. The SEO Bar shows how every post is performing at a glance. Hover over, tap, or focus any item to see what's asserted from your environment.
+2. The SEO Settings meta box integrates seamlessly into the WordPress editor, complete with live character and pixel counters.
+3. The global SEO Settings page blends right into WordPress, with built-in tooltips explaining every option so you stay in full control.
+4. Edit meta titles, descriptions, canonical URLs, and visibility rules inline with WordPress's native Quick Edit interface.
+5. Categories and taxonomy terms carry their own SEO Bar, general metadata, and social sharing settings.
+6. Author profile pages include dedicated authorial links — including Fediverse and X — alongside full archive visibility controls.
 
 == Frequently Asked Questions ==
 
@@ -243,6 +244,10 @@ The SEO Framework outputs hidden breadcrumbs for search engines to find via its 
 You can also output these breadcrumbs visually in your theme by [using a shortcode](https://kb.theseoframework.com/?p=212).
 
 == Changelog ==
+
+### 5.2.2
+
+This update lets you remove URL bases under **General Settings → Canonical**. Choose which public hierarchical taxonomies to shorten, including categories, WooCommerce product categories and brands, and custom taxonomies. For example, `/category/recipes/bread/` becomes `/recipes/bread/`. If the shorter URL is already taken, [the SEO Bar tells you](https://theseoframework.com/?p=4703#detailed).
 
 ### 5.2.1
 

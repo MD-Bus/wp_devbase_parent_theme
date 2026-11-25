@@ -125,12 +125,14 @@ class Builder {
 		/**
 		 * Adjust interpreter and builder items here, before the tests have run.
 		 *
-		 * The only use we can think of here is removing items from `$builder::$tests`,
-		 * and reading `$builder::$query{_cache}`. Do not add tests here. Do not alter the query.
+		 * Remove regular assessments through `$builder::$tests` and read `$builder::$query{_cache}`.
+		 * Each builder runs its blocking checks independently. Do not add tests here. Do not alter the query.
 		 *
 		 * @link Example: https://gist.github.com/sybrew/03dd428deadc860309879e1d5208e1c4
 		 * @see related (recommended) action 'the_seo_framework_seo_bar'
 		 * @since 4.0.0
+		 * @since 5.2.2 Now applies `$builder::$tests` to regular assessments only.
+		 *
 		 * @param string                                       $interpreter The current class name.
 		 * @param \The_SEO_Framework\Admin\SEOBar\Builder\Main $builder     The builder object.
 		 */
@@ -138,7 +140,7 @@ class Builder {
 
 		$items = &self::collect_seo_bar_items();
 
-		foreach ( $builder->run_all_tests( $query ) as $key => $data )
+		foreach ( $builder->run_tests( $query ) as $key => $data )
 			$items[ $key ] = $data;
 
 		/**
@@ -146,7 +148,8 @@ class Builder {
 		 *
 		 * @link Example: https://gist.github.com/sybrew/59130560fcbeb98f7580dc11c54ba174
 		 * @since 4.0.0
-		 * @since 5.0.0 Added the builder's instance as the third parameter.
+		 * @since 5.0.0 Added the builder's instance as the second parameter.
+		 *
 		 * @param string $interpreter The interpreter class name.
 		 * @param object $builder     The builder's class instance.
 		 */
@@ -183,6 +186,24 @@ class Builder {
 	}
 
 	/**
+	 * Determines whether a blocking assessment is registered for the current SEO Bar.
+	 *
+	 * @since 5.2.2
+	 *
+	 * @return bool True if any registered item marks itself as blocking.
+	 */
+	public static function has_blocking_item() {
+
+		// Stop at the first registered assessment marked as blocking.
+		foreach ( self::$items as $item ) {
+			if ( ! empty( $item['meta']['blocking'] ) )
+				return true;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Registers or overwrites an SEO Bar item.
 	 *
 	 * @since 4.0.0
@@ -197,6 +218,7 @@ class Builder {
 	 *     @type string    $reason Required. The final assessment: The reason for the $status.
 	 *     @type string[]  $assess Required. The assessments on why the reason is set. Keep it short and concise!
 	 *                             Does not accept HTML for performant ARIA support.
+	 *     @type array     $meta   Optional. Item metadata. Set `[ 'blocking' => true ]` for blocking assessments.
 	 * }
 	 */
 	public static function register_seo_bar_item( $key, $item ) {

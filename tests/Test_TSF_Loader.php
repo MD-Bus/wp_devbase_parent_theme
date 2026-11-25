@@ -142,9 +142,20 @@ class Test_TSF_Loader extends WP_UnitTestCase {
 
 		// If a release renames these, the removal in tsf.php silently does nothing: the notice shows once, which is harmless,
 		// but update tsf.php to the new names.
-		$this->assertStringContainsString( "'the_seo_framework_upgraded', 'The_SEO_Framework\\Bootstrap\\_prepare_upgrade_notice', 99", $upgrade );
-		$this->assertStringContainsString( "'the_seo_framework_upgraded', 'The_SEO_Framework\\Bootstrap\\_prepare_upgrade_suggestion', 100", $upgrade );
-		$this->assertStringContainsString( "'the_seo_framework_downgraded', 'The_SEO_Framework\\Bootstrap\\_prepare_downgrade_notice', 99", $upgrade );
+		$notices = array(
+			array( 'the_seo_framework_upgraded', '_prepare_upgrade_notice', 99 ),
+			array( 'the_seo_framework_upgraded', '_prepare_upgrade_suggestion', 100 ),
+			array( 'the_seo_framework_downgraded', '_prepare_downgrade_notice', 99 ),
+		);
+
+		// Hook, callback and priority must all match; how TSF wraps the add_action() call does not matter (5.2.2 split it over lines).
+		foreach ( $notices as list( $hook, $callback, $priority ) ) {
+			$arguments = array( "'$hook'", "'The_SEO_Framework\\Bootstrap\\$callback'", (string) $priority );
+			$pattern   = '/add_action\(\s*' . implode( '\s*,\s*', array_map( 'preg_quote', $arguments ) ) . '\b/';
+
+			$this->assertMatchesRegularExpression( $pattern, $upgrade, "TSF no longer registers $callback on $hook at priority $priority." );
+		}
+
 		$this->assertStringContainsString( 'TSF_DISABLE_SUGGESTIONS', $this->source( 'inc/classes/admin/utils.class.php' ) );
 	}
 

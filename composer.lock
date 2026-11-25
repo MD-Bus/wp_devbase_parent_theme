@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "aeea34c70767af20d68c7ae2de6e94ca",
+    "content-hash": "ef94e28bf9b6bb0caab070e8cda2a0ac",
     "packages": [
         {
             "name": "composer/installers",
@@ -621,15 +621,15 @@
         },
         {
             "name": "wp-plugin/autodescription",
-            "version": "5.2.1",
+            "version": "5.2.2",
             "source": {
                 "type": "svn",
                 "url": "https://plugins.svn.wordpress.org/autodescription/",
-                "reference": "tags/5.2.1"
+                "reference": "tags/5.2.2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/autodescription.5.2.1.zip"
+                "url": "https://downloads.wordpress.org/plugin/autodescription.5.2.2.zip"
             },
             "require": {
                 "composer/installers": "~1.0|~2.0"
@@ -648,7 +648,7 @@
                 "issues": "https://wordpress.org/support/plugin/autodescription",
                 "source": "https://plugins.svn.wordpress.org/autodescription"
             },
-            "time": "2026-11-10T21:17:31+00:00"
+            "time": "2026-11-25T10:12:54+00:00"
         },
         {
             "name": "wp-plugin/secure-custom-fields",
