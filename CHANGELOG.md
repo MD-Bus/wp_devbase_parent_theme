@@ -10,6 +10,12 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.57.1] — 2026-11-25
+
+### Changed
+
+- **The SEO Framework 5.2.1 → 5.2.2.** New in the plugin: URL bases can be removed from categories and other public hierarchical taxonomies, WooCommerce product categories and brands included (SEO Settings > General > Canonical; off by default, needs pretty permalinks). It fixes database upgrades that could discard or overwrite saved SEO settings, or be marked complete before the save was verified, and saving settings during a pending upgrade now shows a retry message instead of failing silently. Each site with The SEO Framework switched on upgrades its SEO database once, on the first requests after this release; saved settings are kept. Nothing in the theme changes behaviour.
+
 ## [1.57.0] — 2026-11-23
 
 ### Added
