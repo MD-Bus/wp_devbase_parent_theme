@@ -47,6 +47,7 @@ done <<-DEPS
 	secure-custom-fields|secure-custom-fields.php
 	admin-site-enhancements|admin-site-enhancements.php
 	autodescription|autodescription.php
+	filebird|filebird.php
 DEPS
 
 # The other way round: composer.lock ahead of vendor/. A Dependabot pull

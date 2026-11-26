@@ -28,6 +28,9 @@ tests_add_filter( 'muplugins_loaded', 'devbase_tests_switch_theme' );
 // code; Test_TSF_Disable removes this filter again where it checks the default.
 tests_add_filter( 'devbase/tsf/enabled', '__return_true' );
 
+// FileBird is OFF by default too (Miscellaneous > Media). The suite turns it on so Test_FileBird_Loader checks the real load.
+tests_add_filter( 'devbase/filebird/enabled', '__return_true' );
+
 // A verified ping also syncs the bundled plugins and starts wp-cron.php (devbase_maintenance_housekeeping()).
 // Off for the suite: dozens of tests send pings, and none of them should unpack a real plugin zip into the
 // test site or make a real loopback request. Test_Maintenance removes these where it checks that behaviour.

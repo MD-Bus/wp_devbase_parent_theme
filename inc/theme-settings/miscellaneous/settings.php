@@ -284,6 +284,24 @@ add_action( 'acf/init', function () {
 					? sprintf( __( 'Kept off while %s is active: two SEO plugins would print every tag twice. Deactivate it to be able to use The SEO Framework. ', 'devbase_parent_theme' ), devbase_tsf_conflicting_plugin() )
 					: '' ) . __( 'Off by default. When on, The SEO Framework runs the site\'s SEO: titles, descriptions, social tags, structured data, the sitemap and robots.txt, and an SEO box on the edit screens. When off it is not loaded at all (not just hidden), so a client who runs their own SEO plugin has the page to themselves. The Organization Details page and the archive SEO tab are only there while it is on, because only The SEO Framework reads them. Nothing is deleted when you turn it off. It takes effect on the next page load.', 'devbase_parent_theme' ),
 			),
+			// Tab: Media. One switch: whether FileBird (Media Library folders) runs at all. Off by default.
+			array(
+				'key'   => 'field_devbase_misc_media_tab',
+				'label' => __( 'Media', 'devbase_parent_theme' ),
+				'name'  => '',
+				'type'  => 'tab',
+			),
+			array(
+				'key'           => 'field_devbase_enable_filebird',
+				'label'         => __( 'Enable FileBird', 'devbase_parent_theme' ),
+				'name'          => 'enable_filebird',
+				'type'          => 'true_false',
+				'ui'            => 1,
+				'default_value' => 0,
+				'instructions'  => ( function_exists( 'devbase_dependency_is_foreign' ) && devbase_dependency_is_foreign( 'filebird' )
+					? __( 'This site already runs FileBird as a plugin, so that one is used and this switch does nothing. ', 'devbase_parent_theme' )
+					: '' ) . __( 'Off by default. When on, the Media Library gets folders (FileBird): a folder tree beside the files, drag and drop, uploads into a folder, folders in the media window and a folder gallery block. Folders only sort files: nothing moves and no address changes. When off it is not loaded at all; the folders are kept and come back when it is turned on again. It takes effect on the next page load.', 'devbase_parent_theme' ),
+			),
 			// Tab: Credit. One setting; everything else is downloaded. See credit.php.
 			array(
 				'key'   => 'field_devbase_misc_credit_tab',
@@ -332,6 +350,24 @@ add_action( 'acf/init', function () {
 				'ui'            => 1,
 				'default_value' => 1,
 				'instructions'  => __( 'When on (the default), the Custom Fields menu and its screens (field groups, post types, taxonomies, options pages, tools) are hidden and closed, so nobody changes the site\'s structure by accident. Everything the theme built keeps working, and the Theme Settings pages stay. Turn it off here to edit field groups.', 'devbase_parent_theme' ),
+			),
+			array(
+				'key'               => 'field_devbase_hide_filebird_menu',
+				'label'             => __( 'Hide FileBird menu', 'devbase_parent_theme' ),
+				'name'              => 'hide_filebird_menu',
+				'type'              => 'true_false',
+				'ui'                => 1,
+				'default_value'     => 1,
+				'instructions'      => __( 'When on (the default), the FileBird menu (its own settings, import and export) is hidden from the dashboard. The folders in the Media Library keep working. Hidden is not blocked: its page still opens by its address. Turn it off to reach FileBird\'s settings.', 'devbase_parent_theme' ),
+				'conditional_logic' => array(
+					array(
+						array(
+							'field'    => 'field_devbase_enable_filebird',
+							'operator' => '==',
+							'value'    => '1',
+						),
+					),
+				),
 			),
 			array(
 				'key'           => 'field_devbase_allow_make_available',
@@ -476,7 +512,7 @@ add_action( 'admin_enqueue_scripts', function ( $hook ) {
  * get_field(): the Secure Custom Fields menu is decided before any field is registered, when get_field()
  * would find nothing and the default would not apply. An explicit "off" saved earlier stays off.
  *
- * @param string $name The field name (lock_remote_setup, hide_wpvivid_ui, hide_scf_ui).
+ * @param string $name The field name (lock_remote_setup, hide_wpvivid_ui, hide_scf_ui, hide_filebird_menu).
  */
 function devbase_switch_on( $name ) {
 	$raw = get_option( 'options_' . $name, null );

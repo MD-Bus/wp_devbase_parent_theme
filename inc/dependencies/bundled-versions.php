@@ -27,6 +27,7 @@ function devbase_bundled_versions() {
 		'Secure Custom Fields'    => 'secure-custom-fields/secure-custom-fields.php',
 		'Admin Site Enhancements' => 'admin-site-enhancements/admin-site-enhancements.php',
 		'The SEO Framework'       => 'autodescription/autodescription.php',
+		'FileBird'                => 'filebird/filebird.php',
 		'MCP Adapter'             => 'mcp-adapter/mcp-adapter.php',
 	);
 
@@ -40,6 +41,10 @@ function devbase_bundled_versions() {
 	// Shipped but not running: say so, so nobody reads the version as "this site's SEO".
 	if ( function_exists( 'devbase_tsf_disabled' ) && devbase_tsf_disabled() ) {
 		$versions['The SEO Framework'] .= ' ' . __( '(disabled)', 'devbase_parent_theme' );
+	}
+
+	if ( function_exists( 'devbase_filebird_enabled' ) && ! devbase_filebird_enabled() ) {
+		$versions['FileBird'] .= ' ' . __( '(disabled)', 'devbase_parent_theme' );
 	}
 
 	$versions['Timber'] = class_exists( 'Timber\Timber' ) && ! empty( Timber\Timber::$version ) ? Timber\Timber::$version : '—';

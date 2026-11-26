@@ -1,7 +1,7 @@
 # Dependabot: a pull request when a Composer dependency has a new version.
 #
 # Since 1.7.0 this is THE way the bundled dependencies change: sites no longer
-# update anything themselves, so SCF, ASE, The SEO Framework, Timber, Twig and the Symfony
+# update anything themselves, so SCF, ASE, The SEO Framework, FileBird, Timber, Twig and the Symfony
 # polyfills move only through a pull request here, tested and released by the
 # developer. (The MCP Adapter isn't on Packagist; see
 # .github/workflows/mcp-adapter-release.yml.)
@@ -18,7 +18,7 @@
 # Dependabot won't update a PR someone has pushed to, which includes that
 # workflow's commit: `@dependabot recreate` rebuilds it (and re-runs the sync).
 #
-# SCF and ASE are exact pins ("6.9.7"); Dependabot moves the pin, which is
+# SCF, ASE, The SEO Framework and FileBird are exact pins ("6.9.7"); Dependabot moves the pin, which is
 # the intent: a newer version is offered, never a range that drifts.
 #
 # .github/ is export-ignored, so none of this reaches a site.

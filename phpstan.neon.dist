@@ -13,4 +13,5 @@ parameters:
 		- vendor/secure-custom-fields
 		- vendor/autodescription
 		- vendor/admin-site-enhancements
+		- vendor/filebird
 	treatPhpDocTypesAsCertain: false

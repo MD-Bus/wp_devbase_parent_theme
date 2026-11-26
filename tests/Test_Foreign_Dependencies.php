@@ -26,10 +26,10 @@ class Test_Foreign_Dependencies extends WP_UnitTestCase {
 		return array_merge( $found, $this->foreign );
 	}
 
-	public function test_here_the_theme_runs_all_four_of_its_own_copies() {
+	public function test_here_the_theme_runs_all_five_of_its_own_copies() {
 		remove_filter( 'devbase/dependencies/foreign', array( $this, 'set' ) );
 
-		$this->assertSame( array( 'scf' => false, 'ase' => false, 'mcp' => false, 'tsf' => false ), devbase_foreign_dependencies() );
+		$this->assertSame( array( 'scf' => false, 'ase' => false, 'mcp' => false, 'tsf' => false, 'filebird' => false ), devbase_foreign_dependencies() );
 	}
 
 	public function test_the_answer_for_one_dependency_is_read_by_key() {
@@ -47,6 +47,14 @@ class Test_Foreign_Dependencies extends WP_UnitTestCase {
 		$this->foreign = array( 'scf' => true );
 		$this->assertFalse( devbase_scf_ui_hidden(), 'Only the theme\'s own copy is hidden.' );
 		$this->assertTrue( apply_filters( 'acf/settings/show_admin', true ) );
+	}
+
+	public function test_a_filebird_the_site_installed_keeps_its_menu() {
+		delete_option( 'options_hide_filebird_menu' ); // on by default
+		$this->assertTrue( devbase_filebird_menu_hidden() );
+
+		$this->foreign = array( 'filebird' => true );
+		$this->assertFalse( devbase_filebird_menu_hidden(), 'Only the theme\'s own copy is hidden.' );
 	}
 
 	public function test_the_theme_never_writes_its_ase_defaults_into_the_sites_own_ase() {

@@ -10,6 +10,13 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.58.0] — 2026-11-25
+
+### Added
+
+- **FileBird 6.5.9, vendored: folders for the Media Library.** Off by default: **Theme Settings > Miscellaneous > Media > Enable FileBird**. When on, the Media Library gets FileBird's folder tree, drag and drop, uploads into a folder, folders in the media popup and its folder gallery block. Loaded from `vendor/` like The SEO Framework (started by hand, since it starts on `plugins_loaded`, which a theme misses; its tables are created before its first run). Dependabot watches it like the other vendored plugins, and `bin/check-vendor-drift.sh` checks it. On a client's site its review request, its deactivation-feedback form and its YayMail adverts are off. A site that already runs FileBird (or FileBird Pro) as a plugin keeps its own and the theme loads nothing; the folders live in the same tables either way.
+- **Hide FileBird menu** (Miscellaneous > Management, on by default): keeps FileBird's own page (its settings, import and export) out of the dashboard menu. Hidden, not blocked: the page still opens by its address.
+
 ## [1.57.1] — 2026-11-25
 
 ### Changed

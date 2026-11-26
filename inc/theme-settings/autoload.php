@@ -28,7 +28,7 @@ const DEVBASE_AUTOLOAD_STAMP = 'devbase_settings_autoload_stamp';
  * @return string[]
  */
 function devbase_settings_autoload_fields() {
-	$names = array( 'enable_tsf', 'credit_brand_url' );
+	$names = array( 'enable_tsf', 'enable_filebird', 'credit_brand_url' );
 
 	if ( function_exists( 'acf_get_fields' ) && function_exists( 'acf_get_field_group' ) ) {
 		foreach ( array( 'group_devbase_schema', 'group_devbase_tracking' ) as $group ) {

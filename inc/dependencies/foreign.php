@@ -3,7 +3,7 @@
 // Is a dependency ALREADY running on this site, installed by someone else as a real plugin?
 //
 // The theme carries its own copies of Secure Custom Fields, Admin Site Enhancements, the MCP
-// Adapter and The SEO Framework in vendor/ and loads them itself. If the site already has one of them as an ordinary
+// Adapter, The SEO Framework and FileBird in vendor/ and loads them itself. If the site already has one of them as an ordinary
 // plugin (a client installed it, or the host did), loading ours too would fight it: our asset URL
 // overrides would break theirs, our ASE defaults would be written over their settings, a second copy
 // would redeclare classes. So when one is already there we use THEIRS: the theme's loader for that
@@ -32,13 +32,15 @@ function devbase_foreign_dependencies() {
 			'mcp' => class_exists( 'WP\MCP\Plugin', false ),
 			// TSF defines its version the moment its main file loads.
 			'tsf' => defined( 'THE_SEO_FRAMEWORK_VERSION' ),
+			// FileBird and FileBird Pro define their version the moment their main file loads.
+			'filebird' => defined( 'NJFB_VERSION' ),
 		);
 	}
 
 	return (array) apply_filters( 'devbase/dependencies/foreign', $found );
 }
 
-/** Whether the site's own copy of a dependency (scf, ase or mcp) is the one running. */
+/** Whether the site's own copy of a dependency (scf, ase, mcp, tsf or filebird) is the one running. */
 function devbase_dependency_is_foreign( $key ) {
 	return ! empty( devbase_foreign_dependencies()[ $key ] );
 }

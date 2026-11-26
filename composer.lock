@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ef94e28bf9b6bb0caab070e8cda2a0ac",
+    "content-hash": "d963ce62971126defd6dbdf2c5a439cd",
     "packages": [
         {
             "name": "composer/installers",
@@ -649,6 +649,37 @@
                 "source": "https://plugins.svn.wordpress.org/autodescription"
             },
             "time": "2026-11-25T10:12:54+00:00"
+        },
+        {
+            "name": "wp-plugin/filebird",
+            "version": "6.5.9",
+            "source": {
+                "type": "svn",
+                "url": "https://plugins.svn.wordpress.org/filebird/",
+                "reference": "tags/6.5.9"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://downloads.wordpress.org/plugin/filebird.6.5.9.zip"
+            },
+            "require": {
+                "composer/installers": "~1.0|~2.0"
+            },
+            "type": "wordpress-plugin",
+            "notification-url": "https://wp-packages.org/downloads",
+            "authors": [
+                {
+                    "name": "Ninja Team"
+                }
+            ],
+            "description": "Organize thousands of WordPress media files in folders / categories with ease.",
+            "homepage": "https://ninjateam.org/wordpress-media-library-folders/",
+            "support": {
+                "changelog": "https://wordpress.org/plugins/filebird/#developers",
+                "issues": "https://wordpress.org/support/plugin/filebird",
+                "source": "https://plugins.svn.wordpress.org/filebird"
+            },
+            "time": "2026-10-13T20:28:39+00:00"
         },
         {
             "name": "wp-plugin/secure-custom-fields",

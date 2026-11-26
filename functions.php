@@ -31,6 +31,10 @@ require_once __DIR__ . '/inc/dependencies/ase/ase-limit-login-table.php';
 // implementation (see inc/dependencies/tsf/AGENT.md).
 require_once __DIR__ . '/inc/dependencies/tsf/tsf.php';
 
+// Loads FileBird (Media Library folders) from vendor/, only while Theme Settings > Miscellaneous > Media switches it on
+// (see inc/dependencies/filebird/AGENT.md).
+require_once __DIR__ . '/inc/dependencies/filebird/filebird.php';
+
 // Loads the official WordPress MCP Adapter from vendor/, exposing SCF's
 // registered CPT/field abilities (and any others) as MCP tools.
 require_once __DIR__ . '/inc/dependencies/mcp-adapter/mcp-adapter.php';
