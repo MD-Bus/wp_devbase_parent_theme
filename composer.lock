@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d963ce62971126defd6dbdf2c5a439cd",
+    "content-hash": "4e7147ce6c9b055bc70816e2fefb1c36",
     "packages": [
         {
             "name": "composer/installers",
@@ -621,15 +621,15 @@
         },
         {
             "name": "wp-plugin/autodescription",
-            "version": "5.2.2",
+            "version": "5.2.3",
             "source": {
                 "type": "svn",
                 "url": "https://plugins.svn.wordpress.org/autodescription/",
-                "reference": "tags/5.2.2"
+                "reference": "tags/5.2.3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/autodescription.5.2.2.zip"
+                "url": "https://downloads.wordpress.org/plugin/autodescription.5.2.3.zip"
             },
             "require": {
                 "composer/installers": "~1.0|~2.0"
@@ -648,7 +648,7 @@
                 "issues": "https://wordpress.org/support/plugin/autodescription",
                 "source": "https://plugins.svn.wordpress.org/autodescription"
             },
-            "time": "2026-11-25T10:12:54+00:00"
+            "time": "2026-11-25T19:38:31+00:00"
         },
         {
             "name": "wp-plugin/filebird",

@@ -636,21 +636,21 @@
         },
         {
             "name": "wp-plugin/autodescription",
-            "version": "5.2.2",
-            "version_normalized": "5.2.2.0",
+            "version": "5.2.3",
+            "version_normalized": "5.2.3.0",
             "source": {
                 "type": "svn",
                 "url": "https://plugins.svn.wordpress.org/autodescription/",
-                "reference": "tags/5.2.2"
+                "reference": "tags/5.2.3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/autodescription.5.2.2.zip"
+                "url": "https://downloads.wordpress.org/plugin/autodescription.5.2.3.zip"
             },
             "require": {
                 "composer/installers": "~1.0|~2.0"
             },
-            "time": "2026-11-25T10:12:54+00:00",
+            "time": "2026-11-25T19:38:31+00:00",
             "type": "wordpress-plugin",
             "installation-source": "dist",
             "notification-url": "https://wp-packages.org/downloads",
@@ -737,6 +737,6 @@
             "install-path": "../secure-custom-fields"
         }
     ],
-    "dev": true,
+    "dev": false,
     "dev-package-names": []
 }
