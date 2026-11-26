@@ -10,6 +10,12 @@ see the README's Versioning section. Every release needs a section here.
 
 ## [Unreleased]
 
+## [1.58.1] — 2026-11-25
+
+### Changed
+
+- **The SEO Framework 5.2.2 → 5.2.3.** A fix in the plugin: its admin notices can now be dismissed on every admin screen (a script they need was not always loaded). Nothing in the theme changes behaviour.
+
 ## [1.58.0] — 2026-11-25
 
 ### Added
