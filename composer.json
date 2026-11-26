@@ -6,7 +6,7 @@
         "timber/timber": "^2.5",
         "wp-plugin/secure-custom-fields": "6.9.10",
         "wp-plugin/admin-site-enhancements": "9.4.0",
-        "wp-plugin/autodescription": "5.2.2",
+        "wp-plugin/autodescription": "5.2.3",
         "wp-plugin/filebird": "6.5.9"
     },
     "extra": {
